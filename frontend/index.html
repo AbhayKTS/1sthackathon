@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TokyoStrike - Loading</title>
+    <link rel="stylesheet" href="/tokyo-revengers-loading/css/style.css">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700&family=Playfair+Display:ital,wght@0,700;1,700&family=JetBrains+Mono:wght@400;700&display=swap"
+        rel="stylesheet">
+</head>
+
+<body>
+    <!-- Background Container -->
+    <div class="background-container">
+        <img src="tokyo_street_background.jpg" alt="Tokyo Street" class="background-image">
+        <div class="overlay"></div>
+    </div>
+
+    <!-- Header Section -->
+    <header class="loading-header">
+        <div class="header-left">
+            <span>TOKYOSTRIKE — <span id="current-time">02:47 AM</span></span>
+        </div>
+        <div class="header-right">
+            <span id="quote-display">"You don't have to bow your head. Just have a heart that cares for others."</span>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="loading-content">
+        <div class="content-bottom-left">
+            <h1 class="main-title">Night Ride</h1>
+            <p class="subtitle" id="loadingText">Loading the streets of Shibuya...</p>
+        </div>
+
+        <div class="content-bottom-right">
+            <span class="loading-percentage"><span id="percent-count">0</span>%</span>
+        </div>
+    </main>
+
+    <!-- Loading Bar -->
+    <div class="progress-bar-container">
+        <div class="progress-bar"></div>
+    </div>
+
+    <script src="/tokyo-revengers-loading/js/script.js"></script>
+</body>
+
+</html>

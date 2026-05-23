@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TokyoStrike | Rewrite the Timeline Hackathon</title>
+    <meta name="description"
+        content="A Tokyo Revengers inspired hackathon. Code the timeline, rewrite the past, protect the future.">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <nav id="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <a href="#" class="logo">
+                    <span class="logo-text">TOKYOSTRIKE</span>
+                </a>
+                <div class="status-badge">
+                    <span class="status-text" id="live-time">REAL TIME</span>
+                </div>
+            </div>
+
+            <ul class="nav-links">
+                <li><a href="#mission">MISSION</a></li>
+                <li><a href="#schedule">TIMELINE</a></li>
+                <li><a href="#prizes">BOUNTY</a></li>
+                <li><a href="#contact">RULES</a></li>
+            </ul>
+
+            <div class="nav-actions">
+                <a href="#contact" class="btn-outline">JOIN_UNDERGROUND</a>
+            </div>
+        </div>
+    </nav>
+
+    <header class="hero" id="hero">
+        <div class="live-bg-container">
+            <video autoplay muted loop playsinline class="live-bg-video">
+                <source src="bg.mp4" type="video/mp4">
+            </video>
+            <div class="live-bg-overlay"></div>
+            <div class="particles" aria-hidden="true"></div>
+            <div class="smoke-container" aria-hidden="true">
+                <span class="smoke puff-1"></span>
+                <span class="smoke puff-2"></span>
+                <span class="smoke puff-3"></span>
+            </div>
+            <div class="rain-container"></div>
+            <div class="fog-container"></div>
+            <div class="scanlines"></div>
+        </div>
+        <div class="hero-bg-lines"></div>
+        <div class="container">
+            <div class="hero-content">
+                <div class="hero-title-group">
+                    <h1 class="hero-title"><span class="tokyo-title">TOKYO</span> <span
+                            class="strike-title">STRIKE</span></h1>
+                </div>
+                <p class="hero-subtitle">THE UNDERGROUND HACKATHON OF THE NEW ERA</p>
+
+                <div class="hero-stats-grid">
+                    <div class="stat-item">
+                        <span class="stat-label">TARGET_DATE</span>
+                        <span class="stat-value">AUG 15-17</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">BOUNTY_POOL</span>
+                        <span class="stat-value">$50,000+</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">LOCATION</span>
+                        <span class="stat-value">HIDDEN_VENUE</span>
+                    </div>
+                </div>
+
+                <div class="hero-ctas">
+                    <a href="#contact" class="btn-tactical btn-red">INITIATE_RECRUITMENT</a>
+                    <a href="#mission" class="btn-tactical btn-outline">VIEW_INTEL</a>
+                </div>
+                <div class="hero-timers">
+                    <div id="countdown" class="countdown">Starts in: 1.5 months</div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <section class="event-banner" aria-label="Tokyostrike hackathon announcement banner">
+        <div class="event-banner__surface">
+            <div class="event-banner__track">
+                <div class="event-banner__group">
+                    <span class="event-banner__text event-banner__text--primary">~ TOKYOSTRIKE HACKATHON IS HERE! ~</span>
+                    <span class="event-banner__text event-banner__text--secondary">JOIN THE GANG</span>
+                    <span class="event-banner__text event-banner__text--accent">~ REWRITE THE TIMELINE ~</span>
+                    <span class="event-banner__text event-banner__text--secondary">BUILD THE FUTURE</span>
+                    <span class="event-banner__text event-banner__text--primary">~ APPLY NOW ~</span>
+                </div>
+                <div class="event-banner__group" aria-hidden="true">
+                    <span class="event-banner__text event-banner__text--primary">~ TOKYOSTRIKE HACKATHON IS HERE! ~</span>
+                    <span class="event-banner__text event-banner__text--secondary">JOIN THE GANG</span>
+                    <span class="event-banner__text event-banner__text--accent">~ REWRITE THE TIMELINE ~</span>
+                    <span class="event-banner__text event-banner__text--secondary">BUILD THE FUTURE</span>
+                    <span class="event-banner__text event-banner__text--primary">~ APPLY NOW ~</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="mission" id="mission">
+        <div class="mission-video-bg">
+            <video autoplay muted loop playsinline>
+                <source src="assets/videos/tokyo_revengers_about_bg.mp4" type="video/mp4">
+            </video>
+            <div class="video-overlay"></div>
+        </div>
+
+        <div class="mission-container">
+            <div class="mission-content">
+                <div class="section-label">IDENTIFICATION</div>
+                <h2 class="section-title">THE MISSION</h2>
+                <div class="title-underline"></div>
+
+                <div class="mission-text-container">
+                    <p>TokyoStrike isn't just a hackathon. It's a recruitment for the timeline's defenders. In the dark
+                        alleys of the digital metropolis, we are building tools to prevent the catastrophic failure of
+                        the future.</p>
+                    <p>Whether you're a rogue developer or a system architect, your skills are needed to rewrite the
+                        code that defines our reality. Join the gang. Build the future.</p>
+
+                    <a href="#contact" class="btn-primary">READ THE MANIFESTO</a>
+                </div>
+
+                <div class="mission-grid-cards">
+                    <div class="mission-card">
+                        <h3>OUR MISSION</h3>
+                        <p>In the dark alleys of the digital metropolis, we are building tools to prevent the
+                            catastrophic failure of the future. Recruitment starts now.</p>
+                    </div>
+
+                    <div class="mission-card">
+                        <h3>WHO WE ARE</h3>
+                        <p>A collective of rogue developers and system architects dedicated to rewriting the core
+                            definitions of our reality through innovation.</p>
+                    </div>
+
+                    <div class="mission-card">
+                        <h3>WHAT WE DO</h3>
+                        <p>We challenge the status quo by merging creativity with rebellion, gathering the brightest
+                            minds to collaborate on high-stakes digital solutions.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="schedule" id="schedule">
+        <div class="container">
+            <span class="section-tag">OPERATIONS</span>
+            <h2 class="section-title">The Timeline</h2>
+            <div class="timeline">
+                <div class="timeline-item">
+                    <div class="timeline-dot"></div>
+                    <div class="timeline-content">
+                        <span class="timeline-time">DAY 01 - 18:00</span>
+                        <h3>THE INITIATION</h3>
+                        <p>Gang recruitment and team formation at the Shinjuku HQ.</p>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-dot"></div>
+                    <div class="timeline-content">
+                        <span class="timeline-time">DAY 02 - 10:00</span>
+                        <h3>THE BATTLE BEGINS</h3>
+                        <p>48 hours of uninterrupted building. Coffee, code, and conflict.</p>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-dot"></div>
+                    <div class="timeline-content">
+                        <span class="timeline-time">DAY 03 - 14:00</span>
+                        <h3>FINAL SHOWDOWN</h3>
+                        <p>Demos in front of the Founding Members. Winners take the city.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="prizes" id="prizes">
+        <div class="container">
+            <span class="section-tag">REWARDS</span>
+            <h2 class="section-title">The Treasury</h2>
+            <div class="prize-grid">
+                <div class="prize-card">
+                    <span class="prize-rank">STRIKE MASTER</span>
+                    <div class="prize-amount">$10,000</div>
+                    <p>Founders status, exclusive tech-wear, and the top prize.</p>
+                </div>
+                <div class="prize-card">
+                    <span class="prize-rank">COMMANDER</span>
+                    <div class="prize-amount">$5,000</div>
+                    <p>Access to elite mentorship and high-tier gear.</p>
+                </div>
+                <div class="prize-card">
+                    <span class="prize-rank">GUARD</span>
+                    <div class="prize-amount">$2,500</div>
+                    <p>Recognition across the Tokyo ecosystem.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="contact" id="contact">
+        <div class="container">
+            <div class="contact-container">
+                <div class="contact-info">
+                    <span class="section-tag">RECRUITMENT</span>
+                    <h2 class="section-title">Join the Gang</h2>
+                    <p>The timeline won't fix itself. Drop your credentials and tell us what you're building. We'll find
+                        you when the sun goes down.</p>
+                    <div
+                        style="margin-top: 40px; font-family: var(--font-mono); color: var(--strike-red); letter-spacing: 2px;">
+                        LOC: SHINJUKU_DISTRICT_7<br>
+                        ENC: AES-256-GCM
+                    </div>
+                </div>
+                <form class="contact-form">
+                    <div class="form-group">
+                        <input type="text" placeholder="GANG NAME / PSEUDONYM" required>
+                    </div>
+                    <div class="form-group">
+                        <input type="email" placeholder="ENCRYPTED EMAIL" required>
+                    </div>
+                    <div class="form-group">
+                        <textarea rows="5" placeholder="WHAT'S YOUR RECKONING? (PROJECT SKETCH)"></textarea>
+                    </div>
+                    <button type="submit" class="btn-tactical btn-red" style="width: 100%;">Submit Intel</button>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <footer
+        style="padding: 60px 0; text-align: center; border-top: 1px solid var(--rust); font-size: 0.7rem; color: var(--rust); font-family: var(--font-mono); letter-spacing: 3px;">
+        <div class="container">
+            &copy; 2026 TOKYOSTRIKE. ALL RIGHTS RESERVED. PROTECT THE FUTURE.
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
