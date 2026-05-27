@@ -185,7 +185,7 @@ document.addEventListener('DOMContentLoaded', () => {
         diff -= minutes * (1000 * 60);
         const seconds = Math.floor(diff / 1000);
 
-        countdownEl.textContent = `Starts in: ${days}d ${String(hours).padStart(2,'0')}h ${String(minutes).padStart(2,'0')}m ${String(seconds).padStart(2,'0')}s`;
+        countdownEl.textContent = `Starts in: ${days}d ${String(hours).padStart(2, '0')}h ${String(minutes).padStart(2, '0')}m ${String(seconds).padStart(2, '0')}s`;
     }
 
     updateLiveTime();
@@ -202,4 +202,69 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     `;
     document.head.appendChild(style);
+
+    // --- Track Problem Statement Modal Logic ---
+    const psModal = document.getElementById('ps-modal');
+    const psModalClose = document.getElementById('ps-modal-close');
+    const trackCards = document.querySelectorAll('.track-card');
+
+    if (psModal && psModalClose) {
+        // Open modal when a track card is clicked
+        trackCards.forEach(card => {
+            card.addEventListener('click', () => {
+                const isBlockchain = card.classList.contains('track-web3');
+                const isAiml = card.classList.contains('track-aiml');
+                const isCloud = card.classList.contains('track-cloud');
+                const isCyber = card.classList.contains('track-cyber');
+                const isOpenInnovation = card.classList.contains('track-openinnovation');
+
+                // Reset content and themes
+                const allContent = document.querySelectorAll('.ps-track-content');
+                allContent.forEach(content => content.style.display = 'none');
+                psModal.classList.remove('theme-blockchain', 'theme-aiml', 'theme-cloud', 'theme-cyber', 'theme-openinnovation');
+
+                if (isBlockchain) {
+                    document.getElementById('content-web3').style.display = 'block';
+                    psModal.classList.add('theme-blockchain');
+                } else if (isAiml) {
+                    document.getElementById('content-aiml').style.display = 'block';
+                    psModal.classList.add('theme-aiml');
+                } else if (isCloud) {
+                    document.getElementById('content-cloud').style.display = 'block';
+                    psModal.classList.add('theme-cloud');
+                } else if (isCyber) {
+                    document.getElementById('content-cyber').style.display = 'block';
+                    psModal.classList.add('theme-cyber');
+                } else if (isOpenInnovation) {
+                    document.getElementById('content-openinnovation').style.display = 'block';
+                    psModal.classList.add('theme-openinnovation');
+                }
+
+                psModal.classList.add('active');
+                document.body.style.overflow = 'hidden'; // Prevent scrolling
+            });
+        });
+
+        // Close modal when close button is clicked
+        psModalClose.addEventListener('click', () => {
+            psModal.classList.remove('active');
+            document.body.style.overflow = ''; // Restore scrolling
+        });
+
+        // Close modal when clicking outside the container
+        psModal.addEventListener('click', (e) => {
+            if (!e.target.closest('.ps-container')) {
+                psModal.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+        });
+
+        // Close modal with Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && psModal.classList.contains('active')) {
+                psModal.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+        });
+    }
 });

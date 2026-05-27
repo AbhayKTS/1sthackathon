@@ -2146,3 +2146,383 @@ textarea:focus {
         padding: 80px 20px 40px;
     }
 }
+
+/* --- TRACK PROBLEM STATEMENT MODAL STYLES --- */
+.ps-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 10000;
+    background: rgba(0, 0, 0, 0.95);
+    overflow-y: auto;
+    backdrop-filter: blur(15px);
+}
+
+.ps-modal.active {
+    display: flex;
+    flex-direction: column;
+}
+
+.ps-modal-content {
+    position: relative;
+    width: 100%;
+    min-height: 100%;
+}
+
+.ps-modal-close {
+    position: fixed;
+    top: 30px;
+    right: 30px;
+    font-size: 50px;
+    color: #FFFFFF;
+    background: none;
+    border: none;
+    cursor: pointer;
+    z-index: 10100;
+    transition: color 0.3s ease, transform 0.3s ease;
+    line-height: 1;
+}
+
+.ps-modal-close:hover {
+    color: #C41E3A;
+    transform: scale(1.1) rotate(90deg);
+}
+
+/* Provided Problem Statement Styles */
+.problem-statement-section {
+    position: relative;
+    min-height: 100vh;
+    padding: 100px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.ps-background {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    background: linear-gradient(135deg, #0D0D0D 0%, #1A1A1A 50%, #0D0D0D 100%);
+    z-index: -2;
+}
+
+.ps-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    background:
+        radial-gradient(ellipse at 20% 50%, rgba(0, 217, 255, 0.1) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 50%, rgba(196, 30, 58, 0.05) 0%, transparent 50%);
+    z-index: -1;
+}
+
+.ps-container {
+    max-width: 900px;
+    margin: 40px auto;
+    position: relative;
+    z-index: 10;
+    background: rgba(0, 0, 0, 0.8);
+    padding: 60px 50px;
+    border: 5px solid #C41E3A;
+    /* Bold red border now around the box */
+    border-radius: 8px;
+    backdrop-filter: blur(15px);
+    box-shadow: 0 0 60px rgba(196, 30, 58, 0.3), inset 0 0 20px rgba(196, 30, 58, 0.1);
+}
+
+.ps-track-badge {
+    display: inline-block;
+    background: rgba(0, 217, 255, 0.2);
+    border: 1px solid #00D9FF;
+    color: #00D9FF;
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-size: 12px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-weight: 700;
+    margin-bottom: 20px;
+}
+
+.ps-title {
+    font-family: "Bebas Neue", sans-serif;
+    font-size: 48px;
+    color: #00D9FF;
+    text-shadow: 0 0 20px rgba(0, 217, 255, 0.5);
+    letter-spacing: 2px;
+    margin-bottom: 40px;
+    line-height: 1.3;
+}
+
+.ps-content {
+    margin-bottom: 40px;
+}
+
+.ps-items {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+}
+
+.ps-item {
+    border-left: 3px solid #00D9FF;
+    padding-left: 20px;
+    background: rgba(0, 217, 255, 0.05);
+    padding: 20px;
+    border-radius: 0 8px 8px 0;
+    transition: all 0.3s ease;
+}
+
+.ps-item:hover {
+    background: rgba(0, 217, 255, 0.1);
+    transform: translateX(5px);
+}
+
+.ps-item-title {
+    font-family: var(--font-mono);
+    font-size: 1.1rem;
+    color: #00D9FF;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.ps-item-text {
+    color: #E0E0E0;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    margin-bottom: 8px;
+}
+
+.ps-item-text:last-child {
+    margin-bottom: 0;
+}
+
+.ps-cta {
+    display: flex;
+    justify-content: center;
+}
+
+.ps-btn {
+    padding: 16px 50px;
+    background: #00D9FF;
+    color: #0D0D0D;
+    border: none;
+    font-weight: 900;
+    font-size: 14px;
+    letter-spacing: 2px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    box-shadow: 0 0 20px rgba(0, 217, 255, 0.4);
+}
+
+.ps-btn:hover {
+    background: #00FFE0;
+    box-shadow: 0 0 30px rgba(0, 217, 255, 0.8);
+    transform: translateY(-3px);
+}
+
+/* Theme: Blockchain/Web3 */
+.theme-blockchain .ps-track-badge {
+    background: rgba(0, 217, 255, 0.2);
+    border-color: #00D9FF;
+    color: #00D9FF;
+}
+
+.theme-blockchain .ps-title {
+    color: #00D9FF;
+    text-shadow: 0 0 20px rgba(0, 217, 255, 0.5);
+}
+
+.theme-blockchain .ps-container {
+    border-color: #00D9FF;
+    box-shadow: 0 0 60px rgba(0, 217, 255, 0.3), inset 0 0 20px rgba(0, 217, 255, 0.1);
+}
+
+.theme-blockchain .ps-item {
+    border-left-color: #00D9FF;
+    background: rgba(0, 217, 255, 0.05);
+}
+
+.theme-blockchain .ps-item-title {
+    color: #00D9FF;
+}
+
+.theme-blockchain .ps-btn {
+    background: #00D9FF;
+    box-shadow: 0 0 20px rgba(0, 217, 255, 0.4);
+}
+
+/* Theme: AI/ML */
+.theme-aiml .ps-track-badge {
+    background: rgba(188, 19, 254, 0.2);
+    border-color: #BC13FE;
+    color: #BC13FE;
+}
+
+.theme-aiml .ps-title {
+    color: #BC13FE;
+    text-shadow: 0 0 20px rgba(188, 19, 254, 0.5);
+}
+
+.theme-aiml .ps-container {
+    border-color: #BC13FE;
+    box-shadow: 0 0 60px rgba(188, 19, 254, 0.3), inset 0 0 20px rgba(188, 19, 254, 0.1);
+}
+
+.theme-aiml .ps-item {
+    border-left-color: #BC13FE;
+    background: rgba(188, 19, 254, 0.05);
+}
+
+.theme-aiml .ps-item-title {
+    color: #BC13FE;
+}
+
+.theme-aiml .ps-btn {
+    background: #BC13FE;
+    box-shadow: 0 0 20px rgba(188, 19, 254, 0.4);
+}
+
+/* Theme: Cloud / DevOps */
+.theme-cloud .ps-track-badge {
+    background: rgba(0, 255, 224, 0.18);
+    border-color: #00FFE0;
+    color: #00FFE0;
+}
+
+.theme-cloud .ps-title {
+    color: #00FFE0;
+    text-shadow: 0 0 20px rgba(0, 255, 224, 0.45);
+}
+
+.theme-cloud .ps-container {
+    border-color: #00FFE0;
+    box-shadow: 0 0 60px rgba(0, 255, 224, 0.22), inset 0 0 20px rgba(0, 255, 224, 0.08);
+}
+
+.theme-cloud .ps-item {
+    border-left-color: #00FFE0;
+    background: rgba(0, 255, 224, 0.06);
+}
+
+.theme-cloud .ps-item:hover {
+    background: rgba(0, 255, 224, 0.12);
+}
+
+.theme-cloud .ps-item-title {
+    color: #00FFE0;
+}
+
+.theme-cloud .ps-btn {
+    background: #00FFE0;
+    box-shadow: 0 0 20px rgba(0, 255, 224, 0.35);
+}
+
+.theme-cloud .ps-btn:hover {
+    background: #8DFFF1;
+    box-shadow: 0 0 30px rgba(0, 255, 224, 0.65);
+}
+
+/* Theme: Cybersecurity */
+.theme-cyber .ps-track-badge {
+    background: rgba(255, 64, 129, 0.18);
+    border-color: #FF4081;
+    color: #FF4081;
+}
+
+.theme-cyber .ps-title {
+    color: #FF4081;
+    text-shadow: 0 0 20px rgba(255, 64, 129, 0.45);
+}
+
+.theme-cyber .ps-container {
+    border-color: #FF4081;
+    box-shadow: 0 0 60px rgba(255, 64, 129, 0.24), inset 0 0 20px rgba(255, 64, 129, 0.08);
+}
+
+.theme-cyber .ps-item {
+    border-left-color: #FF4081;
+    background: rgba(255, 64, 129, 0.06);
+}
+
+.theme-cyber .ps-item:hover {
+    background: rgba(255, 64, 129, 0.12);
+}
+
+.theme-cyber .ps-item-title {
+    color: #FF4081;
+}
+
+.theme-cyber .ps-btn {
+    background: #FF4081;
+    box-shadow: 0 0 20px rgba(255, 64, 129, 0.35);
+}
+
+.theme-cyber .ps-btn:hover {
+    background: #FF8FB1;
+    box-shadow: 0 0 30px rgba(255, 64, 129, 0.65);
+}
+
+/* Theme: Open Innovation */
+.theme-openinnovation .ps-track-badge {
+    background: rgba(255, 153, 102, 0.18);
+    border-color: #FF9966;
+    color: #FF9966;
+}
+
+.theme-openinnovation .ps-title {
+    color: #FF9966;
+    text-shadow: 0 0 20px rgba(255, 153, 102, 0.45);
+}
+
+.theme-openinnovation .ps-container {
+    border-color: #FF9966;
+    box-shadow: 0 0 60px rgba(255, 153, 102, 0.22), inset 0 0 20px rgba(255, 153, 102, 0.08);
+}
+
+.theme-openinnovation .ps-item {
+    border-left-color: #FF9966;
+    background: rgba(255, 153, 102, 0.06);
+}
+
+.theme-openinnovation .ps-item:hover {
+    background: rgba(255, 153, 102, 0.12);
+}
+
+.theme-openinnovation .ps-item-title {
+    color: #FF9966;
+}
+
+.theme-openinnovation .ps-btn {
+    background: #FF9966;
+    box-shadow: 0 0 20px rgba(255, 153, 102, 0.35);
+}
+
+.theme-openinnovation .ps-btn:hover {
+    background: #FFC3A3;
+    box-shadow: 0 0 30px rgba(255, 153, 102, 0.65);
+}
+
+@media (max-width: 768px) {
+    .ps-container {
+        padding: 40px 25px;
+    }
+
+    .ps-title {
+        font-size: 36px;
+    }
+
+    .ps-paragraph {
+        font-size: 15px;
+    }
+}
