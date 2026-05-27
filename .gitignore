@@ -1,0 +1,8 @@
+# Ignore the specific native build artifact for rollup on Windows
+frontend/node_modules/@rollup/rollup-win32-x64-msvc/rollup.win32-x64-msvc.node
+
+# Typical ignores
+node_modules/
+dist/
+.env
+.DS_Store
