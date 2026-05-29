@@ -111,6 +111,7 @@
         </div>
     </section>
 
+
     <section class="mission" id="mission">
         <div class="mission-video-bg">
             <video autoplay muted loop playsinline>
@@ -294,44 +295,156 @@
                     </div>
                     <div class="track-content">
                         <h3>OPEN INNOVATION</h3>
-                        <p class="track-description">Build freely, experiment boldly, and create solutions that empower the community.</p>
+                        <p class="track-description">Build freely, experiment boldly, and create solutions that empower
+                            the community.</p>
                     </div>
                 </div>
             </div>
         </div>
     </section>
 
-    <section class="schedule" id="schedule">
+    <!-- ===== MAP TIMELINE SECTION ===== -->
+    <!-- Banner above the timeline map (not on the image) -->
+    <div class="timeline-banner">
         <div class="container">
-            <span class="section-tag">OPERATIONS</span>
-            <h2 class="section-title">The Timeline</h2>
-            <div class="timeline">
-                <div class="timeline-item">
-                    <div class="timeline-dot"></div>
-                    <div class="timeline-content">
-                        <span class="timeline-time">DAY 01 - 18:00</span>
-                        <h3>THE INITIATION</h3>
-                        <p>Gang recruitment and team formation at the Shinjuku HQ.</p>
-                    </div>
+            <h2 class="banner-title">THE TIMELINE</h2>
+            <p class="map-section-sub">Navigate the battlefield — hover checkpoints to reveal your mission</p>
+        </div>
+    </div>
+
+    <section class="map-timeline" id="schedule">
+        <div class="map-bg">
+            <img src="assets/images/ChatGPT Image May 29, 2026, 04_51_08 PM.png" alt="Cyberpunk Map" class="map-img">
+            <div class="map-dark-overlay"></div>
+        </div>
+
+        <div class="map-header" aria-hidden="true"></div>
+
+        <div class="map-arena">
+
+            <!-- CHECKPOINT 1: Raven's Watch Tower — top-left tower -->
+            <div class="checkpoint" id="cp1" style="top: 66%; left: 20%;" data-index="1">
+                <div class="cp-marker">
+                    <span class="cp-num">1</span>
+                    <div class="cp-pulse"></div>
                 </div>
-                <div class="timeline-item">
-                    <div class="timeline-dot"></div>
-                    <div class="timeline-content">
-                        <span class="timeline-time">DAY 02 - 10:00</span>
-                        <h3>THE BATTLE BEGINS</h3>
-                        <p>48 hours of uninterrupted building. Coffee, code, and conflict.</p>
-                    </div>
-                </div>
-                <div class="timeline-item">
-                    <div class="timeline-dot"></div>
-                    <div class="timeline-content">
-                        <span class="timeline-time">DAY 03 - 14:00</span>
-                        <h3>FINAL SHOWDOWN</h3>
-                        <p>Demos in front of the Founding Members. Winners take the city.</p>
+                <div class="cp-popup cp-popup--right">
+                    <div class="cp-popup-inner">
+                        <div class="cp-popup-name">LV.1</div>
+                        <p class="cp-popup-desc">The highest vantage point in the district, draped in neon fog. Intel
+                            flows here first.</p>
+                        <div class="cp-popup-activity">🎯 Activity: Team Registration &amp; Briefing</div>
+                        <button class="cp-popup-btn">Start Journey</button>
                     </div>
                 </div>
             </div>
-        </div>
+
+            <!-- CHECKPOINT 2: Violet Village — bottom-center -->
+            <div class="checkpoint" id="cp2" style="top: 72%; left: 36%;" data-index="2">
+                <div class="cp-marker">
+                    <span class="cp-num">2</span>
+                    <div class="cp-pulse"></div>
+                </div>
+                <div class="cp-popup cp-popup--right">
+                    <div class="cp-popup-inner">
+                        <div class="cp-popup-name">LV.2</div>
+                        <p class="cp-popup-desc">A hidden enclave where mentors and builders gather beneath violet
+                            holograms.</p>
+                        <div class="cp-popup-activity">🧠 Activity: Mentor Session &amp; Workshop</div>
+                        <button class="cp-popup-btn">Enter the Village</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CHECKPOINT 3: Crystal Data Core — center-left -->
+            <div class="checkpoint" id="cp3" style="top: 38%; left: 50%;" data-index="3">
+                <div class="cp-marker">
+                    <span class="cp-num">3</span>
+                    <div class="cp-pulse"></div>
+                </div>
+                <div class="cp-popup cp-popup--right">
+                    <div class="cp-popup-inner">
+                        <div class="cp-popup-name">LV.3</div>
+                        <p class="cp-popup-desc">The beating heart of the network, where raw data crystallizes into
+                            power.</p>
+                        <div class="cp-popup-activity">💾 Activity: Technical Resources &amp; API Access</div>
+                        <button class="cp-popup-btn">Access the Core</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CHECKPOINT 4: Mystic Ruin — center-right -->
+            <div class="checkpoint" id="cp4" style="top: 49%; left: 62%;" data-index="4">
+                <div class="cp-marker">
+                    <span class="cp-num">4</span>
+                    <div class="cp-pulse"></div>
+                </div>
+                <div class="cp-popup cp-popup--bottom">
+                    <div class="cp-popup-inner">
+                        <div class="cp-popup-name">LV.4</div>
+                        <p class="cp-popup-desc">Ancient code carved into crumbling walls — only the sharpest debuggers
+                            survive here.</p>
+                        <div class="cp-popup-activity">🔬 Activity: Testing &amp; Debugging Session</div>
+                        <button class="cp-popup-btn">Explore Ruins</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CHECKPOINT 5: Aether Research Campus — upper-right -->
+            <div class="checkpoint" id="cp5" style="top: 27%; left: 72%;" data-index="5">
+                <div class="cp-marker">
+                    <span class="cp-num">5</span>
+                    <div class="cp-pulse"></div>
+                </div>
+                <div class="cp-popup cp-popup--bottom">
+                    <div class="cp-popup-inner">
+                        <div class="cp-popup-name">LV.5</div>
+                        <p class="cp-popup-desc">Floating labs powered by aetheric energy — elite knowledge exchange
+                            happens here.</p>
+                        <div class="cp-popup-activity">⚗️ Activity: Advanced Workshop</div>
+                        <button class="cp-popup-btn">Enter Campus</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CHECKPOINT 6: The Star Citadel — far-right citadel -->
+            <div class="checkpoint" id="cp6" style="top: 20%; left: 86%;" data-index="6">
+                <div class="cp-marker">
+                    <span class="cp-num">6</span>
+                    <div class="cp-pulse"></div>
+                </div>
+                <div class="cp-popup cp-popup--bottom">
+                    <div class="cp-popup-inner">
+                        <div class="cp-popup-name">LV.6</div>
+                        <p class="cp-popup-desc">The final fortress where legends are crowned and the city's fate is
+                            decided.</p>
+                        <div class="cp-popup-activity">🏆 Activity: Final Demo &amp; Awards</div>
+                        <button class="cp-popup-btn">Claim Victory</button>
+                    </div>
+                </div>
+            </div>
+
+        </div><!-- /.map-arena -->
+
+        <!-- Connection lines SVG between checkpoints -->
+        <svg class="map-connections" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+            <defs>
+                <filter id="glow-line">
+                    <feGaussianBlur stdDeviation="0.5" result="coloredBlur" />
+                    <feMerge>
+                        <feMergeNode in="coloredBlur" />
+                        <feMergeNode in="SourceGraphic" />
+                    </feMerge>
+                </filter>
+            </defs>
+            <!-- Sequential path: CP1→CP2→CP3→CP4→CP5→CP6 -->
+            <polyline points="20,66 36,72" class="conn-line conn-line--red" filter="url(#glow-line)" />
+            <polyline points="36,72 50,38" class="conn-line conn-line--red" filter="url(#glow-line)" />
+            <polyline points="50,38 62,49" class="conn-line" filter="url(#glow-line)" />
+            <polyline points="62,49 72,27" class="conn-line" filter="url(#glow-line)" />
+            <polyline points="72,27 86,20" class="conn-line" filter="url(#glow-line)" />
+        </svg>
+
     </section>
 
     <section class="prizes" id="prizes">
@@ -414,28 +527,45 @@
                                 <div class="ps-items">
                                     <div class="ps-item">
                                         <h4 class="ps-item-title">PS 1: CRYPTOCURRENCY TRANSACTION TRACING</h4>
-                                        <p class="ps-item-text">Problem: Crypto mixers and tumblers hide transaction trails, making it difficult to identify real fund receivers.</p>
-                                        <p class="ps-item-text">Solution: Build a blockchain analysis tool that traces transactions through mixing services and identifies the actual beneficiary using heuristic analysis and pattern recognition.</p>
+                                        <p class="ps-item-text">Problem: Crypto mixers and tumblers hide transaction
+                                            trails, making it difficult to identify real fund receivers.</p>
+                                        <p class="ps-item-text">Solution: Build a blockchain analysis tool that traces
+                                            transactions through mixing services and identifies the actual beneficiary
+                                            using heuristic analysis and pattern recognition.</p>
                                     </div>
                                     <div class="ps-item">
                                         <h4 class="ps-item-title">PS 2: DECENTRALIZED IDENTITY & CREDENTIALS</h4>
-                                        <p class="ps-item-text">Problem: Students lack portable, verifiable credentials, and employers cannot instantly verify claimed skills.</p>
-                                        <p class="ps-item-text">Solution: Create a blockchain-based NFT credential system where institutions issue digital badges that employers can verify with one click.</p>
+                                        <p class="ps-item-text">Problem: Students lack portable, verifiable credentials,
+                                            and employers cannot instantly verify claimed skills.</p>
+                                        <p class="ps-item-text">Solution: Create a blockchain-based NFT credential
+                                            system where institutions issue digital badges that employers can verify
+                                            with one click.</p>
                                     </div>
                                     <div class="ps-item">
                                         <h4 class="ps-item-title">PS 3: PEER-TO-PEER STUDENT LENDING PROTOCOL</h4>
-                                        <p class="ps-item-text">Problem: Student debt is high, banks charge 6-8% interest, and no direct lending between alumni and students exists.</p>
-                                        <p class="ps-item-text">Solution: Build a DeFi lending protocol where alumni fund tuition in exchange for a share of future earnings, with smart contracts handling repayment logic.</p>
+                                        <p class="ps-item-text">Problem: Student debt is high, banks charge 6-8%
+                                            interest, and no direct lending between alumni and students exists.</p>
+                                        <p class="ps-item-text">Solution: Build a DeFi lending protocol where alumni
+                                            fund tuition in exchange for a share of future earnings, with smart
+                                            contracts handling repayment logic.</p>
                                     </div>
                                     <div class="ps-item">
                                         <h4 class="ps-item-title">PS 4: BLOCKCHAIN SUPPLY CHAIN TRANSPARENCY</h4>
-                                        <p class="ps-item-text">Problem: Counterfeit goods hurt the economy, while consumers cannot verify authenticity and manufacturers cannot prove ethical sourcing.</p>
-                                        <p class="ps-item-text">Solution: Build an immutable blockchain tracker where every product journey is transparent and smart contracts reward ethical practices.</p>
+                                        <p class="ps-item-text">Problem: Counterfeit goods hurt the economy, while
+                                            consumers cannot verify authenticity and manufacturers cannot prove ethical
+                                            sourcing.</p>
+                                        <p class="ps-item-text">Solution: Build an immutable blockchain tracker where
+                                            every product journey is transparent and smart contracts reward ethical
+                                            practices.</p>
                                     </div>
                                     <div class="ps-item">
                                         <h4 class="ps-item-title">PS 5: DECENTRALIZED RENEWABLE ENERGY TRADING</h4>
-                                        <p class="ps-item-text">Problem: Solar panel owners generate excess energy with nowhere to sell it peer-to-peer, while energy grids remain centralized and inefficient.</p>
-                                        <p class="ps-item-text">Solution: Create a blockchain marketplace where homeowners sell excess solar energy directly to neighbors with real-time smart contracts balancing supply and demand.</p>
+                                        <p class="ps-item-text">Problem: Solar panel owners generate excess energy with
+                                            nowhere to sell it peer-to-peer, while energy grids remain centralized and
+                                            inefficient.</p>
+                                        <p class="ps-item-text">Solution: Create a blockchain marketplace where
+                                            homeowners sell excess solar energy directly to neighbors with real-time
+                                            smart contracts balancing supply and demand.</p>
                                     </div>
                                 </div>
                             </div>
@@ -526,29 +656,47 @@
                             <div class="ps-content">
                                 <div class="ps-items">
                                     <div class="ps-item">
-                                        <h4 class="ps-item-title">PS 1: INTELLIGENT CONTAINER ORCHESTRATION & AUTO-SCALING</h4>
-                                        <p class="ps-item-text">Problem: Applications face unpredictable traffic spikes that cause crashes, while manual scaling is slow and costly.</p>
-                                        <p class="ps-item-text">Solution: Build an ML-powered system that predicts traffic demand and automatically scales containerized applications across cloud infrastructure.</p>
+                                        <h4 class="ps-item-title">PS 1: INTELLIGENT CONTAINER ORCHESTRATION &
+                                            AUTO-SCALING</h4>
+                                        <p class="ps-item-text">Problem: Applications face unpredictable traffic spikes
+                                            that cause crashes, while manual scaling is slow and costly.</p>
+                                        <p class="ps-item-text">Solution: Build an ML-powered system that predicts
+                                            traffic demand and automatically scales containerized applications across
+                                            cloud infrastructure.</p>
                                     </div>
                                     <div class="ps-item">
                                         <h4 class="ps-item-title">PS 2: CLOUD COST OPTIMIZATION ENGINE</h4>
-                                        <p class="ps-item-text">Problem: Cloud bills grow because of unused resources, inefficient deployments, and poor allocation decisions.</p>
-                                        <p class="ps-item-text">Solution: Create an AI system that analyzes cloud usage, identifies waste, recommends rightsizing, and automates cost optimization.</p>
+                                        <p class="ps-item-text">Problem: Cloud bills grow because of unused resources,
+                                            inefficient deployments, and poor allocation decisions.</p>
+                                        <p class="ps-item-text">Solution: Create an AI system that analyzes cloud usage,
+                                            identifies waste, recommends rightsizing, and automates cost optimization.
+                                        </p>
                                     </div>
                                     <div class="ps-item">
-                                        <h4 class="ps-item-title">PS 3: DEPLOYMENT PIPELINE AUTOMATION & FAILURE PREDICTION</h4>
-                                        <p class="ps-item-text">Problem: Manual deployments create downtime, errors, and slow rollbacks that reduce team productivity.</p>
-                                        <p class="ps-item-text">Solution: Build an intelligent CI/CD platform that automates deployments, predicts failures before release, and supports instant rollback.</p>
+                                        <h4 class="ps-item-title">PS 3: DEPLOYMENT PIPELINE AUTOMATION & FAILURE
+                                            PREDICTION</h4>
+                                        <p class="ps-item-text">Problem: Manual deployments create downtime, errors, and
+                                            slow rollbacks that reduce team productivity.</p>
+                                        <p class="ps-item-text">Solution: Build an intelligent CI/CD platform that
+                                            automates deployments, predicts failures before release, and supports
+                                            instant rollback.</p>
                                     </div>
                                     <div class="ps-item">
                                         <h4 class="ps-item-title">PS 4: MULTI-CLOUD WORKLOAD MANAGEMENT PLATFORM</h4>
-                                        <p class="ps-item-text">Problem: Managing workloads across AWS, Azure, and GCP is fragmented, making visibility, cost tracking, and migration difficult.</p>
-                                        <p class="ps-item-text">Solution: Develop a unified platform for monitoring, managing, and orchestrating workloads across multiple cloud providers.</p>
+                                        <p class="ps-item-text">Problem: Managing workloads across AWS, Azure, and GCP
+                                            is fragmented, making visibility, cost tracking, and migration difficult.
+                                        </p>
+                                        <p class="ps-item-text">Solution: Develop a unified platform for monitoring,
+                                            managing, and orchestrating workloads across multiple cloud providers.</p>
                                     </div>
                                     <div class="ps-item">
-                                        <h4 class="ps-item-title">PS 5: INFRASTRUCTURE MONITORING & PREDICTIVE ALERTING</h4>
-                                        <p class="ps-item-text">Problem: Traditional monitoring is reactive, so teams learn about issues only after downtime or customer complaints.</p>
-                                        <p class="ps-item-text">Solution: Build an observability platform with predictive anomaly detection to identify failures before they impact services.</p>
+                                        <h4 class="ps-item-title">PS 5: INFRASTRUCTURE MONITORING & PREDICTIVE ALERTING
+                                        </h4>
+                                        <p class="ps-item-text">Problem: Traditional monitoring is reactive, so teams
+                                            learn about issues only after downtime or customer complaints.</p>
+                                        <p class="ps-item-text">Solution: Build an observability platform with
+                                            predictive anomaly detection to identify failures before they impact
+                                            services.</p>
                                     </div>
                                 </div>
                             </div>
@@ -571,29 +719,48 @@
                             <div class="ps-content">
                                 <div class="ps-items">
                                     <div class="ps-item">
-                                        <h4 class="ps-item-title">PS 1: DDOS PROTECTION & DETECTION FOR CLOUD INFRASTRUCTURE</h4>
-                                        <p class="ps-item-text">Problem: Cloud-hosted applications are disrupted by DDoS attacks, and current detection methods are slow and manual.</p>
-                                        <p class="ps-item-text">Solution: Build an automated system that detects DDoS attacks from traffic patterns, identifies sources, and triggers mitigation in real time.</p>
+                                        <h4 class="ps-item-title">PS 1: DDOS PROTECTION & DETECTION FOR CLOUD
+                                            INFRASTRUCTURE</h4>
+                                        <p class="ps-item-text">Problem: Cloud-hosted applications are disrupted by DDoS
+                                            attacks, and current detection methods are slow and manual.</p>
+                                        <p class="ps-item-text">Solution: Build an automated system that detects DDoS
+                                            attacks from traffic patterns, identifies sources, and triggers mitigation
+                                            in real time.</p>
                                     </div>
                                     <div class="ps-item">
                                         <h4 class="ps-item-title">PS 2: PII DETECTION IN UPLOADED DOCUMENTS</h4>
-                                        <p class="ps-item-text">Problem: Users upload documents containing sensitive Aadhaar, PAN, and driving license data that can expose personal information.</p>
-                                        <p class="ps-item-text">Solution: Develop an AI-based system that detects PII in uploaded documents and alerts users before the information is exposed.</p>
+                                        <p class="ps-item-text">Problem: Users upload documents containing sensitive
+                                            Aadhaar, PAN, and driving license data that can expose personal information.
+                                        </p>
+                                        <p class="ps-item-text">Solution: Develop an AI-based system that detects PII in
+                                            uploaded documents and alerts users before the information is exposed.</p>
                                     </div>
                                     <div class="ps-item">
                                         <h4 class="ps-item-title">PS 3: VULNERABILITY SCANNING FOR OEM EQUIPMENT</h4>
-                                        <p class="ps-item-text">Problem: Critical organizations rely on legacy IT/OT equipment while vulnerability updates are scattered across OEM websites and delayed.</p>
-                                        <p class="ps-item-text">Solution: Build a monitoring tool that continuously tracks OEM sites for critical and high-severity vulnerabilities and sends instant alerts.</p>
+                                        <p class="ps-item-text">Problem: Critical organizations rely on legacy IT/OT
+                                            equipment while vulnerability updates are scattered across OEM websites and
+                                            delayed.</p>
+                                        <p class="ps-item-text">Solution: Build a monitoring tool that continuously
+                                            tracks OEM sites for critical and high-severity vulnerabilities and sends
+                                            instant alerts.</p>
                                     </div>
                                     <div class="ps-item">
                                         <h4 class="ps-item-title">PS 4: CYBER INCIDENT THREAT INTELLIGENCE FEED</h4>
-                                        <p class="ps-item-text">Problem: Organizations lack real-time visibility into cyber threats affecting Indian digital infrastructure and depend on delayed intelligence sources.</p>
-                                        <p class="ps-item-text">Solution: Create a threat intelligence system that collects and analyzes incident data from forums, paste sites, social media, and darknet sources.</p>
+                                        <p class="ps-item-text">Problem: Organizations lack real-time visibility into
+                                            cyber threats affecting Indian digital infrastructure and depend on delayed
+                                            intelligence sources.</p>
+                                        <p class="ps-item-text">Solution: Create a threat intelligence system that
+                                            collects and analyzes incident data from forums, paste sites, social media,
+                                            and darknet sources.</p>
                                     </div>
                                     <div class="ps-item">
                                         <h4 class="ps-item-title">PS 5: DARK WEB OPERATOR DE-ANONYMIZATION</h4>
-                                        <p class="ps-item-text">Problem: Dark web marketplaces operate anonymously, enabling illegal trade in drugs, weapons, and counterfeit goods without accountability.</p>
-                                        <p class="ps-item-text">Solution: Develop a technique or tool to identify hidden operators by tracing infrastructure, network clues, and related identity artifacts.</p>
+                                        <p class="ps-item-text">Problem: Dark web marketplaces operate anonymously,
+                                            enabling illegal trade in drugs, weapons, and counterfeit goods without
+                                            accountability.</p>
+                                        <p class="ps-item-text">Solution: Develop a technique or tool to identify hidden
+                                            operators by tracing infrastructure, network clues, and related identity
+                                            artifacts.</p>
                                     </div>
                                 </div>
                             </div>
@@ -617,7 +784,9 @@
                                 <div class="ps-items">
                                     <div class="ps-item">
                                         <h4 class="ps-item-title">OPEN INNOVATION</h4>
-                                        <p class="ps-item-text">You are free to build anything here. This track is open innovation, so experiment, collaborate, and turn bold ideas into working solutions.</p>
+                                        <p class="ps-item-text">You are free to build anything here. This track is open
+                                            innovation, so experiment, collaborate, and turn bold ideas into working
+                                            solutions.</p>
                                     </div>
                                 </div>
                             </div>

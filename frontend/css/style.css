@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@300;400;700&family=JetBrains+Mono:wght@400;700&family=Playfair+Display:wght@700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Roboto+Mono:wght@400;600&display=swap');
 
 :root {
     /* Color Palette */
@@ -2524,5 +2524,368 @@ textarea:focus {
 
     .ps-paragraph {
         font-size: 15px;
+    }
+}
+
+/* ============================================================
+    MAP TIMELINE SECTION
+    ============================================================ */
+
+.map-timeline {
+    position: relative;
+    width: 100%;
+    height: 100vh;
+    margin-top: 0;
+    min-height: 600px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+/* --- Background --- */
+.map-bg {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+}
+
+.map-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    display: block;
+}
+
+.map-dark-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.30);
+    z-index: 1;
+}
+
+/* --- Header --- */
+.map-header {
+    position: relative;
+    z-index: 10;
+    text-align: center;
+    padding: 36px 20px 10px;
+    pointer-events: none;
+}
+
+.map-section-tag {
+    font-family: 'Roboto Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 4px;
+    color: #FF006E;
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: 6px;
+    text-shadow: 0 0 10px rgba(255, 0, 110, 0.8);
+}
+
+.map-section-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(38px, 5vw, 64px);
+    color: #ffffff;
+    letter-spacing: 6px;
+    line-height: 1;
+    margin: 0 0 6px;
+    text-shadow: 0 0 30px rgba(255, 0, 110, 0.6), 0 0 60px rgba(196, 30, 58, 0.4);
+}
+
+.map-section-sub {
+    font-family: 'Roboto Mono', monospace;
+    font-size: 12px;
+    color: #b44dff;
+    letter-spacing: 2px;
+    margin: 0;
+    text-shadow: 0 0 10px rgba(180, 77, 255, 0.5);
+}
+
+/* --- Arena (absolute-position container) --- */
+.map-arena {
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+}
+
+/* --- Checkpoint --- */
+.checkpoint {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    cursor: pointer;
+    z-index: 20;
+}
+
+/* Marker circle */
+.cp-marker {
+    position: relative;
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    background: radial-gradient(circle, #C41E3A 0%, #8B0000 70%);
+    border: 2px solid #FF006E;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow:
+        0 0 12px rgba(255, 0, 110, 0.7),
+        0 0 28px rgba(196, 30, 58, 0.5);
+    transition: box-shadow 0.3s ease, transform 0.3s ease, border-color 0.3s ease;
+    z-index: 2;
+}
+
+.checkpoint:hover .cp-marker {
+    transform: scale(1.25);
+    border-color: #00D9FF;
+    box-shadow:
+        0 0 20px rgba(0, 217, 255, 0.9),
+        0 0 50px rgba(255, 0, 110, 0.7),
+        0 0 80px rgba(196, 30, 58, 0.5);
+}
+
+.cp-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 20px;
+    color: #ffffff;
+    line-height: 1;
+    text-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
+    position: relative;
+    z-index: 3;
+}
+
+/* Pulse ring */
+.cp-pulse {
+    position: absolute;
+    inset: -6px;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 0, 110, 0.6);
+    animation: cp-pulse-ring 2s ease-out infinite;
+    pointer-events: none;
+}
+
+@keyframes cp-pulse-ring {
+    0% {
+        transform: scale(0.9);
+        opacity: 0.8;
+    }
+
+    70% {
+        transform: scale(1.7);
+        opacity: 0;
+    }
+
+    100% {
+        transform: scale(1.7);
+        opacity: 0;
+    }
+}
+
+/* --- Popup --- */
+.cp-popup {
+    position: absolute;
+    bottom: calc(100% + 16px);
+    left: 50%;
+    transform: translateX(-50%) scale(0.9);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.28s ease, transform 0.28s ease;
+    z-index: 30;
+    white-space: nowrap;
+}
+
+.cp-popup--right {
+    left: 50%;
+}
+
+.cp-popup--left {
+    left: 50%;
+}
+
+.cp-popup--bottom {
+    bottom: auto;
+    top: calc(100% + 16px);
+    left: 50%;
+    transform: translateX(-50%) scale(0.9);
+}
+
+.checkpoint:hover .cp-popup--bottom {
+    transform: translateX(-50%) scale(1);
+}
+
+.checkpoint:hover .cp-popup {
+    opacity: 1;
+    transform: translateX(-50%) scale(1);
+    pointer-events: auto;
+}
+
+.cp-popup-inner {
+    background: rgba(8, 8, 20, 0.88);
+    border: 1.5px solid #FF006E;
+    border-radius: 6px;
+    padding: 16px 20px 14px;
+    min-width: 230px;
+    max-width: 280px;
+    white-space: normal;
+    box-shadow:
+        0 0 20px rgba(255, 0, 110, 0.35),
+        0 0 40px rgba(0, 217, 255, 0.12),
+        inset 0 0 15px rgba(255, 0, 110, 0.05);
+    backdrop-filter: blur(12px);
+}
+
+.cp-popup-name {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 17px;
+    color: #FF006E;
+    letter-spacing: 2px;
+    text-shadow: 0 0 10px rgba(255, 0, 110, 0.8);
+    margin-bottom: 7px;
+    line-height: 1.1;
+}
+
+.cp-popup-desc {
+    font-family: 'Roboto Mono', monospace;
+    font-size: 11px;
+    color: rgba(220, 220, 255, 0.82);
+    line-height: 1.55;
+    margin: 0 0 10px;
+}
+
+.cp-popup-activity {
+    font-family: 'Roboto Mono', monospace;
+    font-size: 11px;
+    color: #00D9FF;
+    letter-spacing: 0.5px;
+    margin-bottom: 12px;
+    text-shadow: 0 0 8px rgba(0, 217, 255, 0.6);
+}
+
+.cp-popup-btn {
+    display: block;
+    width: 100%;
+    padding: 7px 12px;
+    background: transparent;
+    border: 1.5px solid #FF006E;
+    color: #FF006E;
+    font-family: 'Roboto Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    cursor: pointer;
+    border-radius: 3px;
+    transition: background 0.25s, color 0.25s, box-shadow 0.25s;
+}
+
+.cp-popup-btn:hover {
+    background: #FF006E;
+    color: #0D0D0D;
+    box-shadow: 0 0 16px rgba(255, 0, 110, 0.7);
+}
+
+/* --- SVG Connection Lines --- */
+.map-connections {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 4;
+}
+
+.conn-line {
+    fill: none;
+    stroke: rgba(255, 0, 110, 0.45);
+    stroke-width: 0.4;
+    stroke-dasharray: 3 2;
+    animation: dash-move 3s linear infinite;
+}
+
+.conn-line--dim {
+    stroke: rgba(0, 217, 255, 0.3);
+}
+
+@keyframes dash-move {
+    to {
+        stroke-dashoffset: -20;
+    }
+}
+
+/* --- Responsive --- */
+@media (max-width: 768px) {
+    .map-timeline {
+        height: auto;
+        min-height: 100vh;
+    }
+
+    .map-arena {
+        position: relative;
+        min-height: 520px;
+    }
+
+    .cp-popup--right,
+    .cp-popup--left {
+        left: 50%;
+        right: auto;
+        top: auto;
+        bottom: calc(100% + 10px);
+        transform: translateX(-50%) scale(0.9);
+    }
+
+    .checkpoint:hover .cp-popup {
+        transform: translateX(-50%) scale(1);
+    }
+
+    .cp-popup-inner {
+        min-width: 190px;
+    }
+}
+
+/* Banner that sits above the map (separate from the image) */
+.timeline-banner {
+    width: 100%;
+    height: 140px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    background: linear-gradient(180deg, rgba(32, 6, 45, 1) 0%, rgba(28, 8, 46, 0.98) 40%, rgba(20, 6, 38, 0.96) 70%, rgba(20, 6, 38, 0.0) 100%);
+    box-shadow: 0 10px 60px rgba(88, 0, 122, 0.18) inset, 0 8px 50px rgba(88, 0, 122, 0.10);
+    z-index: 15;
+    position: relative;
+}
+
+.timeline-banner .map-section-tag {
+    display: block;
+    color: #FF006E;
+    font-family: 'Roboto Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 4px;
+    margin-bottom: 6px;
+    text-shadow: 0 0 10px rgba(255, 0, 110, 0.6);
+    opacity: 0.95;
+}
+
+.timeline-banner .banner-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(34px, 4.5vw, 72px);
+    color: #C41E3A;
+    letter-spacing: 6px;
+    margin: 0;
+    text-align: center;
+    text-shadow: 0 0 18px rgba(196, 30, 58, 0.6), 0 0 36px rgba(196, 30, 58, 0.3);
+}
+
+@media (max-width: 900px) {
+    .timeline-banner {
+        height: 100px;
+    }
+
+    .timeline-banner .banner-title {
+        font-size: clamp(22px, 6vw, 40px);
     }
 }
