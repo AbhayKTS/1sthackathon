@@ -27,8 +27,6 @@
                 <li><a href="#mission">MISSION</a></li>
                 <li><a href="#tracks">TRACKS</a></li>
                 <li><a href="#schedule">TIMELINE</a></li>
-                <li><a href="#prizes">BOUNTY</a></li>
-                <li><a href="#contact">RULES</a></li>
             </ul>
 
             <div class="nav-actions">
@@ -69,7 +67,7 @@
                     </div>
                     <div class="stat-item">
                         <span class="stat-label">BOUNTY_POOL</span>
-                        <span class="stat-value">$50,000+</span>
+                        <span class="stat-value">TBA</span>
                     </div>
                     <div class="stat-item">
                         <span class="stat-label">LOCATION</span>
@@ -323,7 +321,7 @@
         <div class="map-arena">
 
             <!-- CHECKPOINT 1: Raven's Watch Tower — top-left tower -->
-            <div class="checkpoint" id="cp1" style="top: 66%; left: 20%;" data-index="1">
+            <div class="checkpoint" id="cp1" style="top: 68%; left: 18%;" data-index="1">
                 <div class="cp-marker">
                     <span class="cp-num">1</span>
                     <div class="cp-pulse"></div>
@@ -340,7 +338,7 @@
             </div>
 
             <!-- CHECKPOINT 2: Violet Village — bottom-center -->
-            <div class="checkpoint" id="cp2" style="top: 72%; left: 36%;" data-index="2">
+            <div class="checkpoint" id="cp2" style="top: 75%; left: 38.3%;" data-index="2">
                 <div class="cp-marker">
                     <span class="cp-num">2</span>
                     <div class="cp-pulse"></div>
@@ -357,7 +355,7 @@
             </div>
 
             <!-- CHECKPOINT 3: Crystal Data Core — center-left -->
-            <div class="checkpoint" id="cp3" style="top: 38%; left: 50%;" data-index="3">
+            <div class="checkpoint" id="cp3" style="top: 45%; left: 47.34%;" data-index="3">
                 <div class="cp-marker">
                     <span class="cp-num">3</span>
                     <div class="cp-pulse"></div>
@@ -374,7 +372,7 @@
             </div>
 
             <!-- CHECKPOINT 4: Mystic Ruin — center-right -->
-            <div class="checkpoint" id="cp4" style="top: 49%; left: 62%;" data-index="4">
+            <div class="checkpoint" id="cp4" style="top: 57%; left: 68%;" data-index="4">
                 <div class="cp-marker">
                     <span class="cp-num">4</span>
                     <div class="cp-pulse"></div>
@@ -391,7 +389,7 @@
             </div>
 
             <!-- CHECKPOINT 5: Aether Research Campus — upper-right -->
-            <div class="checkpoint" id="cp5" style="top: 27%; left: 72%;" data-index="5">
+            <div class="checkpoint" id="cp5" style="top: 35%; left: 73%;" data-index="5">
                 <div class="cp-marker">
                     <span class="cp-num">5</span>
                     <div class="cp-pulse"></div>
@@ -408,7 +406,7 @@
             </div>
 
             <!-- CHECKPOINT 6: The Star Citadel — far-right citadel -->
-            <div class="checkpoint" id="cp6" style="top: 20%; left: 86%;" data-index="6">
+            <div class="checkpoint" id="cp6" style="top: 30%; left: 88%;" data-index="6">
                 <div class="cp-marker">
                     <span class="cp-num">6</span>
                     <div class="cp-pulse"></div>
@@ -447,26 +445,30 @@
 
     </section>
 
-    <section class="prizes" id="prizes">
+    <section class="treasury" id="treasury">
         <div class="container">
-            <span class="section-tag">REWARDS</span>
-            <h2 class="section-title">The Treasury</h2>
-            <div class="prize-grid">
-                <div class="prize-card">
-                    <span class="prize-rank">STRIKE MASTER</span>
-                    <div class="prize-amount">$10,000</div>
-                    <p>Founders status, exclusive tech-wear, and the top prize.</p>
-                </div>
-                <div class="prize-card">
-                    <span class="prize-rank">COMMANDER</span>
-                    <div class="prize-amount">$5,000</div>
-                    <p>Access to elite mentorship and high-tier gear.</p>
-                </div>
-                <div class="prize-card">
-                    <span class="prize-rank">GUARD</span>
-                    <div class="prize-amount">$2,500</div>
-                    <p>Recognition across the Tokyo ecosystem.</p>
-                </div>
+            <div class="treasury-head">
+                <span class="section-tag">TREASURY</span>
+                <h2 class="section-title">The Treasury</h2>
+                <p class="treasury-sub">Prize split and reward details are locked for now. Everything is TBA and will be announced soon.</p>
+            </div>
+
+            <div class="treasury-grid">
+                <article class="treasury-card">
+                    <span class="treasury-rank">RANK_01</span>
+                    <p class="treasury-value">TBA</p>
+                    <p class="treasury-note">To be announced</p>
+                </article>
+                <article class="treasury-card">
+                    <span class="treasury-rank">RANK_02</span>
+                    <p class="treasury-value">TBA</p>
+                    <p class="treasury-note">To be announced</p>
+                </article>
+                <article class="treasury-card">
+                    <span class="treasury-rank">RANK_03</span>
+                    <p class="treasury-value">TBA</p>
+                    <p class="treasury-note">To be announced</p>
+                </article>
             </div>
         </div>
     </section>
@@ -479,30 +481,83 @@
                     <h2 class="section-title">Join the Gang</h2>
                     <p>The timeline won't fix itself. Drop your credentials and tell us what you're building. We'll find
                         you when the sun goes down.</p>
-                    <div
-                        style="margin-top: 40px; font-family: var(--font-mono); color: var(--strike-red); letter-spacing: 2px;">
-                        LOC: SHINJUKU_DISTRICT_7<br>
-                        ENC: AES-256-GCM
-                    </div>
+                    <p class="unstop-note">Soon to be connected with Unstop.</p>
                 </div>
-                <form class="contact-form">
+                <form class="contact-form" id="join-gang-form">
                     <div class="form-group">
-                        <input type="text" placeholder="GANG NAME / PSEUDONYM" required>
+                        <input type="text" id="name" name="name" placeholder="NAME" required>
                     </div>
                     <div class="form-group">
-                        <input type="email" placeholder="ENCRYPTED EMAIL" required>
+                        <input type="email" id="email" name="email" placeholder="EMAIL" required>
                     </div>
                     <div class="form-group">
-                        <textarea rows="5" placeholder="WHAT'S YOUR RECKONING? (PROJECT SKETCH)"></textarea>
+                        <input type="tel" id="number" name="number" placeholder="NUMBER" required>
                     </div>
-                    <button type="submit" class="btn-tactical btn-red" style="width: 100%;">Submit Intel</button>
+                    <div class="form-group">
+                        <input type="text" id="team-name" name="teamName" placeholder="TEAM NAME" required>
+                    </div>
+                    <button type="submit" class="btn-tactical btn-red" id="join-submit" style="width: 100%;">Submit Intel</button>
+                    <p class="form-note">Soon to be connected with Unstop.</p>
+                    <p class="form-status" id="join-status" aria-live="polite"></p>
                 </form>
             </div>
         </div>
     </section>
 
-    <footer
-        style="padding: 60px 0; text-align: center; border-top: 1px solid var(--rust); font-size: 0.7rem; color: var(--rust); font-family: var(--font-mono); letter-spacing: 3px;">
+    <section class="squad-section" id="about">
+        <div class="container">
+            <div class="squad-head">
+                <span class="section-tag">THE MASTERMINDS</span>
+                <h2 class="section-title">About The Team</h2>
+            </div>
+            
+            <div class="squad-grid">
+                <!-- Abhay Kumar -->
+                <div class="team-card">
+                    <div class="team-image-container">
+                        <img src="assets/images/Passport Size Photo (1).jpeg" alt="Abhay Kumar" class="normal-img">
+                        <img src="assets/images/Generated Image June 26, 2026 - 2_49AM.jpg" alt="Abhay Kumar Hover" class="hover-img" style="transform: scale(1.15) translateY(5%);">
+                    </div>
+                    <div class="team-content">
+                        <h3 class="team-name">Abhay Kumar</h3>
+                        <div class="team-role">TEAM LEAD</div>
+                        <p class="team-quote">Leading the gang to rewrite the timeline and building the ultimate underground hackathon experience.</p>
+                        <div class="team-socials">
+                            <a href="https://www.linkedin.com/in/abhay-kumar-220363326/" target="_blank" aria-label="LinkedIn">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
+                            </a>
+                            <a href="#" aria-label="Instagram">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Ansh Yadav -->
+                <div class="team-card">
+                    <div class="team-image-container">
+                        <img src="assets/images/ansh 2.png" alt="Ansh Yadav" class="normal-img">
+                        <img src="assets/images/ansh 2 aa.png" alt="Ansh Yadav Hover" class="hover-img">
+                    </div>
+                    <div class="team-content">
+                        <h3 class="team-name">Ansh Yadav</h3>
+                        <div class="team-role">DEPUTY</div>
+                        <p class="team-quote">Executing the vision and ensuring the timeline remains secure at all costs.</p>
+                        <div class="team-socials">
+                            <a href="#" aria-label="LinkedIn">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
+                            </a>
+                            <a href="#" aria-label="Instagram">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer style="padding: 60px 0; text-align: center; border-top: 1px solid rgba(255,255,255,0.04); font-size: 0.9rem; color: rgba(255,255,255,0.72); font-family: var(--font-mono); letter-spacing: 2px;">
         <div class="container">
             &copy; 2026 TOKYOSTRIKE. ALL RIGHTS RESERVED. PROTECT THE FUTURE.
         </div>
@@ -800,6 +855,7 @@
         </div>
     </div>
 
+    <script type="module" src="js/firebase-join.js"></script>
     <script src="js/script.js"></script>
 </body>
 

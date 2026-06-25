@@ -1187,6 +1187,63 @@ object-position: center 45%;
     margin-bottom: 20px;
 }
 
+/* Treasury */
+.treasury {
+    padding: 110px 0;
+    /* Dark purplish background (matches provided sample) */
+    background: linear-gradient(180deg, #1b0518 0%, #0f0710 100%);
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.treasury-head {
+    max-width: 760px;
+    margin: 0 auto 34px;
+    text-align: center;
+}
+
+.treasury-sub {
+    color: rgba(229, 226, 225, 0.82);
+    font-family: var(--font-mono);
+    letter-spacing: 0.5px;
+}
+
+.treasury-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 22px;
+}
+
+.treasury-card {
+    background: linear-gradient(160deg, rgba(36, 24, 24, 0.95) 0%, rgba(22, 22, 22, 0.95) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    padding: 34px 24px;
+    text-align: center;
+}
+
+.treasury-rank {
+    display: block;
+    font-family: var(--font-mono);
+    letter-spacing: 3px;
+    font-size: 0.8rem;
+    color: var(--strike-red);
+    margin-bottom: 10px;
+}
+
+.treasury-value {
+    font-family: var(--font-heading);
+    font-size: 2.4rem;
+    color: #fff;
+    letter-spacing: 2px;
+}
+
+.treasury-note {
+    color: rgba(229, 226, 225, 0.72);
+    font-family: var(--font-mono);
+    letter-spacing: 1px;
+    font-size: 0.75rem;
+}
+
 /* Contact */
 .contact-container {
     display: grid;
@@ -1217,6 +1274,61 @@ textarea:focus {
     background: #252525;
 }
 
+.unstop-note,
+.form-note {
+    margin-top: 14px;
+    color: rgba(229, 226, 225, 0.74);
+    font-family: var(--font-mono);
+    font-size: 1rem;
+    font-weight: 600;
+    letter-spacing: 1.4px;
+}
+
+/* Make the Join / Contact section background purplish to match Treasury */
+.contact {
+    /* Match Treasury with the darker purplish tone */
+    background: linear-gradient(180deg, #1b0518 0%, #0f0710 100%);
+    padding: 80px 0;
+}
+
+.contact .contact-info, .contact .contact-form {
+    z-index: 2;
+}
+
+footer {
+    background: linear-gradient(180deg, #170414 0%, #0c0410 100%);
+    color: rgba(255,255,255,0.75);
+}
+
+footer .container {
+    font-size: 0.95rem;
+    letter-spacing: 2px;
+    color: rgba(255,255,255,0.78);
+    text-shadow: 0 1px 0 rgba(0,0,0,0.5);
+}
+
+.form-status {
+    margin-top: 10px;
+    min-height: 20px;
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    letter-spacing: 0.8px;
+    color: rgba(229, 226, 225, 0.85);
+}
+
+.form-status.success {
+    color: #82ffa8;
+}
+
+.form-status.error {
+    color: #ff7b86;
+}
+
+#join-submit:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
 @media (max-width: 768px) {
     .hero h1 {
         font-size: 3.5rem;
@@ -1239,6 +1351,10 @@ textarea:focus {
 
     .mission-grid,
     .contact-container {
+        grid-template-columns: 1fr;
+    }
+
+    .treasury-grid {
         grid-template-columns: 1fr;
     }
 
@@ -2626,25 +2742,38 @@ textarea:focus {
     width: 46px;
     height: 46px;
     border-radius: 50%;
-    background: radial-gradient(circle, #C41E3A 0%, #8B0000 70%);
-    border: 2px solid #FF006E;
+    /* Solid neon-style fill with subtle gradient */
+    background: radial-gradient(circle at 35% 30%, #cfa0ff 0%, #a64de0 22%, #7a2e9a 60%);
+    border: 2px solid rgba(200,120,240,0.95);
     display: flex;
     align-items: center;
     justify-content: center;
     box-shadow:
-        0 0 12px rgba(255, 0, 110, 0.7),
-        0 0 28px rgba(196, 30, 58, 0.5);
-    transition: box-shadow 0.3s ease, transform 0.3s ease, border-color 0.3s ease;
+        0 0 12px rgba(170,80,220,0.95),
+        0 0 28px rgba(120,40,160,0.45),
+        inset 0 -3px 8px rgba(0,0,0,0.28);
+    transition: box-shadow 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
     z-index: 2;
+}
+
+.cp-marker::after {
+    /* inner filled disc to avoid hollow appearance */
+    content: "";
+    position: absolute;
+    width: 64%;
+    height: 64%;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #ffffff22 0%, rgba(255,255,255,0.06) 6%, rgba(150,70,220,0.95) 40%, rgba(110,40,180,0.95) 100%);
+    z-index: 1;
 }
 
 .checkpoint:hover .cp-marker {
     transform: scale(1.25);
-    border-color: #00D9FF;
+    border-color: rgba(220,160,245,0.98);
     box-shadow:
-        0 0 20px rgba(0, 217, 255, 0.9),
-        0 0 50px rgba(255, 0, 110, 0.7),
-        0 0 80px rgba(196, 30, 58, 0.5);
+        0 0 18px rgba(200,130,250,0.9),
+        0 0 40px rgba(140,70,200,0.5),
+        inset 0 -6px 16px rgba(0,0,0,0.28);
 }
 
 .cp-num {
@@ -2652,7 +2781,7 @@ textarea:focus {
     font-size: 20px;
     color: #ffffff;
     line-height: 1;
-    text-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
+    text-shadow: 0 0 8px rgba(255,255,255,0.9);
     position: relative;
     z-index: 3;
 }
@@ -2662,7 +2791,7 @@ textarea:focus {
     position: absolute;
     inset: -6px;
     border-radius: 50%;
-    border: 2px solid rgba(255, 0, 110, 0.6);
+    border: 2px solid rgba(190,100,220,0.45);
     animation: cp-pulse-ring 2s ease-out infinite;
     pointer-events: none;
 }
@@ -2670,7 +2799,7 @@ textarea:focus {
 @keyframes cp-pulse-ring {
     0% {
         transform: scale(0.9);
-        opacity: 0.8;
+        opacity: 0.9;
     }
 
     70% {
@@ -2731,18 +2860,18 @@ textarea:focus {
     max-width: 280px;
     white-space: normal;
     box-shadow:
-        0 0 20px rgba(255, 0, 110, 0.35),
-        0 0 40px rgba(0, 217, 255, 0.12),
-        inset 0 0 15px rgba(255, 0, 110, 0.05);
+        0 0 20px rgba(142,68,173,0.18),
+        0 0 40px rgba(100,50,140,0.06),
+        inset 0 0 15px rgba(142,68,173,0.03);
     backdrop-filter: blur(12px);
 }
 
 .cp-popup-name {
     font-family: 'Bebas Neue', sans-serif;
     font-size: 17px;
-    color: #FF006E;
+    color: rgba(142,68,173,0.95);
     letter-spacing: 2px;
-    text-shadow: 0 0 10px rgba(255, 0, 110, 0.8);
+    text-shadow: 0 0 10px rgba(142,68,173,0.6);
     margin-bottom: 7px;
     line-height: 1.1;
 }
@@ -2769,8 +2898,8 @@ textarea:focus {
     width: 100%;
     padding: 7px 12px;
     background: transparent;
-    border: 1.5px solid #FF006E;
-    color: #FF006E;
+    border: 1.5px solid rgba(142,68,173,0.9);
+    color: rgba(142,68,173,0.95);
     font-family: 'Roboto Mono', monospace;
     font-size: 11px;
     font-weight: 600;
@@ -2782,9 +2911,9 @@ textarea:focus {
 }
 
 .cp-popup-btn:hover {
-    background: #FF006E;
+    background: rgba(142,68,173,0.95);
     color: #0D0D0D;
-    box-shadow: 0 0 16px rgba(255, 0, 110, 0.7);
+    box-shadow: 0 0 16px rgba(142,68,173,0.6);
 }
 
 /* --- SVG Connection Lines --- */
@@ -2797,9 +2926,14 @@ textarea:focus {
     z-index: 4;
 }
 
+/* Hide SVG connection lines between checkpoints (removed as requested) */
+.map-connections {
+    display: none !important;
+}
+
 .conn-line {
     fill: none;
-    stroke: rgba(255, 0, 110, 0.45);
+    stroke: rgba(142,68,173,0.45);
     stroke-width: 0.4;
     stroke-dasharray: 3 2;
     animation: dash-move 3s linear infinite;
@@ -2871,10 +3005,11 @@ textarea:focus {
 }
 
 .timeline-banner .banner-title {
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: var(--font-serif);
+    font-style: italic;
     font-size: clamp(34px, 4.5vw, 72px);
     color: #C41E3A;
-    letter-spacing: 6px;
+    letter-spacing: 3px;
     margin: 0;
     text-align: center;
     text-shadow: 0 0 18px rgba(196, 30, 58, 0.6), 0 0 36px rgba(196, 30, 58, 0.3);
@@ -2888,4 +3023,143 @@ textarea:focus {
     .timeline-banner .banner-title {
         font-size: clamp(22px, 6vw, 40px);
     }
+}
+
+/* --- SQUAD SECTION --- */
+.squad-section {
+    padding: var(--section-gap) 0;
+    background: linear-gradient(180deg, #0c0410 0%, #170414 100%);
+    position: relative;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.squad-head {
+    text-align: center;
+    margin-bottom: 60px;
+}
+
+.squad-grid {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    flex-wrap: wrap;
+    max-width: var(--container-width);
+    margin: 0 auto;
+}
+
+.team-card {
+    background: rgba(0, 0, 0, 0.5);
+    border: 2px solid var(--strike-red);
+    border-radius: 5px;
+    width: 320px;
+    display: flex;
+    flex-direction: column;
+    padding: 15px;
+    box-shadow: 0 0 20px rgba(178, 34, 34, 0.2);
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+}
+
+.team-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0 30px rgba(178, 34, 34, 0.6);
+    background: rgba(178, 34, 34, 0.05);
+}
+
+.team-image-container {
+    border: 2px solid var(--strike-red);
+    position: relative;
+    height: 350px;
+    overflow: hidden;
+    margin-bottom: 15px;
+    box-shadow: inset 0 0 15px rgba(178, 34, 34, 0.3);
+}
+
+.team-image-container img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: opacity 0.3s ease;
+}
+
+.team-image-container .normal-img {
+    opacity: 1;
+}
+
+.team-image-container .hover-img {
+    opacity: 0;
+    position: absolute;
+    top: 0;
+    left: 0;
+    animation: imageSwap 7s infinite;
+}
+
+@keyframes imageSwap {
+    0%, 45% { opacity: 0; }
+    50%, 95% { opacity: 1; }
+    100% { opacity: 0; }
+}
+
+.team-content {
+    text-align: center;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.squad-label {
+    color: var(--strike-red);
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 5px;
+}
+
+.team-name {
+    color: #fff;
+    font-family: var(--font-heading);
+    font-size: 2.2rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 10px;
+    text-shadow: 0 0 10px rgba(178, 34, 34, 0.5);
+}
+
+.team-role {
+    background: rgba(178, 34, 34, 0.15);
+    color: var(--strike-red);
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    padding: 6px 18px;
+    border: 1px solid var(--strike-red);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 15px;
+}
+
+.team-quote {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 0.85rem;
+    line-height: 1.6;
+    margin-bottom: 20px;
+    font-family: var(--font-mono);
+}
+
+.team-socials {
+    margin-top: auto;
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+}
+
+.team-socials a {
+    color: var(--white);
+    font-size: 1.2rem;
+    transition: color 0.3s ease;
+}
+
+.team-socials a:hover {
+    color: var(--strike-red);
 }
