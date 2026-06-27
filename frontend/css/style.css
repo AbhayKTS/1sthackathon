@@ -428,6 +428,7 @@ ul {
     background-size: 100% 4px, 3px 100%;
     z-index: 4;
     opacity: 0.3;
+    pointer-events: none;
 }
 
 /* Make sure content overlays sit above background layers */
