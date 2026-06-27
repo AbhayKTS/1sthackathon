@@ -9,8 +9,8 @@ const firebaseConfig = {
   projectId: "sthack-88def",
   storageBucket: "sthack-88def.firebasestorage.app",
   messagingSenderId: "676755311648",
-  appId: "1:676755311648:web:a65ef3607f9803c2910045",
-  measurementId: "G-031MDPS9FQ"
+  appId: "1:676755311648:web:77041fc026d8a7b5910045",
+  measurementId: "G-K8NRWB6NXF"
 };
 
 const app = initializeApp(firebaseConfig);
