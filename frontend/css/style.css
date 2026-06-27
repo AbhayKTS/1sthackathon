@@ -828,14 +828,14 @@ section {
     width: max-content;
     min-width: 200%;
     will-change: transform;
-    animation: bannerScroll 10s linear infinite;
+    animation: bannerScroll 25s linear infinite;
 }
 
 .event-banner__group {
     display: flex;
     align-items: center;
-    gap: 24px;
-    padding-right: 24px;
+    gap: 80px;
+    padding-right: 80px;
     white-space: nowrap;
 }
 
