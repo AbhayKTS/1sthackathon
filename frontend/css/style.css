@@ -3025,6 +3025,10 @@ footer .container {
     }
 }
 
+footer a:hover {
+    color: var(--strike-red) !important;
+}
+
 /* --- SQUAD SECTION --- */
 .squad-section {
     padding: var(--section-gap) 0;
