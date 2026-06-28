@@ -4,6 +4,7 @@ import {
     getFirestore, 
     doc, 
     getDoc, 
+    setDoc,
     collection, 
     query, 
     getDocs, 
@@ -190,24 +191,29 @@ activateRoundBtn.addEventListener("click", async () => {
     const password = prompt("Enter password to activate this round:");
     if (password === "switchkrde") {
         try {
-            // Deactivate all existing rounds
-            const roundsRef = collection(db, "rounds");
-            const snapshot = await getDocs(roundsRef);
+            // Map dropdown values to fixed doc IDs and metadata
+            const roundMap = {
+                "Round 1": { id: "round-1", title: "Round 1", desc: "Show Us What You Got" },
+                "Round 2": { id: "round-2", title: "Round 2", desc: "We Ride At Midnight" },
+                "Round 3": { id: "round-3", title: "Round 3", desc: "Seek The Way In Or Out" }
+            };
             
-            const batchPromises = [];
-            snapshot.forEach((docSnap) => {
-                batchPromises.push(updateDoc(doc(db, "rounds", docSnap.id), { isActive: false }));
-            });
-            await Promise.all(batchPromises);
+            const chosen = roundMap[selectedRoundTitle];
+            if (!chosen) { alert("Invalid round selected."); return; }
             
-            // Add the new active round
-            await addDoc(collection(db, "rounds"), {
-                title: selectedRoundTitle,
-                description: "Auto-generated round",
-                isActive: true,
-                createdAt: serverTimestamp()
-            });
+            // Deactivate all 3 fixed rounds, then activate chosen
+            const allRoundIds = ["round-1", "round-2", "round-3"];
             
+            const deactivatePromises = allRoundIds.map(rid =>
+                setDoc(doc(db, "rounds", rid), {
+                    title: roundMap[Object.keys(roundMap).find(k => roundMap[k].id === rid)].title,
+                    desc: roundMap[Object.keys(roundMap).find(k => roundMap[k].id === rid)].desc,
+                    isActive: rid === chosen.id,
+                    updatedAt: serverTimestamp()
+                })
+            );
+            
+            await Promise.all(deactivatePromises);
             alert("Round successfully activated!");
         } catch (error) {
             console.error("Error activating round:", error);
