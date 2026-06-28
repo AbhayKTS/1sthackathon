@@ -3230,3 +3230,68 @@ footer a:hover {
 .team-socials a:hover {
     color: var(--card-color);
 }
+
+/* ---------------------------------------------------
+   Global Mobile Responsiveness 
+--------------------------------------------------- */
+@media (max-width: 768px) {
+    /* Navbar Adjustments */
+    #navbar {
+        padding: 15px 20px;
+    }
+    .nav-brand .logo-text {
+        font-size: 1rem;
+    }
+    .nav-links {
+        gap: 15px;
+        overflow-x: auto;
+        white-space: nowrap;
+        padding-bottom: 5px;
+        -ms-overflow-style: none;  /* IE and Edge */
+        scrollbar-width: none;  /* Firefox */
+    }
+    .nav-links::-webkit-scrollbar {
+        display: none;
+    }
+    
+    /* Hero Adjustments */
+    .hero h1 {
+        font-size: 2.5rem !important; /* Overriding previous sizes */
+    }
+    .hero-content {
+        padding: 0 15px;
+    }
+    
+    /* Grid Adjustments for Landing Page */
+    .tracks-grid,
+    .squad-grid,
+    .treasury-grid,
+    .prize-grid,
+    .modules-grid {
+        grid-template-columns: 1fr !important;
+        gap: 20px;
+    }
+    
+    /* Admin Table Responsiveness */
+    .admin-container {
+        padding: 10px;
+        overflow-x: hidden;
+    }
+    .admin-table-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    .admin-table {
+        min-width: 600px; /* Ensure table doesn't crush content */
+    }
+    
+    /* Reduce global section gaps */
+    :root {
+        --section-gap: 60px;
+    }
+    
+    /* Tracks specific overrides */
+    .tracks-grid > .track-card {
+        grid-column: 1 / -1 !important;
+    }
+}
