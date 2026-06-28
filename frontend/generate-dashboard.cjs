@@ -1,0 +1,359 @@
+const fs = require('fs');
+
+const customCSS = `
+    <style type="text/tailwindcss">
+        @theme inline {
+          --radius-sm: calc(var(--radius) - 4px);
+          --radius-md: calc(var(--radius) - 2px);
+          --radius-lg: var(--radius);
+          --radius-xl: calc(var(--radius) + 4px);
+          --color-background: var(--background);
+          --color-foreground: var(--foreground);
+          --color-card: var(--card);
+          --color-card-foreground: var(--card-foreground);
+          --color-popover: var(--popover);
+          --color-popover-foreground: var(--popover-foreground);
+          --color-primary: var(--primary);
+          --color-primary-foreground: var(--primary-foreground);
+          --color-secondary: var(--secondary);
+          --color-secondary-foreground: var(--secondary-foreground);
+          --color-muted: var(--muted);
+          --color-muted-foreground: var(--muted-foreground);
+          --color-accent: var(--accent);
+          --color-accent-foreground: var(--accent-foreground);
+          --color-destructive: var(--destructive);
+          --color-destructive-foreground: var(--destructive-foreground);
+          --color-border: var(--border);
+          --color-input: var(--input);
+          --color-ring: var(--ring);
+          --color-blood: var(--blood);
+          --color-gold: var(--gold);
+          --color-ink: var(--ink);
+          --color-paper: var(--paper);
+          --font-display: "Zen Dots", sans-serif;
+          --font-impact: "Bebas Neue", sans-serif;
+          --font-jp: "Noto Sans JP", sans-serif;
+          --font-mono: "JetBrains Mono", monospace;
+        }
+
+        :root {
+          --radius: 0.25rem;
+          --background: oklch(0.12 0.02 25);
+          --foreground: oklch(0.96 0.01 60);
+          --card: oklch(0.16 0.025 25);
+          --card-foreground: oklch(0.96 0.01 60);
+          --popover: oklch(0.14 0.02 25);
+          --popover-foreground: oklch(0.96 0.01 60);
+          --primary: oklch(0.55 0.24 25);
+          --primary-foreground: oklch(0.98 0.01 60);
+          --secondary: oklch(0.22 0.03 25);
+          --secondary-foreground: oklch(0.96 0.01 60);
+          --muted: oklch(0.2 0.02 25);
+          --muted-foreground: oklch(0.65 0.03 40);
+          --accent: oklch(0.55 0.24 25);
+          --accent-foreground: oklch(0.98 0.01 60);
+          --destructive: oklch(0.55 0.24 25);
+          --destructive-foreground: oklch(0.98 0.01 60);
+          --border: oklch(0.28 0.05 25);
+          --input: oklch(0.22 0.03 25);
+          --ring: oklch(0.55 0.24 25);
+          --blood: oklch(0.5 0.27 22);
+          --gold: oklch(0.82 0.16 85);
+          --ink: oklch(0.08 0.01 25);
+          --paper: oklch(0.94 0.02 80);
+          --gradient-blood: linear-gradient(135deg, oklch(0.5 0.27 22), oklch(0.35 0.2 18));
+          --gradient-shadow: radial-gradient(ellipse at top, oklch(0.18 0.04 25 / 0.8), oklch(0.08 0.01 25));
+          --shadow-blood: 0 0 40px oklch(0.5 0.27 22 / 0.5), 0 0 80px oklch(0.5 0.27 22 / 0.2);
+          --shadow-brutal: 6px 6px 0 oklch(0.5 0.27 22);
+        }
+
+        @layer base {
+          * { border-color: var(--color-border); }
+          body {
+            background-color: var(--color-background);
+            color: var(--color-foreground);
+            font-family: var(--font-jp);
+          }
+        }
+
+        @utility text-stroke-blood {
+          -webkit-text-stroke: 2px oklch(0.5 0.27 22);
+          color: transparent;
+        }
+
+        @utility glitch-text {
+          text-shadow: 2px 0 oklch(0.5 0.27 22), -2px 0 oklch(0.6 0.2 200);
+        }
+
+        @utility scanlines {
+          background-image: repeating-linear-gradient(
+            0deg,
+            transparent,
+            transparent 2px,
+            oklch(0 0 0 / 0.15) 2px,
+            oklch(0 0 0 / 0.15) 4px
+          );
+        }
+
+        @utility grain {
+          background-image: radial-gradient(oklch(1 0 0 / 0.03) 1px, transparent 1px);
+          background-size: 3px 3px;
+        }
+
+        @keyframes blood-drip {
+          0%, 100% { transform: translateY(0); opacity: 0.8; }
+          50% { transform: translateY(4px); opacity: 1; }
+        }
+
+        @keyframes flicker {
+          0%, 100% { opacity: 1; }
+          41.99% { opacity: 1; }
+          42% { opacity: 0; }
+          43% { opacity: 0; }
+          43.01% { opacity: 1; }
+          47.99% { opacity: 1; }
+          48% { opacity: 0; }
+          49% { opacity: 0; }
+          49.01% { opacity: 1; }
+        }
+
+        @keyframes slide-in {
+          from { transform: translateX(-20px); opacity: 0; }
+          to { transform: translateX(0); opacity: 1; }
+        }
+
+        @keyframes pulse-blood {
+          0%, 100% { box-shadow: 0 0 20px oklch(0.5 0.27 22 / 0.4); }
+          50% { box-shadow: 0 0 40px oklch(0.5 0.27 22 / 0.8); }
+        }
+
+        @keyframes marquee {
+          from { transform: translateX(0); }
+          to { transform: translateX(-50%); }
+        }
+    </style>
+`;
+
+const htmlContent = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | RevengersHack</title>
+    
+    <!-- Load Tailwind v4 from CDN -->
+    <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+    
+    <!-- Include Custom Styles and Theme Variables -->
+    ${customCSS}
+
+    <!-- Add Google Fonts to match the tailwind config -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=JetBrains+Mono:wght@400;700&family=Noto+Sans+JP:wght@400;700&family=Zen+Dots&display=swap" rel="stylesheet">
+</head>
+<body class="min-h-screen bg-background text-foreground relative overflow-hidden grain dark">
+    <!-- Ambient blood glow -->
+    <div class="pointer-events-none fixed inset-0 -z-10">
+        <div class="absolute -top-40 -left-40 h-[500px] w-[500px] rounded-full bg-blood/20 blur-3xl"></div>
+        <div class="absolute -bottom-40 -right-40 h-[600px] w-[600px] rounded-full bg-blood/15 blur-3xl"></div>
+    </div>
+
+    <!-- TOP NAV -->
+    <header class="border-b border-border/60 bg-ink/80 backdrop-blur-xl sticky top-0 z-50">
+        <div class="mx-auto max-w-[1600px] px-6 py-4 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 sm:flex sm:justify-between">
+            <div class="flex min-w-0 items-center gap-4">
+                <img src="assets/images/manji-emblem.png" alt="" width="40" height="40" class="h-10 w-10 shrink-0" />
+                <div class="min-w-0">
+                    <div class="font-display text-lg tracking-widest text-foreground leading-none truncate" style="font-family: 'Zen Dots', sans-serif;">
+                        REVENGERS<span class="text-blood">/</span>HACK
+                    </div>
+                    <div class="font-mono text-[10px] text-muted-foreground tracking-[0.3em] mt-1" style="font-family: 'JetBrains Mono', monospace;">
+                        東京 リベンジャーズ ハッカソン
+                    </div>
+                </div>
+            </div>
+            <nav class="hidden md:flex items-center gap-8 font-impact tracking-widest text-sm" style="font-family: 'Bebas Neue', sans-serif;">
+                <a href="#" class="text-foreground hover:text-blood transition-colors border-b-2 border-blood pb-1 cursor-pointer">DASHBOARD</a>
+                <a href="/" class="text-muted-foreground hover:text-blood transition-colors cursor-pointer">HOME</a>
+                <a href="/admin.html" class="text-muted-foreground hover:text-blood transition-colors cursor-pointer">ADMIN</a>
+            </nav>
+            <div class="flex items-center gap-3">
+                <div class="hidden lg:block text-right">
+                    <div class="font-mono text-[10px] text-muted-foreground tracking-widest" style="font-family: 'JetBrains Mono', monospace;">AGENT</div>
+                    <div class="font-impact text-sm tracking-wider" id="userEmailDisplay" style="font-family: 'Bebas Neue', sans-serif;">loading...</div>
+                </div>
+                <button id="logoutBtn" class="font-impact tracking-widest text-xs px-4 py-2 bg-blood text-primary-foreground hover:bg-blood/80 transition-all shadow-brutal hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none cursor-pointer" style="font-family: 'Bebas Neue', sans-serif;">
+                    LOGOUT
+                </button>
+            </div>
+        </div>
+        <!-- Marquee -->
+        <div class="border-t border-border/60 bg-blood/10 overflow-hidden">
+            <div class="flex whitespace-nowrap" style="animation: marquee 40s linear infinite">
+                <span class="font-mono text-xs tracking-[0.3em] text-blood py-2 px-8 shrink-0" style="font-family: 'JetBrains Mono', monospace;">
+                    ◆ REVENGERSHACK // 24H REMAIN // ROUND 2 LIVE // SUBMIT OR PERISH // 東京リベンジャーズ // 
+                </span>
+                <span class="font-mono text-xs tracking-[0.3em] text-blood py-2 px-8 shrink-0" style="font-family: 'JetBrains Mono', monospace;">
+                    ◆ REVENGERSHACK // 24H REMAIN // ROUND 2 LIVE // SUBMIT OR PERISH // 東京リベンジャーズ // 
+                </span>
+                <span class="font-mono text-xs tracking-[0.3em] text-blood py-2 px-8 shrink-0" style="font-family: 'JetBrains Mono', monospace;">
+                    ◆ REVENGERSHACK // 24H REMAIN // ROUND 2 LIVE // SUBMIT OR PERISH // 東京リベンジャーズ // 
+                </span>
+                <span class="font-mono text-xs tracking-[0.3em] text-blood py-2 px-8 shrink-0" style="font-family: 'JetBrains Mono', monospace;">
+                    ◆ REVENGERSHACK // 24H REMAIN // ROUND 2 LIVE // SUBMIT OR PERISH // 東京リベンジャーズ // 
+                </span>
+            </div>
+        </div>
+    </header>
+
+    <main class="mx-auto max-w-[1600px] px-6 py-8 space-y-6">
+        <!-- HERO -->
+        <section class="relative grid lg:grid-cols-[1.6fr_1fr] gap-6">
+            <div class="relative overflow-hidden border border-border bg-card group">
+                <img
+                    src="assets/images/hero-biker.jpg"
+                    alt="Underground gang banner"
+                    width="1536"
+                    height="1024"
+                    class="absolute inset-0 h-full w-full object-cover opacity-60 group-hover:opacity-70 transition-opacity"
+                />
+                <div class="absolute inset-0 scanlines opacity-30"></div>
+                <div class="absolute inset-0 bg-gradient-to-r from-ink via-ink/70 to-transparent"></div>
+                <div class="relative p-8 md:p-12 min-h-[420px] flex flex-col justify-between">
+                    <div>
+                        <div class="inline-flex items-center gap-2 border border-blood px-3 py-1 mb-6">
+                            <span class="h-2 w-2 rounded-full bg-blood" style="animation: pulse-blood 2s infinite"></span>
+                            <span class="font-mono text-[10px] tracking-[0.3em] text-blood" style="font-family: 'JetBrains Mono', monospace;">LIVE // ROUND 02</span>
+                        </div>
+                        <div class="font-mono text-xs tracking-[0.3em] text-muted-foreground mb-3" style="font-family: 'JetBrains Mono', monospace;">
+                            WELCOME BACK, AGENT.
+                        </div>
+                        <h1 class="font-display text-4xl md:text-6xl lg:text-7xl tracking-tighter leading-[0.9] mb-4" style="font-family: 'Zen Dots', sans-serif;">
+                            WE RIDE<br />
+                            <span class="text-blood" style="animation: flicker 4s infinite">AT MIDNIGHT</span>
+                        </h1>
+                        <p class="font-jp max-w-md text-muted-foreground text-sm md:text-base" style="font-family: 'Noto Sans JP', sans-serif;">
+                            The underground waits for no one. Lock in your code, defend your turf, and take the throne.
+                        </p>
+                    </div>
+
+                    <!-- Submission Form Logic -->
+                    <div class="mt-8" id="activeRoundFormContainer" style="display: none; position: relative; z-index: 10;">
+                        <div class="border border-blood p-4 mb-4" style="background: rgba(0,0,0,0.5);">
+                            <h3 class="font-impact text-xl text-blood tracking-wider mb-1" id="activeRoundTitle" style="font-family: 'Bebas Neue', sans-serif;">Loading...</h3>
+                            <p class="font-jp text-sm text-muted-foreground mb-4" id="activeRoundDesc" style="font-family: 'Noto Sans JP', sans-serif;">Loading...</p>
+
+                            <form id="submissionForm" class="flex flex-col gap-3">
+                                <input type="url" id="repoUrl" placeholder="GITHUB REPO URL" required class="bg-input border border-border px-3 py-2 font-mono text-xs focus:outline-none focus:border-blood w-full text-foreground" style="font-family: 'JetBrains Mono', monospace; background-color: var(--input); color: var(--foreground);">
+                                <input type="url" id="demoUrl" placeholder="LIVE DEMO URL (OPTIONAL)" class="bg-input border border-border px-3 py-2 font-mono text-xs focus:outline-none focus:border-blood w-full text-foreground" style="font-family: 'JetBrains Mono', monospace; background-color: var(--input); color: var(--foreground);">
+                                <button type="submit" id="submitMissionBtn" class="font-impact tracking-widest text-sm px-6 py-3 bg-blood text-primary-foreground shadow-brutal hover:translate-x-[3px] hover:translate-y-[3px] hover:shadow-none transition-all w-max cursor-pointer" style="font-family: 'Bebas Neue', sans-serif;">
+                                    SUBMIT BUILD →
+                                </button>
+                            </form>
+                            <div id="submissionStatus" class="font-mono text-xs mt-3" style="font-family: 'JetBrains Mono', monospace;"></div>
+                        </div>
+                    </div>
+                    <div id="noActiveRoundMsg" class="mt-8 font-mono text-xs tracking-[0.3em] text-muted-foreground relative z-10" style="font-family: 'JetBrains Mono', monospace;">
+                        [NO ACTIVE MISSIONS AWAITING SUBMISSION]
+                    </div>
+                </div>
+                <!-- Corner accents -->
+                <div class="absolute top-3 left-3 h-4 w-4 border-t-2 border-l-2 border-blood"></div>
+                <div class="absolute top-3 right-3 h-4 w-4 border-t-2 border-r-2 border-blood"></div>
+                <div class="absolute bottom-3 left-3 h-4 w-4 border-b-2 border-l-2 border-blood"></div>
+                <div class="absolute bottom-3 right-3 h-4 w-4 border-b-2 border-r-2 border-blood"></div>
+            </div>
+
+            <!-- COUNTDOWN + AGENT CARD -->
+            <div class="space-y-6">
+                <div class="border border-blood bg-card relative overflow-hidden">
+                    <div class="absolute inset-0 scanlines opacity-20"></div>
+                    <div class="relative p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="font-mono text-[10px] tracking-[0.3em] text-blood" style="font-family: 'JetBrains Mono', monospace;">⚠ TIME REMAINING</div>
+                            <div class="font-jp text-xs text-muted-foreground" style="font-family: 'Noto Sans JP', sans-serif;">残り時間</div>
+                        </div>
+                        <div class="font-display text-5xl tracking-tighter text-foreground tabular-nums" style="animation: flicker 6s infinite; font-family: 'Zen Dots', sans-serif;">
+                            18<span class="text-blood">:</span>42<span class="text-blood">:</span>07
+                        </div>
+                        <div class="mt-4 h-1 bg-muted relative overflow-hidden">
+                            <div class="absolute inset-y-0 left-0 bg-blood" style="width: 78%; animation: pulse-blood 3s infinite"></div>
+                        </div>
+                        <div class="grid grid-cols-3 gap-2 mt-4 text-center">
+                            <div class="font-mono text-[9px] tracking-widest text-muted-foreground" style="font-family: 'JetBrains Mono', monospace;">HOURS</div>
+                            <div class="font-mono text-[9px] tracking-widest text-muted-foreground" style="font-family: 'JetBrains Mono', monospace;">MINUTES</div>
+                            <div class="font-mono text-[9px] tracking-widest text-muted-foreground" style="font-family: 'JetBrains Mono', monospace;">SECONDS</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="border border-border bg-card p-6 relative">
+                    <div class="flex items-center gap-4">
+                        <div class="relative shrink-0">
+                            <div class="h-16 w-16 bg-gradient-to-br from-blood to-ink border-2 border-blood flex items-center justify-center font-display text-2xl" style="font-family: 'Zen Dots', sans-serif;">
+                                T
+                            </div>
+                            <div class="absolute -bottom-1 -right-1 h-4 w-4 rounded-full bg-emerald-500 border-2 border-card"></div>
+                        </div>
+                        <div class="min-w-0 flex-1">
+                            <div class="font-mono text-[10px] tracking-[0.3em] text-muted-foreground" style="font-family: 'JetBrains Mono', monospace;">TEAM_ID // <span id="teamIdDisplay">...</span></div>
+                            <div class="font-impact text-2xl tracking-wider truncate" id="teamNameDisplay" style="font-family: 'Bebas Neue', sans-serif;">Loading...</div>
+                            <div class="font-jp text-xs text-blood" id="teamStatusBadge" style="font-family: 'Noto Sans JP', sans-serif;">REVENGERSHACK HACKER</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- MAIN GRID -->
+        <section class="grid lg:grid-cols-3 gap-6">
+            <!-- SQUAD -->
+            <div class="lg:col-span-2 border border-border bg-card">
+                <div class="flex items-center justify-between border-b border-border px-6 py-4">
+                    <div class="flex items-center gap-3">
+                        <div class="h-2 w-2 bg-blood"></div>
+                        <h2 class="font-display tracking-widest text-sm" style="font-family: 'Zen Dots', sans-serif;">THE SQUAD</h2>
+                    </div>
+                    <span class="font-jp text-xs text-muted-foreground" style="font-family: 'Noto Sans JP', sans-serif;">仲間</span>
+                </div>
+                <ul class="divide-y divide-border" id="teamMembersList">
+                    <li class="p-4 flex items-center justify-center">
+                        <span class="font-mono text-sm text-muted-foreground">Loading members...</span>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- INTEL -->
+            <div class="border border-border bg-card">
+                <div class="flex items-center justify-between border-b border-border px-6 py-4">
+                    <div class="flex items-center gap-3">
+                        <div class="h-2 w-2 bg-blood" style="animation: pulse-blood 2s infinite"></div>
+                        <h2 class="font-display tracking-widest text-sm" style="font-family: 'Zen Dots', sans-serif;">INTEL / COMMS</h2>
+                    </div>
+                    <span class="font-mono text-[10px] text-blood" style="font-family: 'JetBrains Mono', monospace;">LIVE FEED</span>
+                </div>
+                <ul class="divide-y divide-border h-[400px] overflow-y-auto" id="announcementsFeed">
+                    <li class="p-4 flex items-center justify-center h-full">
+                        <span class="font-mono text-sm text-muted-foreground">No recent intel.</span>
+                    </li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- FOOTER -->
+        <footer class="pt-8 pb-4 border-t border-border flex flex-wrap items-center justify-between gap-4">
+            <div class="font-mono text-[10px] tracking-[0.3em] text-muted-foreground" style="font-family: 'JetBrains Mono', monospace;">
+                REVENGERSHACK © 2026 // BUILT IN THE UNDERGROUND
+            </div>
+            <div class="font-jp text-xs text-blood" style="font-family: 'Noto Sans JP', sans-serif;">天上天下唯我独尊 — Supreme above heaven and earth.</div>
+        </footer>
+    </main>
+
+    <!-- Firebase SDKs -->
+    <script type="module" src="js/dashboard.js"></script>
+</body>
+</html>`;
+
+fs.writeFileSync('t:/1sthackathon/frontend/dashboard.html', htmlContent);
+console.log('Successfully written dashboard.html');
