@@ -233,28 +233,19 @@
             <!-- Round Control -->
             <div class="card">
                 <div class="card-header">Round Control</div>
-                <form id="roundForm" class="dash-form">
-                    <div class="form-group">
-                        <label style="font-family: var(--font-mono); font-size: 0.8rem; color: rgba(255,255,255,0.5);">ROUND TITLE</label>
-                        <input type="text" id="roundTitle" placeholder="e.g. Round 1" required>
-                    </div>
-                    <div class="form-group">
-                        <label style="font-family: var(--font-mono); font-size: 0.8rem; color: rgba(255,255,255,0.5);">DESCRIPTION</label>
-                        <textarea id="roundDesc" placeholder="Instructions for this round..." rows="3" required></textarea>
-                    </div>
-                    <div class="form-group" style="display: flex; align-items: center; gap: 10px;">
-                        <input type="checkbox" id="roundIsActive" style="width: auto;">
-                        <label style="font-family: var(--font-mono); font-size: 0.8rem; color: rgba(255,255,255,0.5); cursor: pointer;" for="roundIsActive">SET AS ACTIVE</label>
-                    </div>
-                    <button type="submit" class="btn-primary" style="width: 100%;">CREATE / UPDATE ROUND</button>
-                    <div id="roundStatus" style="margin-top: 10px; font-size: 0.8rem; font-family: var(--font-mono);"></div>
-                </form>
-                
-                <hr style="border-color: rgba(255,255,255,0.1); margin: 20px 0;">
-                <h4 style="font-family: var(--font-mono); color: var(--strike-red); font-size: 0.9rem; margin-bottom: 10px;">EXISTING ROUNDS</h4>
-                <ul id="roundsList" style="list-style: none; padding: 0; font-size: 0.9rem;">
-                    <li style="color: rgba(255,255,255,0.5);">Loading...</li>
-                </ul>
+
+                <h4 style="font-family: var(--font-mono); color: var(--strike-red); font-size: 0.9rem; margin-bottom: 10px;">SWITCH ACTIVE ROUND</h4>
+                <div class="form-group dash-form">
+                    <select id="roundSelect" style="width: 100%; background: rgba(0,0,0,0.4); border: none; border-bottom: 2px solid rgba(255,255,255,0.1); color: var(--white); padding: 8px; margin-bottom: 10px;">
+                        <option value="">Select a round to activate...</option>
+                        <option value="Round 1">Round 1: SHOW US WHAT YOU GOT</option>
+                        <option value="Round 2">Round 2: WE RIDE AT MIDNIGHT</option>
+                        <option value="Round 3">Round 3: SEEK THE WAY IN OR OUT</option>
+                    </select>
+                </div>
+                <button id="activateRoundBtn" class="btn-primary" style="width: 100%; margin-bottom: 20px;">ACTIVATE CHOSEN ROUND</button>
+
+
             </div>
 
             <!-- Announcements Panel -->

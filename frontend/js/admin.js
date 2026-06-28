@@ -37,12 +37,9 @@ const statTotalSubmissions = document.getElementById("statTotalSubmissions");
 const teamsTableBody = document.getElementById("teamsTableBody");
 const submissionsTableBody = document.getElementById("submissionsTableBody");
 
-const roundForm = document.getElementById("roundForm");
-const roundTitle = document.getElementById("roundTitle");
-const roundDesc = document.getElementById("roundDesc");
-const roundIsActive = document.getElementById("roundIsActive");
-const roundStatus = document.getElementById("roundStatus");
-const roundsList = document.getElementById("roundsList");
+
+const roundSelect = document.getElementById("roundSelect");
+const activateRoundBtn = document.getElementById("activateRoundBtn");
 
 const announcementForm = document.getElementById("announcementForm");
 const annTitle = document.getElementById("annTitle");
@@ -76,7 +73,6 @@ onAuthStateChanged(auth, async (user) => {
             // Load admin data
             loadTeams();
             loadSubmissions();
-            loadRounds();
             
         } else {
             // No user doc found, redirect to login
@@ -183,86 +179,45 @@ function loadSubmissions() {
     });
 }
 
-// Load Rounds
-function loadRounds() {
-    const roundsRef = collection(db, "rounds");
-    onSnapshot(roundsRef, (snapshot) => {
-        if (snapshot.empty) {
-            roundsList.innerHTML = `<li style="color: rgba(255,255,255,0.5);">No rounds created yet.</li>`;
-            return;
-        }
-        
-        roundsList.innerHTML = "";
-        snapshot.forEach((docSnap) => {
-            const data = docSnap.data();
-            const li = document.createElement("li");
-            li.className = "round-item";
+// Activate Round with Password
+activateRoundBtn.addEventListener("click", async () => {
+    const selectedRoundTitle = roundSelect.value;
+    if (!selectedRoundTitle) {
+        alert("Please select a round first.");
+        return;
+    }
+    
+    const password = prompt("Enter password to activate this round:");
+    if (password === "switchkrde") {
+        try {
+            // Deactivate all existing rounds
+            const roundsRef = collection(db, "rounds");
+            const snapshot = await getDocs(roundsRef);
             
-            li.innerHTML = `
-                <div>
-                    <strong style="color: var(--white);">${data.title}</strong>
-                    <div style="font-size: 0.75rem; color: rgba(255,255,255,0.5);">${docSnap.id}</div>
-                </div>
-                <button class="toggle-btn ${data.isActive ? 'active' : ''}" data-id="${docSnap.id}" data-active="${data.isActive}">
-                    ${data.isActive ? 'ACTIVE' : 'INACTIVE'}
-                </button>
-            `;
-            
-            roundsList.appendChild(li);
-        });
-        
-        // Add listeners to toggle buttons
-        document.querySelectorAll(".toggle-btn").forEach(btn => {
-            btn.addEventListener("click", async (e) => {
-                const roundId = e.target.getAttribute("data-id");
-                const currentlyActive = e.target.getAttribute("data-active") === "true";
-                
-                try {
-                    // If we are making this active, maybe deactivate others first (optional rule)
-                    // For now, just toggle the specific one
-                    await updateDoc(doc(db, "rounds", roundId), {
-                        isActive: !currentlyActive
-                    });
-                } catch (error) {
-                    console.error("Error toggling round:", error);
-                }
+            const batchPromises = [];
+            snapshot.forEach((docSnap) => {
+                batchPromises.push(updateDoc(doc(db, "rounds", docSnap.id), { isActive: false }));
             });
-        });
-        
-    }, (error) => {
-        console.error("Error loading rounds:", error);
-    });
-}
-
-// Create/Update Round Form
-roundForm.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    roundStatus.textContent = "Processing...";
-    roundStatus.style.color = "var(--white)";
-    
-    const title = roundTitle.value;
-    const description = roundDesc.value;
-    const isActive = roundIsActive.checked;
-    
-    try {
-        await addDoc(collection(db, "rounds"), {
-            title: title,
-            description: description,
-            isActive: isActive,
-            createdAt: serverTimestamp()
-        });
-        
-        roundStatus.textContent = "Round created successfully.";
-        roundStatus.style.color = "#4ade80"; // green
-        roundForm.reset();
-        
-        setTimeout(() => { roundStatus.textContent = ""; }, 3000);
-    } catch (error) {
-        console.error("Error creating round:", error);
-        roundStatus.textContent = "Failed to create round.";
-        roundStatus.style.color = "var(--strike-red)";
+            await Promise.all(batchPromises);
+            
+            // Add the new active round
+            await addDoc(collection(db, "rounds"), {
+                title: selectedRoundTitle,
+                description: "Auto-generated round",
+                isActive: true,
+                createdAt: serverTimestamp()
+            });
+            
+            alert("Round successfully activated!");
+        } catch (error) {
+            console.error("Error activating round:", error);
+            alert("Error activating round: " + error.message);
+        }
+    } else if (password !== null) {
+        alert("Incorrect password!");
     }
 });
+
 
 // Broadcast Announcement Form
 announcementForm.addEventListener("submit", async (e) => {

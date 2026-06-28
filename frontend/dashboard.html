@@ -159,13 +159,13 @@
     <header class="border-b border-border/60 bg-ink/80 backdrop-blur-xl sticky top-0 z-50">
         <div class="mx-auto max-w-[1600px] px-6 py-4 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 sm:flex sm:justify-between">
             <div class="flex min-w-0 items-center gap-4">
-                <img src="assets/images/manji-emblem.png" alt="" width="40" height="40" class="h-10 w-10 shrink-0" />
+                <img src="assets/images/image.png" alt="" width="40" height="40" class="h-10 w-10 shrink-0" />
                 <div class="min-w-0">
                     <div class="font-display text-lg tracking-widest text-foreground leading-none truncate" style="font-family: 'Zen Dots', sans-serif;">
                         REVENGERS<span class="text-blood">/</span>HACK
                     </div>
                     <div class="font-mono text-[10px] text-muted-foreground tracking-[0.3em] mt-1" style="font-family: 'JetBrains Mono', monospace;">
-                        東京 リベンジャーズ ハッカソン
+                        
                     </div>
                 </div>
             </div>
@@ -188,16 +188,16 @@
         <div class="border-t border-border/60 bg-blood/10 overflow-hidden">
             <div class="flex whitespace-nowrap" style="animation: marquee 40s linear infinite">
                 <span class="font-mono text-xs tracking-[0.3em] text-blood py-2 px-8 shrink-0" style="font-family: 'JetBrains Mono', monospace;">
-                    ◆ REVENGERSHACK // 24H REMAIN // ROUND 2 LIVE // SUBMIT OR PERISH // 東京リベンジャーズ // 
+                    ◆ REVENGERSHACK // 24H REMAIN // ROUND 2 LIVE // SUBMIT OR PERISH // 
                 </span>
                 <span class="font-mono text-xs tracking-[0.3em] text-blood py-2 px-8 shrink-0" style="font-family: 'JetBrains Mono', monospace;">
-                    ◆ REVENGERSHACK // 24H REMAIN // ROUND 2 LIVE // SUBMIT OR PERISH // 東京リベンジャーズ // 
+                    ◆ REVENGERSHACK // 24H REMAIN // ROUND 2 LIVE // SUBMIT OR PERISH // 
                 </span>
                 <span class="font-mono text-xs tracking-[0.3em] text-blood py-2 px-8 shrink-0" style="font-family: 'JetBrains Mono', monospace;">
-                    ◆ REVENGERSHACK // 24H REMAIN // ROUND 2 LIVE // SUBMIT OR PERISH // 東京リベンジャーズ // 
+                    ◆ REVENGERSHACK // 24H REMAIN // ROUND 2 LIVE // SUBMIT OR PERISH // 
                 </span>
                 <span class="font-mono text-xs tracking-[0.3em] text-blood py-2 px-8 shrink-0" style="font-family: 'JetBrains Mono', monospace;">
-                    ◆ REVENGERSHACK // 24H REMAIN // ROUND 2 LIVE // SUBMIT OR PERISH // 東京リベンジャーズ // 
+                    ◆ REVENGERSHACK // 24H REMAIN // ROUND 2 LIVE // SUBMIT OR PERISH // 
                 </span>
             </div>
         </div>
@@ -206,43 +206,77 @@
     <main class="mx-auto max-w-[1600px] px-6 py-8 space-y-6">
         <!-- HERO -->
         <section class="relative grid lg:grid-cols-[1.6fr_1fr] gap-6">
-            <div class="relative overflow-hidden border border-border bg-card group">
+            <div class="relative overflow-hidden border border-border bg-card group" id="heroBannerBox">
                 <img
-                    src="assets/images/hero-biker.jpg"
-                    alt="Underground gang banner"
-                    width="1536"
-                    height="1024"
-                    class="absolute inset-0 h-full w-full object-cover opacity-60 group-hover:opacity-70 transition-opacity"
+                    id="heroImageBg"
+                    src="assets/images/round1img.png"
+                    alt="Round 1 Banner"
+                    width="932"
+                    height="420"
+                    class="absolute inset-0 h-full w-full object-cover opacity-100 brightness-200 transition-opacity"
                 />
-                <div class="absolute inset-0 scanlines opacity-30"></div>
-                <div class="absolute inset-0 bg-gradient-to-r from-ink via-ink/70 to-transparent"></div>
+                <div class="absolute inset-0 scanlines opacity-30 pointer-events-none"></div>
+                <div class="absolute inset-0 bg-gradient-to-r from-ink via-ink/40 to-transparent pointer-events-none"></div>
+                
                 <div class="relative p-8 md:p-12 min-h-[420px] flex flex-col justify-between">
-                    <div>
-                        <div class="inline-flex items-center gap-2 border border-blood px-3 py-1 mb-6">
-                            <span class="h-2 w-2 rounded-full bg-blood" style="animation: pulse-blood 2s infinite"></span>
-                            <span class="font-mono text-[10px] tracking-[0.3em] text-blood" style="font-family: 'JetBrains Mono', monospace;">LIVE // ROUND 02</span>
+                    <div class="flex justify-between items-start">
+                        <!-- Top Left: Badge & Title -->
+                        <div>
+                            <div class="inline-flex items-center gap-2 border border-blood px-3 py-1 mb-2 bg-black/50">
+                                <span class="h-2 w-2 rounded-full bg-blood" style="animation: pulse-blood 2s infinite"></span>
+                                <span id="heroRoundBadge" class="font-mono text-[10px] tracking-[0.3em] text-blood" style="font-family: 'JetBrains Mono', monospace;">LIVE // ROUND 01</span>
+                            </div>
+                            <div class="font-mono text-xs tracking-[0.3em] text-blood mb-3" style="font-family: 'JetBrains Mono', monospace;">
+                                ROUND 01
+                            </div>
+                            <h1 id="heroRoundTitle" class="font-display text-4xl md:text-5xl lg:text-6xl tracking-tighter leading-[0.9] mb-4" style="font-family: 'Zen Dots', sans-serif;">
+                                SHOW US<br />
+                                <span class="text-blood" style="animation: flicker 4s infinite">WHAT YOU GOT</span>
+                            </h1>
+                            <p id="heroRoundDesc" class="font-jp max-w-md text-muted-foreground text-sm md:text-base leading-relaxed" style="font-family: 'Noto Sans JP', sans-serif;">
+                                This is your first move.<br />
+                                Submit your problem statements and<br />
+                                presentation decks that define your vision,<br />
+                                your approach, and your edge.
+                            </p>
+                            
+                            <!-- What to submit -->
+                            <div class="mt-6" id="heroRequirementsContainer">
+                                <div class="font-mono text-xs tracking-[0.3em] text-blood mb-3" style="font-family: 'JetBrains Mono', monospace;" id="heroRequirementsTitle">
+                                    WHAT TO SUBMIT
+                                </div>
+                                <div class="flex flex-col gap-3 font-mono text-xs tracking-widest text-muted-foreground" style="font-family: 'JetBrains Mono', monospace;" id="heroRequirementsList">
+                                    <div class="flex items-center gap-3">
+                                        <div class="h-6 w-6 border border-blood flex items-center justify-center text-blood">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                                        </div>
+                                        PROBLEM STATEMENT
+                                    </div>
+                                    <div class="flex items-center gap-3">
+                                        <div class="h-6 w-6 border border-blood flex items-center justify-center text-blood">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+                                        </div>
+                                        PRESENTATION DECK (PPT)
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="font-mono text-xs tracking-[0.3em] text-muted-foreground mb-3" style="font-family: 'JetBrains Mono', monospace;">
-                            WELCOME BACK, AGENT.
+
+                        <!-- Top Right: Status -->
+                        <div class="font-mono text-[10px] tracking-[0.3em] text-blood" style="font-family: 'JetBrains Mono', monospace;">
+                            STATUS: ACTIVE ►
                         </div>
-                        <h1 class="font-display text-4xl md:text-6xl lg:text-7xl tracking-tighter leading-[0.9] mb-4" style="font-family: 'Zen Dots', sans-serif;">
-                            WE RIDE<br />
-                            <span class="text-blood" style="animation: flicker 4s infinite">AT MIDNIGHT</span>
-                        </h1>
-                        <p class="font-jp max-w-md text-muted-foreground text-sm md:text-base" style="font-family: 'Noto Sans JP', sans-serif;">
-                            The underground waits for no one. Lock in your code, defend your turf, and take the throne.
-                        </p>
                     </div>
 
                     <!-- Submission Form Logic -->
                     <div class="mt-8" id="activeRoundFormContainer" style="display: none; position: relative; z-index: 10;">
-                        <div class="border border-blood p-4 mb-4" style="background: rgba(0,0,0,0.5);">
+                        <div class="border border-blood p-4 mb-4 bg-black/60 backdrop-blur-sm">
                             <h3 class="font-impact text-xl text-blood tracking-wider mb-1" id="activeRoundTitle" style="font-family: 'Bebas Neue', sans-serif;">Loading...</h3>
                             <p class="font-jp text-sm text-muted-foreground mb-4" id="activeRoundDesc" style="font-family: 'Noto Sans JP', sans-serif;">Loading...</p>
 
                             <form id="submissionForm" class="flex flex-col gap-3">
-                                <input type="url" id="repoUrl" placeholder="GITHUB REPO URL" required class="bg-input border border-border px-3 py-2 font-mono text-xs focus:outline-none focus:border-blood w-full text-foreground" style="font-family: 'JetBrains Mono', monospace; background-color: var(--input); color: var(--foreground);">
-                                <input type="url" id="demoUrl" placeholder="LIVE DEMO URL (OPTIONAL)" class="bg-input border border-border px-3 py-2 font-mono text-xs focus:outline-none focus:border-blood w-full text-foreground" style="font-family: 'JetBrains Mono', monospace; background-color: var(--input); color: var(--foreground);">
+                                <input type="url" id="githubLink" placeholder="GITHUB REPO URL" required class="bg-input border border-border px-3 py-2 font-mono text-xs focus:outline-none focus:border-blood w-full text-foreground" style="font-family: 'JetBrains Mono', monospace; background-color: var(--input); color: var(--foreground);">
+                                <input type="url" id="demoLink" placeholder="LIVE DEMO URL (OPTIONAL)" class="bg-input border border-border px-3 py-2 font-mono text-xs focus:outline-none focus:border-blood w-full text-foreground" style="font-family: 'JetBrains Mono', monospace; background-color: var(--input); color: var(--foreground);">
                                 <button type="submit" id="submitMissionBtn" class="font-impact tracking-widest text-sm px-6 py-3 bg-blood text-primary-foreground shadow-brutal hover:translate-x-[3px] hover:translate-y-[3px] hover:shadow-none transition-all w-max cursor-pointer" style="font-family: 'Bebas Neue', sans-serif;">
                                     SUBMIT BUILD →
                                 </button>
@@ -250,15 +284,25 @@
                             <div id="submissionStatus" class="font-mono text-xs mt-3" style="font-family: 'JetBrains Mono', monospace;"></div>
                         </div>
                     </div>
-                    <div id="noActiveRoundMsg" class="mt-8 font-mono text-xs tracking-[0.3em] text-muted-foreground relative z-10" style="font-family: 'JetBrains Mono', monospace;">
-                        [NO ACTIVE MISSIONS AWAITING SUBMISSION]
+                    
+                    <div id="heroFooterText" class="mt-8 font-mono text-[10px] tracking-[0.3em] text-muted-foreground relative z-10" style="font-family: 'JetBrains Mono', monospace;">
+                        [ SUBMISSION DEADLINE WILL BE ANNOUNCED SOON ]
                     </div>
                 </div>
+
+                <!-- Right edge text -->
+                <div id="heroVerticalText" class="absolute right-4 top-1/2 -translate-y-1/2 rotate-90 origin-right font-mono text-[8px] tracking-[0.5em] text-blood opacity-80 whitespace-nowrap" style="font-family: 'JetBrains Mono', monospace;">
+                    - FOCUS - PLAN - EXECUTE - DOMINATE -
+                </div>
+                
+                <!-- Extra box for special rounds (like Round 3) -->
+                <div id="heroExtraBox" class="absolute bottom-10 right-10 z-10"></div>
+
                 <!-- Corner accents -->
-                <div class="absolute top-3 left-3 h-4 w-4 border-t-2 border-l-2 border-blood"></div>
-                <div class="absolute top-3 right-3 h-4 w-4 border-t-2 border-r-2 border-blood"></div>
-                <div class="absolute bottom-3 left-3 h-4 w-4 border-b-2 border-l-2 border-blood"></div>
-                <div class="absolute bottom-3 right-3 h-4 w-4 border-b-2 border-r-2 border-blood"></div>
+                <div class="absolute top-4 left-4 h-6 w-6 border-t-2 border-l-2 border-blood"></div>
+                <div class="absolute top-4 right-4 h-6 w-6 border-t-2 border-r-2 border-blood"></div>
+                <div class="absolute bottom-4 left-4 h-6 w-6 border-b-2 border-l-2 border-blood"></div>
+                <div class="absolute bottom-4 right-4 h-6 w-6 border-b-2 border-r-2 border-blood"></div>
             </div>
 
             <!-- COUNTDOWN + AGENT CARD -->
@@ -268,7 +312,7 @@
                     <div class="relative p-6">
                         <div class="flex items-center justify-between mb-4">
                             <div class="font-mono text-[10px] tracking-[0.3em] text-blood" style="font-family: 'JetBrains Mono', monospace;">⚠ TIME REMAINING</div>
-                            <div class="font-jp text-xs text-muted-foreground" style="font-family: 'Noto Sans JP', sans-serif;">残り時間</div>
+                            <div class="font-jp text-xs text-muted-foreground" style="font-family: 'Noto Sans JP', sans-serif;"></div>
                         </div>
                         <div class="font-display text-5xl tracking-tighter text-foreground tabular-nums" style="animation: flicker 6s infinite; font-family: 'Zen Dots', sans-serif;">
                             18<span class="text-blood">:</span>42<span class="text-blood">:</span>07
@@ -311,7 +355,7 @@
                         <div class="h-2 w-2 bg-blood"></div>
                         <h2 class="font-display tracking-widest text-sm" style="font-family: 'Zen Dots', sans-serif;">THE SQUAD</h2>
                     </div>
-                    <span class="font-jp text-xs text-muted-foreground" style="font-family: 'Noto Sans JP', sans-serif;">仲間</span>
+                    <span class="font-jp text-xs text-muted-foreground" style="font-family: 'Noto Sans JP', sans-serif;"></span>
                 </div>
                 <ul class="divide-y divide-border" id="teamMembersList">
                     <li class="p-4 flex items-center justify-center">
@@ -320,20 +364,49 @@
                 </ul>
             </div>
 
-            <!-- INTEL -->
+            <!-- INFORMATION -->
             <div class="border border-border bg-card">
                 <div class="flex items-center justify-between border-b border-border px-6 py-4">
                     <div class="flex items-center gap-3">
                         <div class="h-2 w-2 bg-blood" style="animation: pulse-blood 2s infinite"></div>
-                        <h2 class="font-display tracking-widest text-sm" style="font-family: 'Zen Dots', sans-serif;">INTEL / COMMS</h2>
+                        <h2 class="font-display tracking-widest text-sm" style="font-family: 'Zen Dots', sans-serif;">INFORMATION</h2>
                     </div>
-                    <span class="font-mono text-[10px] text-blood" style="font-family: 'JetBrains Mono', monospace;">LIVE FEED</span>
+                    <span class="font-mono text-[10px] text-blood" style="font-family: 'JetBrains Mono', monospace;">UPDATES</span>
                 </div>
                 <ul class="divide-y divide-border h-[400px] overflow-y-auto" id="announcementsFeed">
                     <li class="p-4 flex items-center justify-center h-full">
-                        <span class="font-mono text-sm text-muted-foreground">No recent intel.</span>
+                        <span class="font-mono text-sm text-muted-foreground">No recent updates.</span>
                     </li>
                 </ul>
+            </div>
+        </section>
+
+        <!-- LEADERBOARD -->
+        <section class="border border-border bg-card">
+            <div class="flex items-center justify-between border-b border-border px-6 py-4">
+                <div class="flex items-center gap-3">
+                    <div class="h-2 w-2 bg-gold" style="animation: pulse-blood 2s infinite"></div>
+                    <h2 class="font-display tracking-widest text-sm" style="font-family: 'Zen Dots', sans-serif;">GLOBAL LEADERBOARD</h2>
+                </div>
+                <span class="font-mono text-[10px] text-gold" style="font-family: 'JetBrains Mono', monospace;">TOP RANKS</span>
+            </div>
+            <div class="p-0 overflow-x-auto">
+                <table class="w-full text-left font-mono text-sm" style="font-family: 'JetBrains Mono', monospace;">
+                    <thead class="text-xs text-muted-foreground border-b border-border bg-black/20">
+                        <tr>
+                            <th class="py-3 px-6 font-normal tracking-widest">RANK</th>
+                            <th class="py-3 px-6 font-normal tracking-widest">TEAM</th>
+                            <th class="py-3 px-6 font-normal tracking-widest text-right">SCORE</th>
+                        </tr>
+                    </thead>
+                    <tbody id="leaderboardTableBody" class="divide-y divide-border/50">
+                        <tr class="hover:bg-white/5 transition-colors">
+                            <td class="py-4 px-6 text-gold">01</td>
+                            <td class="py-4 px-6 text-foreground font-impact tracking-widest text-lg" style="font-family: 'Bebas Neue', sans-serif;">Loading...</td>
+                            <td class="py-4 px-6 text-blood text-right">---</td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </section>
 
@@ -342,7 +415,7 @@
             <div class="font-mono text-[10px] tracking-[0.3em] text-muted-foreground" style="font-family: 'JetBrains Mono', monospace;">
                 REVENGERSHACK © 2026 // BUILT IN THE UNDERGROUND
             </div>
-            <div class="font-jp text-xs text-blood" style="font-family: 'Noto Sans JP', sans-serif;">天上天下唯我独尊 — Supreme above heaven and earth.</div>
+            <div class="font-jp text-xs text-blood" style="font-family: 'Noto Sans JP', sans-serif;">Supreme above heaven and earth.</div>
         </footer>
     </main>
 
