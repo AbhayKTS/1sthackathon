@@ -3242,24 +3242,59 @@ footer a:hover {
     .nav-brand .logo-text {
         font-size: 1rem;
     }
-    .nav-links {
+    .nav-container {
+        flex-direction: column;
         gap: 15px;
-        overflow-x: auto;
-        white-space: nowrap;
-        padding-bottom: 5px;
-        -ms-overflow-style: none;  /* IE and Edge */
-        scrollbar-width: none;  /* Firefox */
+        align-items: center;
     }
-    .nav-links::-webkit-scrollbar {
-        display: none;
+    .nav-links {
+        display: none; /* Hide standard links to save space */
     }
     
     /* Hero Adjustments */
-    .hero h1 {
-        font-size: 2.5rem !important; /* Overriding previous sizes */
+    .hero-title-group {
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 15px;
+    }
+    .hero-title, 
+    .hero .hero-title,
+    .hero-title .tokyo-title, 
+    .hero-title .strike-title {
+        font-size: 14vw !important; /* Scale to viewport */
+        display: block !important;
+        margin: 0 !important;
+        text-align: center;
+        line-height: 1.1;
+    }
+    .hero-subtitle {
+        font-size: 0.75rem;
+        letter-spacing: 2px;
+        line-height: 1.4;
+    }
+    .hero-stats-grid {
+        flex-direction: column;
+        gap: 15px;
+        align-items: center;
+        width: 100%;
+    }
+    .stat-item {
+        width: 100%;
+        text-align: center;
+    }
+    .hero-ctas {
+        flex-direction: column;
+        gap: 15px;
+        width: 100%;
+    }
+    .hero-ctas a {
+        width: 100%;
+        text-align: center;
     }
     .hero-content {
         padding: 0 15px;
+        margin-top: 80px; /* Account for taller stacked navbar */
     }
     
     /* Grid Adjustments for Landing Page */
@@ -3291,7 +3326,22 @@ footer a:hover {
     }
     
     /* Tracks specific overrides */
-    .tracks-grid > .track-card {
+    .tracks-grid > .track-card,
+    .track-card:nth-child(1),
+    .track-card:nth-child(2),
+    .track-card:nth-child(3),
+    .track-card:nth-child(4),
+    .track-card:nth-child(5) {
         grid-column: 1 / -1 !important;
+        justify-self: center !important;
+        max-width: 100% !important;
+        width: 100% !important;
+        min-height: auto;
+    }
+
+    /* Squad Slider Adjustments */
+    .squad-carousel-container {
+        padding: 0 5px;
+        gap: 5px;
     }
 }
