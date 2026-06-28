@@ -14,7 +14,7 @@ export default defineConfig({
         landing: resolve(__dirname, 'landing.html'),
         login: resolve(__dirname, 'login.html'),
         dashboard: resolve(__dirname, 'dashboard.html'),
-        admin: resolve(__dirname, 'admin.html')
+        admin: resolve(__dirname, 'cmd-center.html')
       }
     }
   }

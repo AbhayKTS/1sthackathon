@@ -28,6 +28,40 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
+// ─── SECURITY: Session Inactivity Timeout ───────────────────────
+const SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
+let inactivityTimer = null;
+
+function resetInactivityTimer() {
+    if (inactivityTimer) clearTimeout(inactivityTimer);
+    inactivityTimer = setTimeout(() => {
+        // Auto-logout on inactivity
+        signOut(auth).then(() => {
+            sessionStorage.clear();
+            localStorage.removeItem('rh_login_attempts');
+            alert('Session expired due to inactivity. Please log in again.');
+            window.location.href = '/login.html';
+        });
+    }, SESSION_TIMEOUT_MS);
+}
+
+// Track user activity
+['mousemove', 'keydown', 'scroll', 'click', 'touchstart'].forEach(event => {
+    document.addEventListener(event, resetInactivityTimer, { passive: true });
+});
+resetInactivityTimer(); // Start timer on load
+
+// ─── SECURITY: Input Sanitization Helper ────────────────────────
+function sanitizeHTML(str) {
+    if (typeof str !== 'string') return '';
+    return str.trim()
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#x27;');
+}
+
 // DOM Elements
 const userEmailDisplay = document.getElementById("userEmailDisplay");
 const logoutBtn = document.getElementById("logoutBtn");
@@ -84,9 +118,12 @@ onAuthStateChanged(auth, async (user) => {
     }
 });
 
-// Logout
+// Logout — clear all session data
 logoutBtn.addEventListener("click", () => {
+    if (inactivityTimer) clearTimeout(inactivityTimer);
     signOut(auth).then(() => {
+        sessionStorage.clear();
+        localStorage.removeItem('rh_login_attempts');
         window.location.href = '/login.html';
     });
 });
@@ -107,12 +144,12 @@ function loadTeams() {
             const team = doc.data();
             const tr = document.createElement("tr");
             
-            const membersList = team.members ? team.members.map(m => m.name).join(", ") : "None";
+            const membersList = team.members ? team.members.map(m => sanitizeHTML(m.name)).join(", ") : "None";
             
             tr.innerHTML = `
-                <td><strong>${team.teamName || 'Unnamed'}</strong></td>
+                <td><strong>${sanitizeHTML(team.teamName || 'Unnamed')}</strong></td>
                 <td>${membersList}</td>
-                <td><span style="font-family: var(--font-mono); font-size: 0.8rem; color: rgba(255,255,255,0.5);">${doc.id}</span></td>
+                <td><span style="font-family: var(--font-mono); font-size: 0.8rem; color: rgba(255,255,255,0.5);">${sanitizeHTML(doc.id)}</span></td>
             `;
             teamsTableBody.appendChild(tr);
         });
@@ -167,10 +204,10 @@ function loadSubmissions() {
             
             const tr = document.createElement("tr");
             tr.innerHTML = `
-                <td><strong>${teamNames[sub.teamId]}</strong></td>
-                <td>${roundNames[sub.roundId]}</td>
-                <td><a href="${sub.githubLink}" target="_blank">Repo ↗</a></td>
-                <td><a href="${sub.demoLink}" target="_blank">Demo ↗</a></td>
+                <td><strong>${sanitizeHTML(teamNames[sub.teamId])}</strong></td>
+                <td>${sanitizeHTML(roundNames[sub.roundId])}</td>
+                <td><a href="${sanitizeHTML(sub.githubLink)}" target="_blank" rel="noopener noreferrer">Repo ↗</a></td>
+                <td><a href="${sanitizeHTML(sub.demoLink)}" target="_blank" rel="noopener noreferrer">Demo ↗</a></td>
                 <td style="font-size: 0.8rem; color: rgba(255,255,255,0.5);">${date}</td>
             `;
             submissionsTableBody.appendChild(tr);
@@ -180,7 +217,7 @@ function loadSubmissions() {
     });
 }
 
-// Activate Round with Password
+// Activate Round — SECURED: No hardcoded password, relies on Firebase Auth admin role check
 activateRoundBtn.addEventListener("click", async () => {
     const selectedRoundTitle = roundSelect.value;
     if (!selectedRoundTitle) {
@@ -188,39 +225,45 @@ activateRoundBtn.addEventListener("click", async () => {
         return;
     }
     
-    const password = prompt("Enter password to activate this round:");
-    if (password === "switchkrde") {
-        try {
-            // Map dropdown values to fixed doc IDs and metadata
-            const roundMap = {
-                "Round 1": { id: "round-1", title: "Round 1", desc: "Show Us What You Got" },
-                "Round 2": { id: "round-2", title: "Round 2", desc: "We Ride At Midnight" },
-                "Round 3": { id: "round-3", title: "Round 3", desc: "Seek The Way In Or Out" }
-            };
-            
-            const chosen = roundMap[selectedRoundTitle];
-            if (!chosen) { alert("Invalid round selected."); return; }
-            
-            // Deactivate all 3 fixed rounds, then activate chosen
-            const allRoundIds = ["round-1", "round-2", "round-3"];
-            
-            const deactivatePromises = allRoundIds.map(rid =>
-                setDoc(doc(db, "rounds", rid), {
-                    title: roundMap[Object.keys(roundMap).find(k => roundMap[k].id === rid)].title,
-                    desc: roundMap[Object.keys(roundMap).find(k => roundMap[k].id === rid)].desc,
-                    isActive: rid === chosen.id,
-                    updatedAt: serverTimestamp()
-                })
-            );
-            
-            await Promise.all(deactivatePromises);
-            alert("Round successfully activated!");
-        } catch (error) {
-            console.error("Error activating round:", error);
-            alert("Error activating round: " + error.message);
-        }
-    } else if (password !== null) {
-        alert("Incorrect password!");
+    // Verify admin is still authenticated
+    if (!auth.currentUser) {
+        alert("Session expired. Please log in again.");
+        window.location.href = '/login.html';
+        return;
+    }
+
+    // Confirm action instead of using a hardcoded password
+    const confirmed = confirm(`Are you sure you want to activate "${selectedRoundTitle}"? This will deactivate all other rounds.`);
+    if (!confirmed) return;
+
+    try {
+        // Map dropdown values to fixed doc IDs and metadata
+        const roundMap = {
+            "Round 1": { id: "round-1", title: "Round 1", desc: "Show Us What You Got" },
+            "Round 2": { id: "round-2", title: "Round 2", desc: "We Ride At Midnight" },
+            "Round 3": { id: "round-3", title: "Round 3", desc: "Seek The Way In Or Out" }
+        };
+        
+        const chosen = roundMap[selectedRoundTitle];
+        if (!chosen) { alert("Invalid round selected."); return; }
+        
+        // Deactivate all 3 fixed rounds, then activate chosen
+        const allRoundIds = ["round-1", "round-2", "round-3"];
+        
+        const deactivatePromises = allRoundIds.map(rid =>
+            setDoc(doc(db, "rounds", rid), {
+                title: roundMap[Object.keys(roundMap).find(k => roundMap[k].id === rid)].title,
+                desc: roundMap[Object.keys(roundMap).find(k => roundMap[k].id === rid)].desc,
+                isActive: rid === chosen.id,
+                updatedAt: serverTimestamp()
+            })
+        );
+        
+        await Promise.all(deactivatePromises);
+        alert("Round successfully activated!");
+    } catch (error) {
+        console.error("Error activating round:", error);
+        alert("Error activating round: " + error.message);
     }
 });
 
@@ -234,8 +277,8 @@ announcementForm.addEventListener("submit", async (e) => {
     
     try {
         await addDoc(collection(db, "announcements"), {
-            title: annTitle.value,
-            message: annMessage.value,
+            title: sanitizeHTML(annTitle.value),
+            message: sanitizeHTML(annMessage.value),
             timestamp: serverTimestamp(),
             createdBy: auth.currentUser.uid
         });

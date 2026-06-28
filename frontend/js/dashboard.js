@@ -28,6 +28,26 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
+// ─── SECURITY: Session Inactivity Timeout ───────────────────────
+const SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
+let inactivityTimer = null;
+
+function resetInactivityTimer() {
+    if (inactivityTimer) clearTimeout(inactivityTimer);
+    inactivityTimer = setTimeout(() => {
+        signOut(auth).then(() => {
+            sessionStorage.clear();
+            alert('Session expired due to inactivity. Please log in again.');
+            window.location.href = '/login.html';
+        });
+    }, SESSION_TIMEOUT_MS);
+}
+
+['mousemove', 'keydown', 'scroll', 'click', 'touchstart'].forEach(event => {
+    document.addEventListener(event, resetInactivityTimer, { passive: true });
+});
+resetInactivityTimer();
+
 // DOM Elements
 const userEmailDisplay = document.getElementById("userEmailDisplay");
 const logoutBtn = document.getElementById("logoutBtn");
@@ -85,9 +105,11 @@ onAuthStateChanged(auth, async (user) => {
     }
 });
 
-// Logout
+// Logout — clear all session data
 logoutBtn.addEventListener("click", () => {
+    if (inactivityTimer) clearTimeout(inactivityTimer);
     signOut(auth).then(() => {
+        sessionStorage.clear();
         window.location.href = '/login.html';
     });
 });
