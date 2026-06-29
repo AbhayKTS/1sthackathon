@@ -2660,7 +2660,7 @@ footer .container {
     flex-direction: column;
     align-items: center;
     justify-content: flex-start;
-    background: linear-gradient(180deg, #1b0518 0%, #0f0710 100%);
+    background: #0B0B0B;
 }
 
 /* --- Background --- */
@@ -2673,159 +2673,877 @@ footer .container {
 .map-img {
     width: 100%;
     height: 100%;
-    object-fit: cover;
-    object-position: center;
+    object-fit: fill; /* Stretch image to fit viewport exactly so percentage coordinates align 100% perfectly */
     display: block;
+    filter: brightness(0.9) contrast(1.05) saturate(1.05); /* Original rich map colors */
 }
 
 .map-dark-overlay {
     position: absolute;
     inset: 0;
-    background: rgba(0, 0, 0, 0.30);
+    background: rgba(11, 11, 11, 0.15); /* Very subtle dark overlay so image details are fully visible */
     z-index: 1;
+    backdrop-filter: blur(0px);
+    transition: backdrop-filter 0.3s ease, background-color 0.3s ease;
+}
+
+/* Blurs background slightly behind active popups */
+.map-timeline:has(.checkpoint:hover) .map-dark-overlay {
+    backdrop-filter: blur(1.5px);
+    background-color: rgba(11, 11, 11, 0.35);
+}
+
+/* --- Tactical HUD & Conic Radar Sweep --- */
+.hud-grid {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 2;
+    background-image: 
+        linear-gradient(rgba(196, 30, 58, 0.015) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(196, 30, 58, 0.015) 1px, transparent 1px);
+    background-size: 60px 60px;
+}
+
+.hud-scanlines {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 2;
+    background: repeating-linear-gradient(
+        0deg,
+        rgba(0, 0, 0, 0.12) 0px,
+        rgba(0, 0, 0, 0.12) 1px,
+        transparent 1px,
+        transparent 3px
+    );
+}
+
+.hud-vignette {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 2;
+    background: radial-gradient(circle, transparent 40%, rgba(11, 11, 11, 0.8) 100%);
+}
+
+.hud-radar-sweep {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 2;
+    background: conic-gradient(from 0deg at 50% 50%, rgba(196, 30, 58, 0.06) 0deg, transparent 80deg);
+    animation: radar-spin 9s linear infinite;
+}
+
+@keyframes radar-spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Drifting Volumetric Fog */
+.hud-fog {
+    position: absolute;
+    inset: 0;
+    background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="1000" viewBox="0 0 1000 1000"><filter id="noise"><feTurbulence type="fractalNoise" baseFrequency="0.006" numOctaves="3" stitchTiles="stitch" result="noise"/><feColorMatrix type="matrix" values="1 0 0 0 0.76  0 1 0 0 0.12  0 0 1 0 0.22  0 0 0 0.07 0"/></filter><rect width="1000" height="1000" filter="url(%23noise)"/></svg>');
+    opacity: 0.22;
+    z-index: 2;
+    pointer-events: none;
+    animation: fog-drift 45s linear infinite;
+}
+
+@keyframes fog-drift {
+    from { background-position: 0 0; }
+    to { background-position: 1000px 0; }
+}
+
+/* --- Floating Sakura, Embers & Kanji --- */
+.hud-petal-container {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 3;
+    overflow: hidden;
+}
+
+.hud-petal {
+    position: absolute;
+    background: #C41E3A;
+    border-radius: 50% 0 50% 50%;
+    opacity: 0.45;
+    width: 6px;
+    height: 10px;
+    transform: rotate(45deg);
+    animation: petal-fall 14s linear infinite;
+}
+
+.petal-1 { left: 10%; top: -20px; animation-delay: 0s; width: 5px; height: 8px; }
+.petal-2 { left: 40%; top: -20px; animation-delay: 4s; }
+.petal-3 { left: 65%; top: -20px; animation-delay: 2s; width: 6px; height: 9px; }
+.petal-4 { left: 80%; top: -20px; animation-delay: 6s; }
+.petal-5 { left: 25%; top: -20px; animation-delay: 8s; width: 4px; height: 7px; }
+
+.hud-ember {
+    position: absolute;
+    background: #ff3333;
+    border-radius: 50%;
+    width: 2.5px;
+    height: 2.5px;
+    box-shadow: 0 0 4px #ff3333;
+    opacity: 0.65;
+    animation: ember-float 9s linear infinite;
+}
+
+.ember-1 { left: 18%; bottom: -10px; animation-delay: 0s; }
+.ember-2 { left: 38%; bottom: -10px; animation-delay: 3s; }
+.ember-3 { left: 58%; bottom: -10px; animation-delay: 5s; }
+.ember-4 { left: 72%; bottom: -10px; animation-delay: 1.5s; }
+.ember-5 { left: 88%; bottom: -10px; animation-delay: 6s; }
+
+.hud-kanji-float {
+    position: absolute;
+    font-family: 'Sawarabi Mincho', serif;
+    font-size: 16px;
+    color: rgba(196, 30, 58, 0.32);
+    text-shadow: 0 0 5px rgba(196, 30, 58, 0.25);
+    pointer-events: none;
+    z-index: 3;
+    animation: kanji-float-anim 16s linear infinite;
+}
+.kanji-1 { left: 15%; animation-delay: 0s; font-size: 13px; }
+.kanji-2 { left: 35%; animation-delay: 4s; font-size: 18px; }
+.kanji-3 { left: 60%; animation-delay: 2s; font-size: 16px; }
+.kanji-4 { left: 75%; animation-delay: 7s; font-size: 20px; }
+.kanji-5 { left: 90%; animation-delay: 11s; font-size: 14px; }
+
+@keyframes petal-fall {
+    0% {
+        top: -20px;
+        transform: translateX(0) rotate(0deg);
+        opacity: 0.45;
+    }
+    50% {
+        opacity: 0.65;
+    }
+    100% {
+        top: 100%;
+        transform: translateX(100px) rotate(360deg);
+        opacity: 0;
+    }
+}
+
+@keyframes ember-float {
+    0% {
+        bottom: -10px;
+        transform: translateX(0);
+        opacity: 0.65;
+    }
+    100% {
+        bottom: 100%;
+        transform: translateX(-40px);
+        opacity: 0;
+    }
+}
+
+@keyframes kanji-float-anim {
+    0% { top: 105%; transform: translateX(0) rotate(0deg); opacity: 0; }
+    10% { opacity: 0.45; }
+    90% { opacity: 0.45; }
+    100% { top: -5%; transform: translateX(-60px) rotate(360deg); opacity: 0; }
+}
+
+/* Slowly rotating cybernetic temporal clock face watermark in background */
+.hud-clock-container {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1;
+    pointer-events: none;
+}
+
+.hud-clock-svg {
+    width: 580px;
+    height: 580px;
+    animation: clock-spin 180s linear infinite;
+    filter: drop-shadow(0 0 10px rgba(0, 212, 255, 0.05));
+}
+
+.hand-minute {
+    transform-origin: 50px 50px;
+    animation: hand-turn 32s linear infinite;
+}
+
+.hand-hour {
+    transform-origin: 50px 50px;
+    animation: hand-turn 220s linear infinite;
+}
+
+@keyframes clock-spin {
+    to { transform: rotate(360deg); }
+}
+
+@keyframes hand-turn {
+    to { transform: rotate(360deg); }
+}
+
+/* Floating Timeline Glass Fracture Shards */
+.hud-shards-container {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 3;
+}
+
+.hud-shard {
+    position: absolute;
+    background: rgba(255, 255, 255, 0.015);
+    border: 0.8px solid rgba(0, 212, 255, 0.18);
+    backdrop-filter: blur(1.5px);
+    pointer-events: none;
+    animation: shard-drift 24s linear infinite;
+}
+
+.shard-1 {
+    width: 44px;
+    height: 64px;
+    left: 15%;
+    top: 60%;
+    clip-path: polygon(25% 0%, 100% 45%, 70% 100%, 0% 75%);
+    animation-delay: 0s;
+}
+
+.shard-2 {
+    width: 54px;
+    height: 38px;
+    left: 78%;
+    top: 20%;
+    clip-path: polygon(0% 35%, 85% 0%, 100% 75%, 15% 100%);
+    animation-delay: 6s;
+    border-color: rgba(196, 30, 58, 0.18); /* Red tint on some shards */
+}
+
+.shard-3 {
+    width: 32px;
+    height: 52px;
+    left: 46%;
+    top: 80%;
+    clip-path: polygon(50% 0%, 100% 100%, 0% 80%);
+    animation-delay: 3s;
+}
+
+@keyframes shard-drift {
+    0% { transform: translateY(60px) rotate(0deg); opacity: 0; }
+    10% { opacity: 0.5; }
+    90% { opacity: 0.5; }
+    100% { transform: translateY(-160px) rotate(360deg); opacity: 0; }
+}
+
+/* Pulsing Toman Manji Watermark behind Title */
+.hud-watermark-container {
+    position: absolute;
+    top: 30%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 2;
+    pointer-events: none;
+}
+
+.hud-watermark-emblem {
+    width: 250px;
+    height: 250px;
+    filter: brightness(0.65) sepia(1) saturate(12) hue-rotate(-50deg);
+    animation: watermark-pulse 6s ease-in-out infinite alternate;
+}
+
+@keyframes watermark-pulse {
+    0% { transform: scale(1); opacity: 0.05; }
+    100% { transform: scale(1.12); opacity: 0.09; }
+}
+
+/* --- Centered Heading Overlay --- */
+.hud-header-container {
+    position: absolute;
+    top: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 15;
+    text-align: center;
+    pointer-events: none;
+}
+
+.hud-timeline-title {
+    font-family: var(--font-heading);
+    font-size: 56px;
+    letter-spacing: 5px;
+    text-transform: uppercase;
+    margin: 0;
+    line-height: 1;
+}
+
+.hud-timeline-title .title-white {
+    color: #ffffff;
+    text-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
+}
+
+.hud-timeline-title .title-crimson {
+    color: #C41E3A;
+    text-shadow: 
+        0 0 12px rgba(196, 30, 58, 0.8),
+        -2px -2px 0 #C41E3A,
+        2px 2px 0 #000000;
+}
+
+.hud-timeline-sub {
+    font-family: var(--font-mono);
+    font-size: 14px; /* Increased font size for visibility */
+    color: rgba(229, 226, 225, 0.85); /* Made brighter */
+    letter-spacing: 1.5px;
+    margin: 8px 0 0 0;
+    text-transform: uppercase;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+}
+
+/* --- Margin HUD Annotations & Flickering Neon Tube Kanji --- */
+.hud-overlay-tl {
+    position: absolute;
+    top: 40px;
+    left: 45px;
+    z-index: 15;
+    pointer-events: none;
+}
+
+.hud-tokyo-logo {
+    font-family: 'Sawarabi Mincho', serif;
+    font-size: 38px; /* Increased font size */
+    font-weight: 900;
+    color: #C41E3A;
+    line-height: 1;
+    text-shadow: 0 0 8px rgba(196, 30, 58, 0.6);
+}
+
+.hud-tokyo-sub {
+    font-family: var(--font-mono);
+    font-size: 11px; /* Increased font size */
+    color: rgba(229, 226, 225, 0.55); /* Made brighter */
+    letter-spacing: 1px;
+    margin-top: 4px;
+}
+
+.hud-vertical-text {
+    writing-mode: vertical-rl;
+    text-orientation: upright;
+    font-family: 'Sawarabi Mincho', serif;
+    font-size: 15px; /* Increased vertical labels font size */
+    letter-spacing: 6px;
+    color: rgba(229, 226, 225, 0.25);
+    text-shadow: 1px 1px 0 #000000;
+    animation: neon-tube-flicker 6s linear infinite;
+}
+
+.hud-left-text {
+    position: absolute;
+    top: 95px;
+    left: 0;
+}
+
+@keyframes neon-tube-flicker {
+    0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% {
+        color: rgba(196, 30, 58, 0.7);
+        text-shadow: 0 0 8px rgba(196, 30, 58, 0.9), 0 0 15px rgba(196, 30, 58, 0.5);
+    }
+    20%, 24%, 55% {
+        color: rgba(229, 226, 225, 0.15);
+        text-shadow: none;
+    }
+}
+
+.hud-overlay-tr {
+    position: absolute;
+    top: 40px;
+    right: 45px;
+    z-index: 15;
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.hud-tr-emblem-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    margin-bottom: 20px;
+}
+
+.hud-tr-emblem {
+    width: 36px;
+    height: 40px;
+    filter: drop-shadow(0 0 6px rgba(196, 30, 58, 0.5));
+}
+
+.hud-tr-sub {
+    font-family: var(--font-mono);
+    font-size: 9px; /* Increased font size */
+    color: rgba(229, 226, 225, 0.55);
+    letter-spacing: 1px;
+}
+
+.hud-right-text {
+    position: absolute;
+    top: 95px;
+    right: 12px;
+}
+
+/* --- Bottom Center Gang Slogans --- */
+.hud-overlay-bc {
+    position: absolute;
+    bottom: 25px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 15;
+    text-align: center;
+    pointer-events: none;
+}
+
+.hud-slogan-jp {
+    font-family: 'Sawarabi Mincho', serif;
+    font-size: 18px; /* Increased from 12px for high visibility */
+    color: rgba(229, 226, 225, 0.9); /* Made much brighter */
+    letter-spacing: 2px;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.9);
+}
+
+.hud-slogan-en {
+    font-family: var(--font-mono);
+    font-size: 12px; /* Increased from 8.5px for high visibility */
+    font-weight: bold;
+    color: #ff3333; /* Upgraded to glowing primary red for readability */
+    letter-spacing: 1.5px;
+    margin-top: 5px;
+    text-shadow: 0 0 6px rgba(255, 51, 51, 0.65);
+}
+
+/* --- Fixed Bottom HUD Panels --- */
+.hud-status-panel {
+    position: absolute;
+    bottom: 40px;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    pointer-events: none;
+}
+
+.hud-status-left {
+    left: 45px;
+    gap: 15px;
+}
+
+.hud-status-right {
+    right: 45px;
+    gap: 15px;
+}
+
+.hud-status-content, .hud-protocol-content {
+    display: flex;
+    flex-direction: column;
+}
+
+.hud-status-title {
+    font-family: var(--font-heading);
+    font-size: 15px; /* Increased from 10px for visibility */
+    letter-spacing: 1.5px;
+    color: #ff3333; /* Brighter glowing red */
+    margin-bottom: 6px;
+    text-shadow: 0 0 6px rgba(255, 51, 51, 0.5);
+}
+
+.hud-protocol-title {
+    font-family: var(--font-heading);
+    font-size: 15px; /* Increased from 10px for visibility */
+    letter-spacing: 1.5px;
+    color: #ff3333; /* Brighter glowing red */
+    margin-bottom: 6px;
+    text-shadow: 0 0 6px rgba(255, 51, 51, 0.5);
+}
+
+.hud-status-row, .hud-protocol-row {
+    font-family: var(--font-mono);
+    font-size: 12px; /* Increased from 8.5px for high visibility */
+    color: rgba(229, 226, 225, 0.85); /* Made much brighter */
+    line-height: 1.5;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+}
+
+.hud-protocol-row.text-red {
+    color: #ff3333;
+    font-weight: bold;
+    text-shadow: 0 0 4px rgba(255, 51, 51, 0.4);
+}
+
+.hud-status-lbl {
+    color: rgba(229, 226, 225, 0.5); /* Brighter label label prefix */
+    margin-right: 5px;
+}
+
+.hud-status-val {
+    color: rgba(229, 226, 225, 0.95);
+}
+
+.status-secure {
+    color: #10B981;
+    text-shadow: 0 0 4px rgba(16, 185, 129, 0.4);
+}
+
+.text-blink {
+    animation: hud-flicker 1.5s step-end infinite;
+}
+
+@keyframes hud-flicker {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.35; }
+}
+
+.hud-emblem-container {
+    width: 48px; /* Slightly scaled up panels to support larger text */
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.hud-manji-emblem {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    filter: brightness(0.65) sepia(1) saturate(12) hue-rotate(-50deg) drop-shadow(0 0 5px rgba(196, 30, 58, 0.6));
+    opacity: 0.85;
+}
+
+.hud-skull-container {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.hud-octagon-border {
+    width: 40px;
+    height: 40px;
+    background: #0B0B0B;
+    border: 1.2px solid rgba(196, 30, 58, 0.7);
+    clip-path: polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.hud-skull {
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
+    filter: drop-shadow(0 0 3px rgba(196, 30, 58, 0.5));
+    opacity: 0.85;
+}
+
+/* Time Leap Synchronization HUD (Neon cyan theme representing time travel portal) */
+.hud-time-leap-panel {
+    position: absolute;
+    top: 180px;
+    left: 45px;
+    z-index: 15;
+    background: rgba(11, 11, 11, 0.85);
+    border: 1.2px solid rgba(0, 212, 255, 0.4);
+    border-left: 3px solid #00d4ff;
+    padding: 10px 14px;
+    width: 180px;
+    border-radius: 1px;
+    backdrop-filter: blur(8px);
+    box-shadow: 0 4px 15px rgba(0, 212, 255, 0.15);
+    pointer-events: none;
+}
+
+.hud-tl-monitor-title {
+    font-family: var(--font-heading);
+    font-size: 11px;
+    letter-spacing: 1px;
+    color: #00d4ff;
+    text-shadow: 0 0 6px rgba(0, 212, 255, 0.6);
+    margin-bottom: 5px;
+}
+
+.hud-tl-date-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+
+.hud-tl-date {
+    font-family: var(--font-mono);
+    font-size: 15px;
+    font-weight: bold;
+    color: #ffffff;
+    text-shadow: 0 0 4px rgba(255, 255, 255, 0.3);
+}
+
+.date-past {
+    color: rgba(229, 226, 225, 0.6);
+}
+
+.date-present {
+    color: #00d4ff;
+    text-shadow: 0 0 6px rgba(0, 212, 255, 0.7);
+    animation: tl-date-glitch 4s step-end infinite;
+}
+
+.hud-tl-arrow {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    color: #00d4ff;
+    animation: arrow-blink 1.2s step-end infinite;
+}
+
+.hud-tl-status-msg {
+    font-family: var(--font-mono);
+    font-size: 8px;
+    color: rgba(0, 212, 255, 0.7);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+@keyframes arrow-blink {
+    50% { opacity: 0.2; }
+}
+
+@keyframes tl-date-glitch {
+    0%, 95%, 98%, 100% { opacity: 1; transform: skewX(0deg); }
+    96% { opacity: 0.8; transform: skewX(-15deg); color: #ffffff; }
+    97% { opacity: 0.9; transform: skewX(15deg); color: #ff3333; }
 }
 
 /* --- Header --- */
 .map-header {
-    position: relative;
-    z-index: 10;
-    text-align: center;
-    padding: 36px 20px 10px;
-    pointer-events: none;
+    display: none;
 }
 
-.map-section-tag {
-    font-family: 'Roboto Mono', monospace;
-    font-size: 11px;
-    letter-spacing: 4px;
-    color: #FF006E;
-    text-transform: uppercase;
-    display: block;
-    margin-bottom: 6px;
-    text-shadow: 0 0 10px rgba(255, 0, 110, 0.8);
-}
-
-.map-section-title {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: clamp(38px, 5vw, 64px);
-    color: #ffffff;
-    letter-spacing: 6px;
-    line-height: 1;
-    margin: 0 0 6px;
-    text-shadow: 0 0 30px rgba(255, 0, 110, 0.6), 0 0 60px rgba(196, 30, 58, 0.4);
-}
-
-.map-section-sub {
-    font-family: 'Roboto Mono', monospace;
-    font-size: 12px;
-    color: #b44dff;
-    letter-spacing: 2px;
-    margin: 0;
-    text-shadow: 0 0 10px rgba(180, 77, 255, 0.5);
-}
-
-/* --- Arena (absolute-position container) --- */
+/* --- Arena (absolute container) --- */
 .map-arena {
     position: absolute;
     inset: 0;
     z-index: 5;
 }
 
-/* --- Checkpoint --- */
+/* Chevrons on path */
+.hud-path-chevron {
+    position: absolute;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: rgba(196, 30, 58, 0.65);
+    text-shadow: 0 0 5px rgba(196, 30, 58, 0.5);
+    pointer-events: none;
+    user-select: none;
+    font-weight: normal;
+    z-index: 10;
+    animation: chevron-progression 2s linear infinite;
+}
+
+@keyframes chevron-progression {
+    0% { opacity: 0.3; transform: translate(0, 0) scale(0.9); }
+    50% { opacity: 1; transform: translate(3px, -1px) scale(1.1); }
+    100% { opacity: 0.3; transform: translate(6px, -2px) scale(0.9); }
+}
+
+/* --- Coordinate Tracking Crosshairs along the route path --- */
+.hud-crosshair {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    opacity: 0.4;
+    transition: opacity 0.3s ease;
+}
+
+.hud-cross-symbol {
+    font-family: var(--font-mono);
+    font-size: 14px;
+    color: #C41E3A;
+    line-height: 1;
+    text-shadow: 0 0 4px #C41E3A;
+}
+
+.hud-cross-lbl {
+    font-family: var(--font-mono);
+    font-size: 7px;
+    color: rgba(229, 226, 225, 0.45);
+    letter-spacing: 0.5px;
+    margin-top: 2px;
+}
+
+/* Coordinates light up on hover of timeline */
+.map-timeline:has(.checkpoint:hover) .hud-crosshair {
+    opacity: 0.75;
+}
+
+/* --- Checkpoint Node (Increased from 44px to 60px) --- */
 .checkpoint {
     position: absolute;
     transform: translate(-50%, -50%);
     cursor: pointer;
     z-index: 20;
+    transition: opacity 0.3s ease, transform 0.3s ease;
 }
 
-/* Marker circle */
+/* Dim other checkpoints slightly on node hover */
+.map-timeline:has(.checkpoint:hover) .checkpoint:not(:hover) {
+    opacity: 0.35;
+    filter: saturate(0.6);
+}
+
+/* Marker circle scaled up */
 .cp-marker {
     position: relative;
-    width: 46px;
-    height: 46px;
+    width: 60px; /* Increased from 44px */
+    height: 60px; /* Increased from 44px */
     border-radius: 50%;
-    /* Solid neon-style fill with subtle gradient */
-    background: radial-gradient(circle at 35% 30%, #cfa0ff 0%, #a64de0 22%, #7a2e9a 60%);
-    border: 2px solid rgba(200,120,240,0.95);
+    background: #0B0B0B;
+    border: 2.2px solid rgba(196, 30, 58, 0.8);
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow:
-        0 0 12px rgba(170,80,220,0.95),
-        0 0 28px rgba(120,40,160,0.45),
-        inset 0 -3px 8px rgba(0,0,0,0.28);
-    transition: box-shadow 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
+    box-shadow: 0 0 16px rgba(196, 30, 58, 0.55);
+    transition: transform 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275), border-color 0.3s ease, box-shadow 0.3s ease;
     z-index: 2;
 }
 
-.cp-marker::after {
-    /* inner filled disc to avoid hollow appearance */
+/* Outer dashed ring scaled up */
+.cp-marker::before {
     content: "";
     position: absolute;
-    width: 64%;
-    height: 64%;
+    inset: -10px; /* Adjusted from -7px */
     border-radius: 50%;
-    background: radial-gradient(circle at 35% 30%, #ffffff22 0%, rgba(255,255,255,0.06) 6%, rgba(150,70,220,0.95) 40%, rgba(110,40,180,0.95) 100%);
+    border: 1px dashed rgba(196, 30, 58, 0.55);
+    transition: inset 0.3s ease, border-color 0.3s ease, transform 0.3s ease;
+    z-index: -1;
+    animation: cp-spin-slow 20s linear infinite;
+}
+
+/* Inner glowing ring scaled up */
+.cp-marker::after {
+    content: "";
+    position: absolute;
+    inset: 6px; /* Adjusted from 4px */
+    border-radius: 50%;
+    border: 1.2px solid rgba(196, 30, 58, 0.2);
+    background: linear-gradient(135deg, transparent 40%, rgba(255, 255, 255, 0.25) 50%, transparent 60%);
+    background-size: 200% 200%;
+    background-position: -150% -150%;
+    animation: cp-flare 4s ease infinite;
+}
+
+/* Time Leap blue lightning ray aura surrounding nodes on hover */
+.checkpoint::after {
+    content: "";
+    position: absolute;
+    inset: -14px;
+    border-radius: 50%;
+    border: 2px dashed rgba(0, 212, 255, 0.5);
+    opacity: 0;
+    box-shadow: 
+        0 0 15px rgba(0, 212, 255, 0.6),
+        inset 0 0 15px rgba(0, 212, 255, 0.4);
+    transition: opacity 0.4s ease, transform 0.4s ease;
+    pointer-events: none;
     z-index: 1;
 }
 
+.checkpoint:hover::after {
+    opacity: 1;
+    transform: scale(1.08);
+    animation: time-leap-lightning 2s linear infinite;
+}
+
+@keyframes time-leap-lightning {
+    0% { transform: scale(1.02) rotate(0deg); border-color: rgba(0, 212, 255, 0.5); filter: hue-rotate(0deg); }
+    50% { transform: scale(1.15) rotate(180deg); border-color: rgba(255, 255, 255, 0.95); filter: hue-rotate(90deg); }
+    100% { transform: scale(1.02) rotate(360deg); border-color: rgba(0, 212, 255, 0.5); filter: hue-rotate(360deg); }
+}
+
 .checkpoint:hover .cp-marker {
-    transform: scale(1.25);
-    border-color: rgba(220,160,245,0.98);
-    box-shadow:
-        0 0 18px rgba(200,130,250,0.9),
-        0 0 40px rgba(140,70,200,0.5),
-        inset 0 -6px 16px rgba(0,0,0,0.28);
+    transform: translateY(-5px) scale(1.12); /* Lift checkpoint and scale */
+    border-color: #00d4ff; /* Glow cyan on time leap hover */
+    box-shadow: 0 6px 24px rgba(0, 212, 255, 0.85);
+}
+
+.checkpoint:hover .cp-marker::before {
+    inset: -12px; /* Adjusted from -9px */
+    border-color: #00d4ff;
+    animation: cp-spin-slow 12s linear infinite;
+}
+
+/* Click ripple / pop action */
+.checkpoint:active .cp-marker {
+    transform: translateY(-2px) scale(1.2);
+    box-shadow: 0 0 35px rgba(0, 212, 255, 1);
+    transition: transform 0.05s, box-shadow 0.05s;
+}
+
+@keyframes cp-spin-slow {
+    to { transform: rotate(360deg); }
+}
+
+@keyframes cp-flare {
+    0% { background-position: -150% -150%; }
+    25%, 100% { background-position: 150% 150%; }
 }
 
 .cp-num {
     font-family: 'Bebas Neue', sans-serif;
-    font-size: 20px;
-    color: #ffffff;
+    font-size: 24px; /* Increased from 18px */
+    color: rgba(229, 226, 225, 0.95);
     line-height: 1;
-    text-shadow: 0 0 8px rgba(255,255,255,0.9);
+    text-shadow: 0 0 4px rgba(196, 30, 58, 0.5);
     position: relative;
     z-index: 3;
+    transition: all 0.3s ease;
 }
 
-/* Pulse ring */
+.checkpoint:hover .cp-num {
+    color: #00d4ff;
+    text-shadow: 0 0 8px rgba(0, 212, 255, 0.8);
+}
+
+/* Pulse radar ring scaled up */
 .cp-pulse {
     position: absolute;
-    inset: -6px;
+    inset: -7px; /* Adjusted from -5px */
     border-radius: 50%;
-    border: 2px solid rgba(190,100,220,0.45);
-    animation: cp-pulse-ring 2s ease-out infinite;
+    border: 1.5px solid rgba(196, 30, 58, 0.35);
+    animation: cp-pulse-ring 2.8s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
     pointer-events: none;
 }
 
 @keyframes cp-pulse-ring {
-    0% {
-        transform: scale(0.9);
-        opacity: 0.9;
-    }
-
-    70% {
-        transform: scale(1.7);
-        opacity: 0;
-    }
-
-    100% {
-        transform: scale(1.7);
-        opacity: 0;
-    }
+    0% { transform: scale(0.95); opacity: 0.95; }
+    75% { transform: scale(1.75); opacity: 0; }
+    100% { transform: scale(1.75); opacity: 0; }
 }
 
-/* --- Popup --- */
+/* --- Popup (Premium Tokyo Revengers Mission Files) --- */
 .cp-popup {
     position: absolute;
-    bottom: calc(100% + 16px);
+    bottom: calc(100% + 18px);
     left: 50%;
     transform: translateX(-50%) scale(0.9);
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.28s ease, transform 0.28s ease;
-    z-index: 30;
+    transition: opacity 0.3s cubic-bezier(0.25, 1, 0.5, 1), transform 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+    z-index: 30; /* Higher than connections path (z-index: 4) so path NEVER passes over cards */
     white-space: nowrap;
 }
 
@@ -2839,124 +3557,331 @@ footer .container {
 
 .cp-popup--bottom {
     bottom: auto;
-    top: calc(100% + 16px);
+    top: calc(100% + 18px);
     left: 50%;
     transform: translateX(-50%) scale(0.9);
 }
 
 .checkpoint:hover .cp-popup--bottom {
-    transform: translateX(-50%) scale(1);
+    transform: translateX(-50%) scale(1.02);
 }
 
 .checkpoint:hover .cp-popup {
     opacity: 1;
-    transform: translateX(-50%) scale(1);
+    transform: translateX(-50%) scale(1.02);
     pointer-events: auto;
 }
 
 .cp-popup-inner {
-    background: rgba(8, 8, 20, 0.88);
-    border: 1.5px solid #FF006E;
-    border-radius: 6px;
-    padding: 16px 20px 14px;
-    min-width: 230px;
-    max-width: 280px;
+    background: #111111; /* Matte black background */
+    border: 1.5px solid rgba(196, 30, 58, 0.45); /* Thin red border */
+    border-top: 3px solid #C41E3A; /* Top red accent */
+    border-radius: 1px;
+    padding: 28px 32px 24px; /* Increased padding */
+    min-width: 360px; /* Increased card size to make them larger */
+    max-width: 440px; /* Increased card size to make them larger */
     white-space: normal;
-    box-shadow:
-        0 0 20px rgba(142,68,173,0.18),
-        0 0 40px rgba(100,50,140,0.06),
-        inset 0 0 15px rgba(142,68,173,0.03);
+    box-shadow: 
+        0 12px 32px rgba(0, 0, 0, 0.95),
+        0 0 20px rgba(196, 30, 58, 0.15);
     backdrop-filter: blur(12px);
+    transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease;
+    position: relative;
+}
+
+/* Hover popup lift, glow and scale details */
+.cp-popup-inner:hover {
+    transform: translateY(-4px) scale(1.02);
+    background-color: #141414; /* Slightly brighter background */
+    border-color: rgba(196, 30, 58, 0.85);
+    box-shadow: 
+        0 16px 36px rgba(0, 0, 0, 0.95),
+        0 0 30px rgba(196, 30, 58, 0.35);
+}
+
+/* Corner HUD borders */
+.cp-popup-inner::before {
+    content: "";
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    width: 6px;
+    height: 6px;
+    border-left: 1px solid rgba(196, 30, 58, 0.4);
+    border-top: 1px solid rgba(196, 30, 58, 0.4);
+}
+
+.cp-popup-inner::after {
+    content: "";
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    width: 6px;
+    height: 6px;
+    border-right: 1px solid rgba(196, 30, 58, 0.4);
+    border-bottom: 1px solid rgba(196, 30, 58, 0.4);
 }
 
 .cp-popup-name {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 17px;
-    color: rgba(142,68,173,0.95);
+    font-family: var(--font-mono);
+    font-size: 20px; /* Increased font size from 18px */
+    color: #C41E3A;
     letter-spacing: 2px;
-    text-shadow: 0 0 10px rgba(142,68,173,0.6);
-    margin-bottom: 7px;
+    margin-bottom: 10px;
     line-height: 1.1;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.checkpoint:hover .cp-popup-name {
+    animation: title-text-glitch 1s linear infinite;
+}
+
+@keyframes title-text-glitch {
+    0%, 90%, 94%, 100% { color: #C41E3A; text-shadow: 0 0 5px rgba(196, 30, 58, 0.5); }
+    91% { color: #00d4ff; text-shadow: 0 0 8px rgba(0, 212, 255, 0.8); }
+    92% { color: #ffffff; text-shadow: 0 0 10px rgba(255, 255, 255, 0.8); }
+}
+
+.cp-popup-name::before {
+    content: "";
+    display: inline-block;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #C41E3A;
+    box-shadow: 0 0 5px #C41E3A;
+    margin-right: 8px;
+}
+
+/* Base64 HUD SVG Icons colored in crimson (#C41E3A) */
+#cp1 .cp-popup-name::after {
+    content: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="%23C41E3A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2y20M17 5H7M21 9H3M12 22a5 5 0 0 0 5-5H7a5 5 0 0 0 5 5z"></path></svg>');
+}
+#cp2 .cp-popup-name::after {
+    content: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="%23C41E3A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>');
+}
+#cp3 .cp-popup-name::after {
+    content: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="%23C41E3A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path><path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3"></path></svg>');
+}
+#cp4 .cp-popup-name::after {
+    content: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="%23C41E3A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="20" x2="20" y2="20"></line><line x1="4" y1="4" x2="20" y2="4"></line><line x1="6" y1="4" x2="6" y2="20"></line><line x1="12" y1="4" x2="12" y2="20"></line><line x1="18" y1="4" x2="18" y2="20"></line></svg>');
+}
+#cp5 .cp-popup-name::after {
+    content: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="%23C41E3A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"></path><path d="M6 12v5c0 2 2 3 6 3s6-1 6-3v-5"></path></svg>');
+}
+#cp6 .cp-popup-name::after {
+    content: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="%23C41E3A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>');
 }
 
 .cp-popup-desc {
-    font-family: 'Roboto Mono', monospace;
-    font-size: 11px;
-    color: rgba(220, 220, 255, 0.82);
-    line-height: 1.55;
-    margin: 0 0 10px;
+    font-family: var(--font-body);
+    font-size: 15.5px; /* Increased from 14px */
+    color: rgba(229, 226, 225, 0.9); /* High contrast */
+    line-height: 1.65;
+    margin: 0 0 12px;
 }
 
 .cp-popup-activity {
-    font-family: 'Roboto Mono', monospace;
-    font-size: 11px;
-    color: #00D9FF;
-    letter-spacing: 0.5px;
-    margin-bottom: 12px;
-    text-shadow: 0 0 8px rgba(0, 217, 255, 0.6);
+    font-family: var(--font-mono);
+    font-size: 14px; /* Increased from 12.5px */
+    color: var(--white);
+    background: rgba(196, 30, 58, 0.1);
+    border-left: 2.5px solid #C41E3A;
+    padding: 10px 14px; /* Increased padding */
+    margin-bottom: 16px;
 }
 
+/* Action buttons */
 .cp-popup-btn {
     display: block;
     width: 100%;
-    padding: 7px 12px;
+    padding: 12px 16px; /* Increased padding */
     background: transparent;
-    border: 1.5px solid rgba(142,68,173,0.9);
-    color: rgba(142,68,173,0.95);
-    font-family: 'Roboto Mono', monospace;
-    font-size: 11px;
+    border: 1.2px solid rgba(196, 30, 58, 0.5);
+    color: rgba(229, 226, 225, 0.95);
+    font-family: var(--font-mono);
+    font-size: 12px; /* Increased from 11px */
     font-weight: 600;
     letter-spacing: 2px;
     text-transform: uppercase;
     cursor: pointer;
-    border-radius: 3px;
-    transition: background 0.25s, color 0.25s, box-shadow 0.25s;
+    border-radius: 1px;
+    transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
+    text-align: center;
+    position: relative;
+}
+
+.cp-popup-btn::after {
+    content: " >";
+    color: #C41E3A;
+    font-weight: bold;
+    transition: transform 0.3s ease;
+    display: inline-block;
 }
 
 .cp-popup-btn:hover {
-    background: rgba(142,68,173,0.95);
-    color: #0D0D0D;
-    box-shadow: 0 0 16px rgba(142,68,173,0.6);
+    background: #C41E3A;
+    color: #0B0B0B;
+    border-color: #C41E3A;
+    box-shadow: 0 0 15px rgba(196, 30, 58, 0.7);
+    transform: translateY(-2px) scale(1.01); /* lift slightly and scale */
 }
 
-/* --- SVG Connection Lines --- */
+.cp-popup-btn:hover::after {
+    color: #0B0B0B;
+    transform: translateX(3px);
+}
+
+/* --- SVG Connection Lines (Futuristic Dotted Digital Track) --- */
 .map-connections {
     position: absolute;
     inset: 0;
     width: 100%;
     height: 100%;
     pointer-events: none;
-    z-index: 4;
-}
-
-/* Hide SVG connection lines between checkpoints (removed as requested) */
-.map-connections {
-    display: none !important;
+    z-index: 4; /* Faint line behind checkpoints (z-index: 20) and popups (z-index: 30) */
+    display: block !important;
 }
 
 .conn-line {
     fill: none;
-    stroke: rgba(142,68,173,0.45);
-    stroke-width: 0.4;
-    stroke-dasharray: 3 2;
-    animation: dash-move 3s linear infinite;
+    transition: stroke 0.3s ease, filter 0.3s ease;
 }
 
-.conn-line--dim {
-    stroke: rgba(0, 217, 255, 0.3);
+.conn-line-base {
+    stroke: rgba(196, 30, 58, 0.15); /* Faint tactical path glow */
+    stroke-width: 0.15px; /* Extremely thin vector guidelines to look advanced */
+    stroke-dasharray: 2 6; 
+    animation: path-breathe 4s ease-in-out infinite alternate;
+}
+
+.conn-line-mid {
+    stroke: rgba(196, 30, 58, 0.35); /* Soft crimson navigation path */
+    stroke-width: 0.1px;
+    stroke-dasharray: 2 12;
+}
+
+.conn-line-core {
+    stroke: rgba(229, 226, 225, 0.7); /* Thin core coordinate dot line */
+    stroke-width: 0.08px;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-dasharray: 1 10;
+    animation: dash-move 12s linear infinite;
+}
+
+/* Advanced thin laser pulse line styling (increased width/thickness, restored shorter dashes) */
+.conn-line-pulse {
+    stroke: #ff3333;
+    stroke-width: 0.72px; /* Increased stroke width for physical line thickness/width */
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-dasharray: 10 70; /* Shorter segment length */
+    filter: drop-shadow(0 0 5px #ff3333);
+    animation: flow-pulse 12s linear infinite; /* Kept slow duration */
+    display: block;
+}
+
+/* Glow up path on node hover */
+.map-timeline:has(.checkpoint:hover) .conn-line-base {
+    stroke: rgba(196, 30, 58, 0.4);
+    filter: drop-shadow(0 0 6px rgba(196, 30, 58, 0.75));
+}
+
+@keyframes path-breathe {
+    0% { stroke: rgba(196, 30, 58, 0.12); filter: drop-shadow(0 0 1px rgba(196, 30, 58, 0.2)); }
+    100% { stroke: rgba(196, 30, 58, 0.32); filter: drop-shadow(0 0 4px rgba(196, 30, 58, 0.6)); }
+}
+
+@keyframes flow-pulse {
+    from { stroke-dashoffset: 250; }
+    to { stroke-dashoffset: 0; }
 }
 
 @keyframes dash-move {
     to {
-        stroke-dashoffset: -20;
+        stroke-dashoffset: -40;
     }
 }
 
-/* --- Responsive --- */
+/* Desktop popup coordinates aligned exactly over generated cityscape landmarks using viewport relative offsets */
+@media (min-width: 769px) {
+    #cp1 .cp-popup {
+        left: -7vw !important;
+        top: -35vh !important; /* Adjusted top slightly upward for taller cards */
+        bottom: auto !important;
+        transform: scale(0.9) !important;
+        transform-origin: top left !important;
+    }
+    #cp1:hover .cp-popup {
+        transform: scale(1.02) !important;
+    }
+
+    #cp2 .cp-popup {
+        left: -6vw !important;
+        top: -35vh !important; /* Adjusted top slightly upward for taller cards */
+        bottom: auto !important;
+        transform: scale(0.9) !important;
+        transform-origin: top left !important;
+    }
+    #cp2:hover .cp-popup {
+        transform: scale(1.02) !important;
+    }
+
+    #cp3 .cp-popup {
+        left: 7vw !important;
+        top: -6vh !important;
+        bottom: auto !important;
+        transform: scale(0.9) !important;
+        transform-origin: top left !important;
+    }
+    #cp3:hover .cp-popup {
+        transform: scale(1.02) !important;
+    }
+
+    #cp4 .cp-popup {
+        left: -6vw !important;
+        top: -32vh !important; /* Adjusted top slightly upward for taller cards */
+        bottom: auto !important;
+        transform: scale(0.9) !important;
+        transform-origin: top left !important;
+    }
+    #cp4:hover .cp-popup {
+        transform: scale(1.02) !important;
+    }
+
+    #cp5 .cp-popup {
+        left: 6vw !important;
+        top: -6vh !important;
+        bottom: auto !important;
+        transform: scale(0.9) !important;
+        transform-origin: top left !important;
+    }
+    #cp5:hover .cp-popup {
+        transform: scale(1.02) !important;
+    }
+
+    #cp6 .cp-popup {
+        left: -7vw !important;
+        top: -32vh !important; /* Adjusted top slightly upward for taller cards */
+        bottom: auto !important;
+        transform: scale(0.9) !important;
+        transform-origin: top left !important;
+    }
+    #cp6:hover .cp-popup {
+        transform: scale(1.02) !important;
+    }
+}
+
+/* --- Responsive Layout --- */
 @media (max-width: 768px) {
     .map-timeline {
         height: auto;
         min-height: 100vh;
+        padding-top: 100px;
     }
 
     .map-arena {
@@ -2965,24 +3890,26 @@ footer .container {
     }
 
     .cp-popup--right,
-    .cp-popup--left {
+    .cp-popup--left,
+    .cp-popup--bottom {
         left: 50%;
         right: auto;
         top: auto;
-        bottom: calc(100% + 10px);
+        bottom: calc(100% + 14px);
         transform: translateX(-50%) scale(0.9);
     }
 
-    .checkpoint:hover .cp-popup {
+    .checkpoint:hover .cp-popup,
+    .checkpoint:hover .cp-popup--bottom {
         transform: translateX(-50%) scale(1);
     }
 
     .cp-popup-inner {
-        min-width: 190px;
+        min-width: 220px;
     }
 }
 
-/* Banner that sits above the map (separate from the image) */
+/* Banner above map banner styling */
 .timeline-banner {
     width: 100%;
     height: 140px;
@@ -2990,44 +3917,48 @@ footer .container {
     align-items: center;
     justify-content: center;
     text-align: center;
-    background: linear-gradient(180deg, rgba(32, 6, 45, 1) 0%, rgba(28, 8, 46, 0.98) 40%, rgba(20, 6, 38, 0.96) 70%, rgba(20, 6, 38, 0.0) 100%);
-    box-shadow: 0 10px 60px rgba(88, 0, 122, 0.18) inset, 0 8px 50px rgba(88, 0, 122, 0.10);
+    background: linear-gradient(180deg, rgba(11, 11, 11, 1) 0%, rgba(11, 11, 11, 0.98) 40%, rgba(11, 11, 11, 0.95) 70%, rgba(11, 11, 11, 0.0) 100%);
     z-index: 15;
     position: relative;
+    border-bottom: 1px solid rgba(196, 30, 58, 0.15);
 }
 
 .timeline-banner .map-section-tag {
     display: block;
-    color: #FF006E;
-    font-family: 'Roboto Mono', monospace;
+    color: #C41E3A;
+    font-family: var(--font-mono);
     font-size: 12px;
     letter-spacing: 4px;
     margin-bottom: 6px;
-    text-shadow: 0 0 10px rgba(255, 0, 110, 0.6);
-    opacity: 0.95;
+    text-shadow: 0 0 10px rgba(196, 30, 58, 0.6);
 }
 
 .timeline-banner .banner-title {
-    font-family: var(--font-serif);
-    font-style: italic;
+    font-family: var(--font-heading);
     font-size: clamp(34px, 4.5vw, 72px);
-    color: #C41E3A;
+    color: #ffffff;
     letter-spacing: 3px;
     margin: 0;
     text-align: center;
-    text-shadow: 0 0 18px rgba(196, 30, 58, 0.6), 0 0 36px rgba(196, 30, 58, 0.3);
+    text-shadow: 0 0 18px rgba(196, 30, 58, 0.5);
+}
+
+.timeline-banner .map-section-sub {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: rgba(229, 226, 225, 0.55);
+    letter-spacing: 1.5px;
+    margin-top: 4px;
 }
 
 @media (max-width: 900px) {
     .timeline-banner {
         height: 100px;
     }
-
     .timeline-banner .banner-title {
         font-size: clamp(22px, 6vw, 40px);
     }
 }
-
 footer a:hover {
     color: var(--strike-red) !important;
 }
