@@ -19,7 +19,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=JetBrains+Mono:wght@400;700&family=Noto+Sans+JP:wght@400;700&family=Zen+Dots&display=swap" rel="stylesheet">
 </head>
-<body class="min-h-screen bg-background text-foreground relative overflow-hidden grain dark">
+<body class="min-h-screen bg-background text-foreground relative grain dark">
     <!-- Ambient blood glow -->
     <div class="pointer-events-none fixed inset-0 -z-10">
         <div class="absolute -top-40 -left-40 h-[500px] w-[500px] rounded-full bg-blood/20 blur-3xl"></div>
@@ -185,11 +185,11 @@
                             <div class="font-mono text-[10px] tracking-[0.3em] text-blood" style="font-family: 'JetBrains Mono', monospace;">⚠ TIME REMAINING</div>
                             <div class="font-jp text-xs text-muted-foreground" style="font-family: 'Noto Sans JP', sans-serif;"></div>
                         </div>
-                        <div class="font-display text-5xl tracking-tighter text-foreground tabular-nums" style="animation: flicker 6s infinite; font-family: 'Zen Dots', sans-serif;">
-                            18<span class="text-blood">:</span>42<span class="text-blood">:</span>07
+                        <div id="countdownDisplay" class="font-display text-5xl tracking-tighter text-foreground tabular-nums" style="animation: flicker 6s infinite; font-family: 'Zen Dots', sans-serif;">
+                            24<span class="text-blood">:</span>00<span class="text-blood">:</span>00
                         </div>
                         <div class="mt-4 h-1 bg-muted relative overflow-hidden">
-                            <div class="absolute inset-y-0 left-0 bg-blood" style="width: 78%; animation: pulse-blood 3s infinite"></div>
+                            <div id="countdownProgress" class="absolute inset-y-0 left-0 bg-blood" style="width: 100%; animation: pulse-blood 3s infinite"></div>
                         </div>
                         <div class="grid grid-cols-3 gap-2 mt-4 text-center">
                             <div class="font-mono text-[9px] tracking-widest text-muted-foreground" style="font-family: 'JetBrains Mono', monospace;">HOURS</div>

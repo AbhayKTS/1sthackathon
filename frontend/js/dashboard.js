@@ -70,8 +70,45 @@ let currentUserDoc = null;
 let currentTeamId = null;
 let activeRoundId = null;
 
+// Firebase real-time listener unsubscribers to prevent memory leaks and duplicate queries
+let roundsUnsubscribers = [];
+let announcementsUnsubscriber = null;
+let leaderboardUnsubscriber = null;
+let countdownInterval = null;
+
+function cleanupListeners() {
+    roundsUnsubscribers.forEach(unsub => unsub());
+    roundsUnsubscribers = [];
+    if (announcementsUnsubscriber) {
+        announcementsUnsubscriber();
+        announcementsUnsubscriber = null;
+    }
+    if (leaderboardUnsubscriber) {
+        leaderboardUnsubscriber();
+        leaderboardUnsubscriber = null;
+    }
+    if (countdownInterval) {
+        clearInterval(countdownInterval);
+        countdownInterval = null;
+    }
+}
+
+// Input Sanitization Helper
+function sanitizeHTML(str) {
+    if (typeof str !== 'string') return '';
+    return str.trim()
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#x27;');
+}
+
 // Enforce Auth
 onAuthStateChanged(auth, async (user) => {
+    // Cleanup any existing real-time listeners first to avoid leaks
+    cleanupListeners();
+
     if (!user) {
         window.location.href = '/login.html';
         return;
@@ -99,6 +136,7 @@ onAuthStateChanged(auth, async (user) => {
         // Load global dashboard data
         loadActiveRounds();
         listenToAnnouncements();
+        loadLeaderboard();
 
     } catch (error) {
         console.error("Error loading dashboard data:", error);
@@ -108,6 +146,7 @@ onAuthStateChanged(auth, async (user) => {
 // Logout — clear all session data
 logoutBtn.addEventListener("click", () => {
     if (inactivityTimer) clearTimeout(inactivityTimer);
+    cleanupListeners();
     signOut(auth).then(() => {
         sessionStorage.clear();
         window.location.href = '/login.html';
@@ -172,10 +211,14 @@ const heroFooterText = document.getElementById("heroFooterText");
 function loadActiveRounds() {
     const roundIds = ["round-1", "round-2", "round-3"];
     
+    // Clear any previous active rounds listeners
+    roundsUnsubscribers.forEach(unsub => unsub());
+    roundsUnsubscribers = [];
+
     // Listen to all 3 round docs simultaneously
     roundIds.forEach(rid => {
         const roundRef = doc(db, "rounds", rid);
-        onSnapshot(roundRef, (roundDoc) => {
+        const unsub = onSnapshot(roundRef, (roundDoc) => {
             if (roundDoc.exists() && roundDoc.data().isActive) {
                 activeRoundId = roundDoc.id;
                 const roundData = roundDoc.data();
@@ -292,24 +335,70 @@ function loadActiveRounds() {
                         `;
                     }
                 }
-
+ 
                 if(heroRoundTitle) heroRoundTitle.innerHTML = `${topText}<br /><span class="text-blood" style="animation: flicker 4s infinite">${bottomText}</span>`;
+                
+                // Initialize countdown target (24 hours from updatedAt, or 24h from now as fallback)
+                let targetTime = Date.now() + 24 * 60 * 60 * 1000;
+                if (roundData.updatedAt) {
+                    const updatedMs = roundData.updatedAt.toMillis ? roundData.updatedAt.toMillis() : roundData.updatedAt.seconds ? roundData.updatedAt.seconds * 1000 : Date.now();
+                    targetTime = updatedMs + 24 * 60 * 60 * 1000;
+                }
+                startCountdown(targetTime);
             }
         }, (error) => {
             console.error(`Error listening to ${rid}:`, error);
         });
+        roundsUnsubscribers.push(unsub);
     });
 }
 
+// Start Countdown Timer
+function startCountdown(targetTime) {
+    if (countdownInterval) clearInterval(countdownInterval);
+    
+    const displayEl = document.getElementById("countdownDisplay");
+    const progressEl = document.getElementById("countdownProgress");
+    if (!displayEl) return;
+    
+    function tick() {
+        const now = Date.now();
+        const diff = Math.max(0, targetTime - now);
+        
+        if (diff === 0) {
+            displayEl.innerHTML = `00<span class="text-blood">:</span>00<span class="text-blood">:</span>00`;
+            if (progressEl) progressEl.style.width = "0%";
+            clearInterval(countdownInterval);
+            return;
+        }
+        
+        const hours = Math.floor(diff / (1000 * 60 * 60));
+        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+        
+        displayEl.innerHTML = `${String(hours).padStart(2, '0')}<span class="text-blood">:</span>${String(minutes).padStart(2, '0')}<span class="text-blood">:</span>${String(seconds).padStart(2, '0')}`;
+        
+        if (progressEl) {
+            // progress is percentage of 24 hours
+            const percent = (diff / (24 * 60 * 60 * 1000)) * 100;
+            progressEl.style.width = `${percent}%`;
+        }
+    }
+    
+    tick(); // run once immediately
+    countdownInterval = setInterval(tick, 1000);
+}
 
 // Listen to Announcements
 function listenToAnnouncements() {
+    if (announcementsUnsubscriber) announcementsUnsubscriber();
+
     const annRef = collection(db, "announcements");
     const q = query(annRef, orderBy("timestamp", "desc"), limit(5));
     
-    onSnapshot(q, (snapshot) => {
+    announcementsUnsubscriber = onSnapshot(q, (snapshot) => {
         if (snapshot.empty) {
-            announcementsFeed.innerHTML = `<p style="color: rgba(255,255,255,0.5); font-size: 0.9rem;">No new communications.</p>`;
+            announcementsFeed.innerHTML = `<p style="color: rgba(255,255,255,0.5); font-size: 0.9rem; padding: 20px; text-align: center;">No new communications.</p>`;
             return;
         }
         
@@ -330,6 +419,57 @@ function listenToAnnouncements() {
         });
     }, (error) => {
         console.error("Error listening to announcements:", error);
+    });
+}
+
+// Load Leaderboard from teams collection
+function loadLeaderboard() {
+    if (leaderboardUnsubscriber) leaderboardUnsubscriber();
+    
+    const teamsRef = collection(db, "teams");
+    const q = query(teamsRef, limit(10));
+    
+    leaderboardUnsubscriber = onSnapshot(q, (snapshot) => {
+        const leaderboardTableBody = document.getElementById("leaderboardTableBody");
+        if (!leaderboardTableBody) return;
+        
+        if (snapshot.empty) {
+            leaderboardTableBody.innerHTML = `<tr><td colspan="3" style="text-align: center; color: rgba(255,255,255,0.5); padding: 20px;">No teams registered yet.</td></tr>`;
+            return;
+        }
+        
+        const teams = [];
+        snapshot.forEach((doc) => {
+            const team = doc.data();
+            teams.push({
+                name: team.teamName || "Unnamed Team",
+                score: team.score || 0
+            });
+        });
+        
+        // Sort teams by score desc
+        teams.sort((a, b) => b.score - a.score);
+        
+        leaderboardTableBody.innerHTML = "";
+        teams.forEach((team, index) => {
+            const tr = document.createElement("tr");
+            tr.className = "hover:bg-white/5 transition-colors";
+            
+            const rankStr = String(index + 1).padStart(2, '0');
+            let rankClass = "text-muted-foreground";
+            if (index === 0) rankClass = "text-gold";
+            else if (index === 1) rankClass = "text-slate-300";
+            else if (index === 2) rankClass = "text-amber-600";
+            
+            tr.innerHTML = `
+                <td class="py-4 px-6 ${rankClass}">${rankStr}</td>
+                <td class="py-4 px-6 text-foreground font-impact tracking-widest text-lg" style="font-family: 'Bebas Neue', sans-serif;">${sanitizeHTML(team.name)}</td>
+                <td class="py-4 px-6 text-blood text-right font-mono">${team.score}</td>
+            `;
+            leaderboardTableBody.appendChild(tr);
+        });
+    }, (error) => {
+        console.error("Error listening to leaderboard:", error);
     });
 }
 

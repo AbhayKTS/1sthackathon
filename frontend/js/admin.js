@@ -84,8 +84,40 @@ const annSubmitBtn = document.getElementById("annSubmitBtn");
 
 let currentAdminDoc = null;
 
+// Firebase listener unsubscribers and memory cache
+let teamsUnsubscriber = null;
+let submissionsUnsubscriber = null;
+
+const teamCache = new Map();
+const roundCache = new Map();
+
+function cleanupListeners() {
+    if (teamsUnsubscriber) {
+        teamsUnsubscriber();
+        teamsUnsubscriber = null;
+    }
+    if (submissionsUnsubscriber) {
+        submissionsUnsubscriber();
+        submissionsUnsubscriber = null;
+    }
+}
+
+async function precacheRounds() {
+    try {
+        const roundsRef = collection(db, "rounds");
+        const snapshot = await getDocs(roundsRef);
+        snapshot.forEach(d => {
+            roundCache.set(d.id, d.data().title || d.id);
+        });
+    } catch (e) {
+        console.error("Error pre-caching rounds:", e);
+    }
+}
+
 // Enforce Auth and Admin Role
 onAuthStateChanged(auth, async (user) => {
+    cleanupListeners();
+
     if (!user) {
         window.location.href = '/login.html';
         return;
@@ -105,7 +137,8 @@ onAuthStateChanged(auth, async (user) => {
             currentAdminDoc = data;
             userEmailDisplay.textContent = `ADMIN: ${user.email}`;
             
-            // Load admin data
+            // Precache rounds and load admin data
+            await precacheRounds();
             loadTeams();
             loadSubmissions();
             
@@ -121,6 +154,7 @@ onAuthStateChanged(auth, async (user) => {
 // Logout — clear all session data
 logoutBtn.addEventListener("click", () => {
     if (inactivityTimer) clearTimeout(inactivityTimer);
+    cleanupListeners();
     signOut(auth).then(() => {
         sessionStorage.clear();
         localStorage.removeItem('rh_login_attempts');
@@ -130,8 +164,10 @@ logoutBtn.addEventListener("click", () => {
 
 // Load Teams
 function loadTeams() {
+    if (teamsUnsubscriber) teamsUnsubscriber();
+
     const teamsRef = collection(db, "teams");
-    onSnapshot(teamsRef, (snapshot) => {
+    teamsUnsubscriber = onSnapshot(teamsRef, (snapshot) => {
         statTotalTeams.textContent = snapshot.size;
         
         if (snapshot.empty) {
@@ -142,6 +178,10 @@ function loadTeams() {
         teamsTableBody.innerHTML = "";
         snapshot.forEach((doc) => {
             const team = doc.data();
+            
+            // Populate persistent teamCache
+            teamCache.set(doc.id, team.teamName || 'Unnamed');
+
             const tr = document.createElement("tr");
             
             const membersList = team.members ? team.members.map(m => sanitizeHTML(m.name)).join(", ") : "None";
@@ -160,10 +200,12 @@ function loadTeams() {
 
 // Load Submissions
 function loadSubmissions() {
+    if (submissionsUnsubscriber) submissionsUnsubscriber();
+
     const submissionsRef = collection(db, "submissions");
     const q = query(submissionsRef, orderBy("submittedAt", "desc"));
     
-    onSnapshot(q, async (snapshot) => {
+    submissionsUnsubscriber = onSnapshot(q, (snapshot) => {
         statTotalSubmissions.textContent = snapshot.size;
         
         if (snapshot.empty) {
@@ -171,47 +213,53 @@ function loadSubmissions() {
             return;
         }
         
-        // Cache team and round names to avoid excessive reads
-        const teamNames = {};
-        const roundNames = {};
-        
         submissionsTableBody.innerHTML = "";
         
-        for (let sDoc of snapshot.docs) {
+        snapshot.forEach((sDoc) => {
             const sub = sDoc.data();
+            const subId = sDoc.id;
+            const teamId = sub.teamId;
+            const roundId = sub.roundId;
             
-            // Resolve Team Name
-            if (!teamNames[sub.teamId]) {
-                try {
-                    const teamSnap = await getDoc(doc(db, "teams", sub.teamId));
-                    teamNames[sub.teamId] = teamSnap.exists() ? teamSnap.data().teamName : sub.teamId;
-                } catch(e) {
-                    teamNames[sub.teamId] = sub.teamId;
-                }
-            }
-            
-            // Resolve Round Name
-            if (!roundNames[sub.roundId]) {
-                try {
-                    const roundSnap = await getDoc(doc(db, "rounds", sub.roundId));
-                    roundNames[sub.roundId] = roundSnap.exists() ? roundSnap.data().title : sub.roundId;
-                } catch(e) {
-                    roundNames[sub.roundId] = sub.roundId;
-                }
-            }
+            const teamName = teamCache.get(teamId) || teamId;
+            const roundName = roundCache.get(roundId) || roundId;
             
             const date = sub.submittedAt ? sub.submittedAt.toDate().toLocaleString() : "Unknown";
             
             const tr = document.createElement("tr");
             tr.innerHTML = `
-                <td><strong>${sanitizeHTML(teamNames[sub.teamId])}</strong></td>
-                <td>${sanitizeHTML(roundNames[sub.roundId])}</td>
+                <td><strong id="sub-team-${subId}">${sanitizeHTML(teamName)}</strong></td>
+                <td><span id="sub-round-${subId}">${sanitizeHTML(roundName)}</span></td>
                 <td><a href="${sanitizeHTML(sub.githubLink)}" target="_blank" rel="noopener noreferrer">Repo ↗</a></td>
                 <td><a href="${sanitizeHTML(sub.demoLink)}" target="_blank" rel="noopener noreferrer">Demo ↗</a></td>
                 <td style="font-size: 0.8rem; color: rgba(255,255,255,0.5);">${date}</td>
             `;
             submissionsTableBody.appendChild(tr);
-        }
+            
+            // Resolve Team Name in background if missing from cache
+            if (!teamCache.has(teamId)) {
+                getDoc(doc(db, "teams", teamId)).then(teamSnap => {
+                    if (teamSnap.exists()) {
+                        const name = teamSnap.data().teamName || teamId;
+                        teamCache.set(teamId, name);
+                        const cell = document.getElementById(`sub-team-${subId}`);
+                        if (cell) cell.textContent = name;
+                    }
+                }).catch(err => console.error("Error fetching team in background:", err));
+            }
+            
+            // Resolve Round Name in background if missing from cache
+            if (!roundCache.has(roundId)) {
+                getDoc(doc(db, "rounds", roundId)).then(roundSnap => {
+                    if (roundSnap.exists()) {
+                        const title = roundSnap.data().title || roundId;
+                        roundCache.set(roundId, title);
+                        const cell = document.getElementById(`sub-round-${subId}`);
+                        if (cell) cell.textContent = title;
+                    }
+                }).catch(err => console.error("Error fetching round in background:", err));
+            }
+        });
     }, (error) => {
         console.error("Error loading submissions:", error);
     });

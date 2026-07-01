@@ -76,6 +76,22 @@
     color: var(--color-foreground);
     font-family: var(--font-jp);
   }
+  
+  /* Custom styled scrollbar matching Tokyo Revengers theme */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--background);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--blood);
+  }
 }
 
 @utility text-stroke-blood {
