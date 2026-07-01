@@ -55,10 +55,30 @@ export interface InviteRecord {
  */
 export async function checkInviteStatus(email: string): Promise<InviteRecord> {
   const db = getAdminDb();
+  const normalizedEmail = email.toLowerCase();
+
+  // Option B: Check if the user is an admin/super_admin to bypass whitelist
+  const userSnap = await db
+    .collection('users')
+    .where('email', '==', normalizedEmail)
+    .limit(1)
+    .get();
+
+  if (!userSnap.empty) {
+    const userData = userSnap.docs[0]!.data();
+    if (userData['role'] === 'admin' || userData['role'] === 'super_admin') {
+      return {
+        id: `admin-${userSnap.docs[0]!.id}`,
+        teamName: 'System Administration',
+        leaderName: 'Admin',
+        status: 'Verified',
+      };
+    }
+  }
 
   const snap = await db
     .collection('invitedTeams')
-    .where('leaderEmail', '==', email.toLowerCase())
+    .where('leaderEmail', '==', normalizedEmail)
     .limit(1)
     .get();
 
@@ -208,17 +228,38 @@ export async function verifyOtpAndCreateSession(
 
   // ─── 1. Find the invite record ───────────────────────────────────────────
   // Re-check here to associate the user with the right invitedTeamId
-  const inviteSnap = await db
-    .collection('invitedTeams')
-    .where('leaderEmail', '==', normalizedEmail)
+  let invitedTeamId = '';
+  let isAdmin = false;
+  let existingRole: UserRole | null = null;
+
+  const userSnap = await db
+    .collection('users')
+    .where('email', '==', normalizedEmail)
     .limit(1)
     .get();
 
-  if (inviteSnap.empty) {
-    throw Errors.notInvited();
+  if (!userSnap.empty) {
+    const userData = userSnap.docs[0]!.data();
+    if (userData['role'] === 'admin' || userData['role'] === 'super_admin') {
+      isAdmin = true;
+      existingRole = userData['role'] as UserRole;
+      invitedTeamId = `admin-${userSnap.docs[0]!.id}`;
+    }
   }
 
-  const invitedTeamId = inviteSnap.docs[0]!.id;
+  if (!isAdmin) {
+    const inviteSnap = await db
+      .collection('invitedTeams')
+      .where('leaderEmail', '==', normalizedEmail)
+      .limit(1)
+      .get();
+
+    if (inviteSnap.empty) {
+      throw Errors.notInvited();
+    }
+
+    invitedTeamId = inviteSnap.docs[0]!.id;
+  }
 
   // ─── 2. Find a valid OTP (query by email only, filter in memory) ─────────
   // Filtering in memory avoids composite index requirements.
@@ -303,17 +344,17 @@ export async function verifyOtpAndCreateSession(
   }
 
   // ─── 7. Upsert the Firestore users doc ───────────────────────────────────
-  const role: UserRole = 'participant_leader';
+  const role: UserRole = isAdmin && existingRole ? existingRole : 'participant_leader';
   const userRef = db.collection('users').doc(uid);
-  const userSnap = await userRef.get();
+  const userDocSnap = await userRef.get();
 
-  if (!userSnap.exists) {
+  if (!userDocSnap.exists) {
     await userRef.set({
       uid,
       email: normalizedEmail,
       role,
       teamId: null,
-      invitedTeamId,
+      invitedTeamId: isAdmin ? null : invitedTeamId,
       displayName: null,
       createdAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),
@@ -328,10 +369,12 @@ export async function verifyOtpAndCreateSession(
   }
 
   // ─── 8. Update invitedTeams status → Verified ────────────────────────────
-  await db.collection('invitedTeams').doc(invitedTeamId).update({
-    status: 'Verified',
-    verifiedAt: FieldValue.serverTimestamp(),
-  });
+  if (!isAdmin) {
+    await db.collection('invitedTeams').doc(invitedTeamId).update({
+      status: 'Verified',
+      verifiedAt: FieldValue.serverTimestamp(),
+    });
+  }
 
   // ─── 9. Issue Firebase custom token ──────────────────────────────────────
   // Client uses signInWithCustomToken(auth, customToken) to get a real ID token.
