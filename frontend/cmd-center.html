@@ -174,14 +174,25 @@
         <div class="main-column">
             
             <!-- Analytics -->
-            <div class="card" style="border-left-color: var(--white); display: flex; justify-content: space-around;">
-                <div style="text-align: center;">
-                    <h3 style="font-family: var(--font-mono); color: var(--strike-red); margin-bottom: 10px; font-size: 1rem;">TOTAL TEAMS</h3>
-                    <h2 id="statTotalTeams" style="font-size: 2.5rem; color: var(--white);">0</h2>
-                </div>
-                <div style="text-align: center;">
-                    <h3 style="font-family: var(--font-mono); color: var(--strike-red); margin-bottom: 10px; font-size: 1rem;">SUBMISSIONS</h3>
-                    <h2 id="statTotalSubmissions" style="font-size: 2.5rem; color: var(--white);">0</h2>
+            <div class="card" style="border-left-color: var(--white);">
+                <div class="card-header">Conversion Funnel & Metrics</div>
+                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; text-align: center; margin-top: 20px;">
+                    <div>
+                        <h3 style="font-family: var(--font-mono); color: var(--strike-red); margin-bottom: 10px; font-size: 0.8rem;">INVITED TEAMS</h3>
+                        <h2 id="statInvited" style="font-size: 2.5rem; color: var(--white);">0</h2>
+                    </div>
+                    <div>
+                        <h3 style="font-family: var(--font-mono); color: var(--strike-red); margin-bottom: 10px; font-size: 0.8rem;">VERIFIED USERS</h3>
+                        <h2 id="statUsers" style="font-size: 2.5rem; color: var(--white);">0</h2>
+                    </div>
+                    <div>
+                        <h3 style="font-family: var(--font-mono); color: var(--strike-red); margin-bottom: 10px; font-size: 0.8rem;">PROFILES SUBMITTED</h3>
+                        <h2 id="statSubmitted" style="font-size: 2.5rem; color: var(--white);">0</h2>
+                    </div>
+                    <div>
+                        <h3 style="font-family: var(--font-mono); color: var(--strike-red); margin-bottom: 10px; font-size: 0.8rem;">APPROVED TEAMS</h3>
+                        <h2 id="statApproved" style="font-size: 2.5rem; color: var(--white);">0</h2>
+                    </div>
                 </div>
             </div>
 

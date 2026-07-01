@@ -66,8 +66,10 @@ function sanitizeHTML(str) {
 const userEmailDisplay = document.getElementById("userEmailDisplay");
 const logoutBtn = document.getElementById("logoutBtn");
 
-const statTotalTeams = document.getElementById("statTotalTeams");
-const statTotalSubmissions = document.getElementById("statTotalSubmissions");
+const statInvited = document.getElementById("statInvited");
+const statUsers = document.getElementById("statUsers");
+const statSubmitted = document.getElementById("statSubmitted");
+const statApproved = document.getElementById("statApproved");
 
 const teamsTableBody = document.getElementById("teamsTableBody");
 const submissionsTableBody = document.getElementById("submissionsTableBody");
@@ -141,6 +143,7 @@ onAuthStateChanged(auth, async (user) => {
             await precacheRounds();
             loadTeams();
             loadSubmissions();
+            fetchAnalytics(user);
             
         } else {
             // No user doc found, redirect to login
@@ -150,6 +153,36 @@ onAuthStateChanged(auth, async (user) => {
         console.error("Error verifying admin:", error);
     }
 });
+
+async function fetchAnalytics(user) {
+    try {
+        const token = await user.getIdToken();
+        const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+            ? 'http://localhost:3001/api' 
+            : '/api';
+
+        const res = await fetch(`${API_BASE}/admin/analytics`, {
+            headers: {
+                "Authorization": `Bearer ${token}`
+            }
+        });
+
+        if (res.ok) {
+            const data = await res.json();
+            if (data.success && data.data) {
+                const metrics = data.data;
+                if (statInvited) statInvited.textContent = metrics.totalInvited;
+                if (statUsers) statUsers.textContent = metrics.totalUsers;
+                if (statSubmitted) statSubmitted.textContent = metrics.totalTeamsSubmitted;
+                if (statApproved) statApproved.textContent = metrics.totalTeamsApproved;
+            }
+        } else {
+            console.error("Failed to fetch analytics", await res.text());
+        }
+    } catch (e) {
+        console.error("Error fetching analytics", e);
+    }
+}
 
 // Logout — clear all session data
 logoutBtn.addEventListener("click", () => {
