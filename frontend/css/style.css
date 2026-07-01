@@ -1099,8 +1099,6 @@ section {
     border-left: 4px solid var(--strike-red);
 }
 
-object-position: center 45%;
-
 .timeline-item:nth-child(even) .timeline-content {
     border-left: none;
     border-right: 4px solid var(--strike-red);

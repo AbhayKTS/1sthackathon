@@ -38,14 +38,17 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Smooth Scroll
+    // Guard: skip anchors where href is exactly "#" — querySelector("#") is an invalid
+    // CSS selector and throws a SyntaxError, breaking any click handler on the page.
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
         anchor.addEventListener('click', function (e) {
+            const href = this.getAttribute('href');
+            // Only intercept when there is a real target ID (not a bare "#")
+            if (!href || href === '#') return;
             e.preventDefault();
-            const target = document.querySelector(this.getAttribute('href'));
+            const target = document.querySelector(href);
             if (target) {
-                target.scrollIntoView({
-                    behavior: 'smooth'
-                });
+                target.scrollIntoView({ behavior: 'smooth' });
             }
         });
     });

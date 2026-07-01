@@ -48,14 +48,14 @@ function resetInactivityTimer() {
 });
 resetInactivityTimer();
 
-// DOM Elements
+// DOM Elements — all reads guarded because some elements only exist when a round is active
 const userEmailDisplay = document.getElementById("userEmailDisplay");
 const logoutBtn = document.getElementById("logoutBtn");
 const teamNameDisplay = document.getElementById("teamNameDisplay");
 const teamIdDisplay = document.getElementById("teamIdDisplay");
 const teamMembersList = document.getElementById("teamMembersList");
 
-const noActiveRoundMsg = document.getElementById("noActiveRoundMsg");
+const noActiveRoundMsg = document.getElementById("noActiveRoundMsg");       // may not exist
 const activeRoundFormContainer = document.getElementById("activeRoundFormContainer");
 const activeRoundTitle = document.getElementById("activeRoundTitle");
 const activeRoundDesc = document.getElementById("activeRoundDesc");
@@ -180,9 +180,9 @@ function loadActiveRounds() {
                 activeRoundId = roundDoc.id;
                 const roundData = roundDoc.data();
                 
-                noActiveRoundMsg.style.display = "none";
-                activeRoundFormContainer.style.display = "block";
-                teamStatusBadge.style.display = "inline-block";
+                if (noActiveRoundMsg) noActiveRoundMsg.style.display = "none";
+                if (activeRoundFormContainer) activeRoundFormContainer.style.display = "block";
+                if (teamStatusBadge) teamStatusBadge.style.display = "inline-block";
                 
                 activeRoundTitle.textContent = roundData.title || "Active Round";
                 activeRoundDesc.textContent = roundData.description || "Submit your payload below.";
@@ -333,49 +333,57 @@ function listenToAnnouncements() {
     });
 }
 
-// Handle Submissions
-submissionForm.addEventListener("submit", async (e) => {
+// Handle Submissions — guard: submissionForm only exists in the DOM when a round is active
+if (submissionForm) {
+  submissionForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     
     if (!currentTeamId) {
-        submissionStatus.textContent = "Error: You are not assigned to a team.";
-        submissionStatus.style.color = "var(--strike-red)";
+        if (submissionStatus) {
+            submissionStatus.textContent = "Error: You are not assigned to a team.";
+            submissionStatus.style.color = "var(--strike-red)";
+        }
         return;
     }
     
     if (!activeRoundId) {
-        submissionStatus.textContent = "Error: No active round found.";
-        submissionStatus.style.color = "var(--strike-red)";
+        if (submissionStatus) {
+            submissionStatus.textContent = "Error: No active round found.";
+            submissionStatus.style.color = "var(--strike-red)";
+        }
         return;
     }
     
-    submitMissionBtn.disabled = true;
-    submitMissionBtn.textContent = "TRANSMITTING...";
-    submissionStatus.textContent = "";
+    if (submitMissionBtn) { submitMissionBtn.disabled = true; submitMissionBtn.textContent = "TRANSMITTING..."; }
+    if (submissionStatus) submissionStatus.textContent = "";
     
-    const githubLink = document.getElementById("githubLink").value;
-    const demoLink = document.getElementById("demoLink").value;
+    const githubLink = document.getElementById("githubLink")?.value || "";
+    const demoLink = document.getElementById("demoLink")?.value || "";
     
     try {
         await addDoc(collection(db, "submissions"), {
             teamId: currentTeamId,
             roundId: activeRoundId,
-            githubLink: githubLink,
-            demoLink: demoLink,
+            githubLink,
+            demoLink,
             submittedBy: auth.currentUser.uid,
             submittedAt: serverTimestamp()
         });
         
-        submissionStatus.textContent = "Transmission successful. Payload delivered.";
-        submissionStatus.style.color = "#4ade80"; // green
+        if (submissionStatus) {
+            submissionStatus.textContent = "Transmission successful. Payload delivered.";
+            submissionStatus.style.color = "#4ade80";
+        }
         submissionForm.reset();
         
     } catch (error) {
         console.error("Submission error:", error);
-        submissionStatus.textContent = "Transmission failed. Check permissions.";
-        submissionStatus.style.color = "var(--strike-red)";
+        if (submissionStatus) {
+            submissionStatus.textContent = "Transmission failed. Check permissions.";
+            submissionStatus.style.color = "var(--strike-red)";
+        }
     } finally {
-        submitMissionBtn.disabled = false;
-        submitMissionBtn.textContent = "TRANSMIT CODE";
+        if (submitMissionBtn) { submitMissionBtn.disabled = false; submitMissionBtn.textContent = "TRANSMIT CODE"; }
     }
-});
+  });
+}

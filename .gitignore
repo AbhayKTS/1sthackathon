@@ -26,3 +26,7 @@ build/
 
 # Temp
 temp_repo
+
+
+# MCP Server
+.playwright-mcp

@@ -20,7 +20,9 @@
         }
 
         .auth-panel {
-            background: rgba(0, 0, 0, 0.6);
+            background: rgba(0, 0, 0, 0.88);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
             padding: 50px 40px;
             border: 1px solid rgba(255, 255, 255, 0.05);
             border-top: 2px solid var(--strike-red);
@@ -172,10 +174,10 @@
 
         <form id="loginForm">
             <div class="form-group">
-                <input type="email" id="email" placeholder="EMAIL ADDRESS" required>
+                <input type="email" id="email" placeholder="EMAIL ADDRESS" autocomplete="username" required>
             </div>
             <div class="form-group" style="margin-bottom: 20px;">
-                <input type="password" id="password" placeholder="PASSWORD" required>
+                <input type="password" id="password" placeholder="PASSWORD" autocomplete="current-password" required>
             </div>
             <button type="submit" class="btn-primary" style="width: 100%;" id="loginBtn">ACCESS TERMINAL</button>
             <div style="text-align: center; margin-top: 15px;">

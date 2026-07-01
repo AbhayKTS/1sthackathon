@@ -78,7 +78,7 @@
                 </div>
 
                 <div class="hero-ctas">
-                    <a href="#" class="btn-tactical btn-red">INITIATE_RECRUITMENT</a>
+                    <a href="/login.html" class="btn-tactical btn-red">INITIATE_RECRUITMENT</a>
                     <a href="#mission" class="btn-tactical btn-outline">VIEW_INTEL</a>
                 </div>
                 <div class="hero-timers">
@@ -1124,73 +1124,8 @@
     <script type="module" src="js/firebase-join.js"></script>
     <script type="module" src="js/script.js"></script>
 
-<!-- Marquee Script -->
-<script>
-document.addEventListener("DOMContentLoaded", function() {
-    const wrapper = document.querySelector('.squad-marquee-wrapper');
-    const grid = document.querySelector('.squad-grid');
-    const leftArrow = document.querySelector('.left-arrow');
-    const rightArrow = document.querySelector('.right-arrow');
-    
-    if (!wrapper || !grid || !leftArrow || !rightArrow) return;
-    
-    let scrollSpeed = 1;
-    let isPaused = false;
-    let pauseTimeout;
-    
-    // Auto-scroll function
-    function scrollMarquee() {
-        if (!isPaused) {
-            wrapper.scrollLeft += scrollSpeed;
-            
-            // Loop logic: reset when reaching half the total scroll width
-            // Since we duplicated exactly 1 set of cards, halfway is scrollWidth / 2
-            if (scrollSpeed > 0 && wrapper.scrollLeft >= (grid.scrollWidth / 2)) {
-                wrapper.scrollLeft -= (grid.scrollWidth / 2);
-            } else if (scrollSpeed < 0 && wrapper.scrollLeft <= 0) {
-                wrapper.scrollLeft += (grid.scrollWidth / 2);
-            }
-        }
-        requestAnimationFrame(scrollMarquee);
-    }
-    
-    // Start auto-scroll
-    requestAnimationFrame(scrollMarquee);
-    
-    // Pause on hover
-    const pauseElements = [grid, leftArrow, rightArrow];
-    pauseElements.forEach(el => {
-        el.addEventListener('mouseenter', () => isPaused = true);
-        el.addEventListener('mouseleave', () => {
-            // Only unpause if we aren't in a click-scroll timeout
-            if (!pauseTimeout) isPaused = false;
-        });
-    });
-    
-    function pauseForScroll() {
-        isPaused = true;
-        clearTimeout(pauseTimeout);
-        pauseTimeout = setTimeout(() => {
-            pauseTimeout = null;
-            // Only unpause if mouse is not currently over the elements
-            if (!grid.matches(':hover') && !leftArrow.matches(':hover') && !rightArrow.matches(':hover')) {
-                isPaused = false;
-            }
-        }, 600); // 600ms pause to allow smooth scroll to finish
-    }
-
-    // Arrow clicks
-    leftArrow.addEventListener('click', () => {
-        pauseForScroll();
-        wrapper.scrollBy({ left: -310, behavior: 'smooth' }); // card width + gap
-    });
-    
-    rightArrow.addEventListener('click', () => {
-        pauseForScroll();
-        wrapper.scrollBy({ left: 310, behavior: 'smooth' }); // card width + gap
-    });
-});
-</script>
+<!-- Marquee controller — extracted to external module to comply with CSP -->
+<script type="module" src="js/marquee.js"></script>
 
 </body>
 

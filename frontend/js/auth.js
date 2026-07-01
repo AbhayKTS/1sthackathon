@@ -73,6 +73,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const authTitle = document.getElementById("authTitle");
     const toggleAuthMode = document.getElementById("toggleAuthMode");
 
+    const passwordInput = document.getElementById("password");
+
     let isSignupMode = false;
 
     if (!loginForm || !googleLoginBtn || !errorEl) return;
@@ -85,10 +87,14 @@ document.addEventListener("DOMContentLoaded", () => {
                 authTitle.textContent = "Create Account";
                 submitBtn.textContent = "REGISTER";
                 toggleAuthMode.textContent = "Already have an account? Log in";
+                // Signal to password managers that this is a new-password field
+                if (passwordInput) passwordInput.setAttribute("autocomplete", "new-password");
             } else {
                 authTitle.textContent = "Authentication Required";
                 submitBtn.textContent = "ACCESS TERMINAL";
                 toggleAuthMode.textContent = "Don't have an account? Sign up";
+                // Restore to credential lookup
+                if (passwordInput) passwordInput.setAttribute("autocomplete", "current-password");
             }
             errorEl.textContent = "";
         });
