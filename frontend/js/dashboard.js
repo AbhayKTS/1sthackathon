@@ -364,13 +364,26 @@ function loadActiveRounds() {
  
                 if(heroRoundTitle) heroRoundTitle.innerHTML = `${topText}<br /><span class="text-blood" style="animation: flicker 4s infinite">${bottomText}</span>`;
                 
-                // Initialize countdown target (24 hours from updatedAt, or 24h from now as fallback)
-                let targetTime = Date.now() + 24 * 60 * 60 * 1000;
-                if (roundData.updatedAt) {
+                // Initialize countdown target
+                let targetTime = null;
+                
+                if (roundData.submissionDeadline) {
+                    const deadlineMs = roundData.submissionDeadline.toMillis ? roundData.submissionDeadline.toMillis() : roundData.submissionDeadline.seconds ? roundData.submissionDeadline.seconds * 1000 : null;
+                    if (deadlineMs) targetTime = deadlineMs;
+                } else if (roundData.updatedAt) {
+                    // Fallback to 24h after activation if no deadline is set
                     const updatedMs = roundData.updatedAt.toMillis ? roundData.updatedAt.toMillis() : roundData.updatedAt.seconds ? roundData.updatedAt.seconds * 1000 : Date.now();
                     targetTime = updatedMs + 24 * 60 * 60 * 1000;
                 }
-                startCountdown(targetTime);
+                
+                if (targetTime) {
+                    startCountdown(targetTime);
+                } else {
+                    const displayEl = document.getElementById("countdownDisplay");
+                    if (displayEl) displayEl.innerHTML = `<span class="text-blood text-3xl">TBA</span>`;
+                    const progressEl = document.getElementById("countdownProgress");
+                    if (progressEl) progressEl.style.width = "0%";
+                }
             }
         }, (error) => {
             console.error(`Error listening to ${rid}:`, error);
@@ -527,14 +540,32 @@ if (submissionForm) {
     const demoLink = document.getElementById("demoLink")?.value || "";
     
     try {
-        await addDoc(collection(db, "submissions"), {
+        const idToken = await auth.currentUser.getIdToken(true);
+        const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+            ? 'http://localhost:3001/api' 
+            : '/api';
+
+        const payload = {
             teamId: currentTeamId,
             roundId: activeRoundId,
             githubLink,
-            demoLink,
-            submittedBy: auth.currentUser.uid,
-            submittedAt: serverTimestamp()
+            demoLink
+        };
+
+        const response = await fetch(`${API_BASE}/submission/submit`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${idToken}`
+            },
+            body: JSON.stringify(payload)
         });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            throw new Error(result.error?.message || 'Failed to submit payload');
+        }
         
         if (submissionStatus) {
             submissionStatus.textContent = "Transmission successful. Payload delivered.";

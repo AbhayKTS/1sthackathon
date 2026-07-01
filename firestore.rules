@@ -109,13 +109,10 @@ service cloud.firestore {
     }
 
     // ─── Existing: Submissions ───────────────────────────────────────────
-    // Any authenticated (non-anonymous) user can create.
-    // TODO Phase 9: restrict create to leader of an approved team, enforce deadline via Admin SDK.
+    // Any authenticated user can read. Writes are handled via the Admin SDK API.
     match /submissions/{subId} {
       allow read: if request.auth != null;
-      allow create: if request.auth != null
-        && request.auth.token.firebase.sign_in_provider != 'anonymous';
-      allow update, delete: if isAdminOrSuperAdmin();
+      allow create, update, delete: if false;
     }
 
     // ─── Default: Deny Everything Else ───────────────────────────────────
