@@ -75,6 +75,12 @@ service cloud.firestore {
       allow create, delete: if false;
     }
 
+    // ─── Phase 12: Support Tickets ─────────────────────────────────────────
+    match /tickets/{docId} {
+      allow read: if request.auth != null && (resource.data.userId == request.auth.uid || isAdminOrSuperAdmin());
+      allow write: if false;
+    }
+
     // ─── Existing: Join Gang Leads (Landing page interest form) ──────────
     // Any authenticated user (including anonymous) can create.
     match /joinGangLeads/{docId} {

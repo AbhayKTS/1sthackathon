@@ -12,7 +12,8 @@ export type NotificationType =
   | 'team_approved' 
   | 'team_rejected' 
   | 'team_need_changes' 
-  | 'submission_received';
+  | 'submission_received'
+  | 'support_reply';
 
 export interface CreateNotificationInput {
   userId: string;

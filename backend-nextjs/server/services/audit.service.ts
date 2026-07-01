@@ -31,6 +31,7 @@ export type AuditAction =
   | 'submission.submitted'
   | 'submission.locked'
   | 'ticket.created'
+  | 'ticket.replied'
   | 'ticket.responded'
   | 'ticket.closed';
 
