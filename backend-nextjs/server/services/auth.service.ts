@@ -20,6 +20,7 @@ import { Errors } from '@/lib/errors';
 import { env } from '@/lib/env';
 import { writeAuditLog } from './audit.service';
 import type { UserRole } from '@/types/auth';
+import { sendEmail } from './email.service';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -374,6 +375,15 @@ export async function verifyOtpAndCreateSession(
       status: 'Verified',
       verifiedAt: FieldValue.serverTimestamp(),
     });
+
+    if (isNewUser) {
+        const loginUrl = env.NEXT_PUBLIC_APP_URL ? `${env.NEXT_PUBLIC_APP_URL}/dashboard` : 'https://revengershack.com/dashboard';
+        sendEmail({
+            to: normalizedEmail,
+            template: 'verified',
+            variables: { loginUrl }
+        }).catch(e => console.error("Failed to send verified email", e));
+    }
   }
 
   // ─── 9. Issue Firebase custom token ──────────────────────────────────────

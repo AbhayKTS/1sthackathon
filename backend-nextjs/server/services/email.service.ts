@@ -14,7 +14,9 @@
  */
 
 import { Resend } from 'resend';
+import { FieldValue } from 'firebase-admin/firestore';
 import { env } from '@/lib/env';
+import { getAdminDb } from '@/lib/firebase-admin';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -131,7 +133,148 @@ function renderOtpEmail(vars: Record<string, string | number>): RenderedEmail {
   };
 }
 
-// ─── Template Router ─────────────────────────────────────────────────────────
+function renderStandardEmail(subject: string, title: string, subtitle: string, bodyHtml: string, textBody: string): RenderedEmail {
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>RevengersHack</title>
+</head>
+<body style="margin:0;padding:0;background:#0a0a0a;font-family:'Segoe UI',Arial,sans-serif;color:#f5f5f5;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;margin:40px auto;">
+    <tr>
+      <td style="background:#111;border:1px solid #2a2a2a;border-radius:4px;padding:40px;">
+        <div style="border-left:3px solid #e50914;padding-left:16px;margin-bottom:32px;">
+          <h1 style="margin:0;color:#e50914;font-size:22px;letter-spacing:4px;text-transform:uppercase;">
+            REVENGERS<span style="color:#fff;">HACK</span>
+          </h1>
+          <p style="margin:4px 0 0;color:#666;font-size:11px;letter-spacing:2px;text-transform:uppercase;">${subtitle}</p>
+        </div>
+        ${bodyHtml}
+        <p style="color:#333;font-size:11px;margin-top:32px;border-top:1px solid #1f1f1f;padding-top:20px;">
+          — Team RevengersHack &nbsp;|&nbsp; This is an automated message.
+        </p>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+
+  const text = [
+    `REVENGERSHACK — ${subtitle}`,
+    '',
+    textBody,
+    '',
+    '— Team RevengersHack',
+  ].join('\n');
+
+  return { subject, html, text };
+}
+
+function renderInvitationEmail(vars: Record<string, string | number>): RenderedEmail {
+  const teamName = vars.teamName as string;
+  const loginUrl = vars.loginUrl as string;
+  return renderStandardEmail(
+    `[REVENGERSHACK] You've been recruited.`,
+    `You've been recruited.`,
+    `INITIATION PROTOCOL`,
+    `<p style="color:#ccc;font-size:14px;line-height:1.6;">Team <strong>${teamName}</strong>,</p>
+     <p style="color:#ccc;font-size:14px;line-height:1.6;">You have been officially recruited for RevengersHack. The underground awaits your arrival.</p>
+     <div style="margin:32px 0;">
+       <a href="${loginUrl}" style="background:#e50914;color:#fff;text-decoration:none;padding:12px 24px;font-size:14px;letter-spacing:2px;font-weight:bold;display:inline-block;">ACCESS PORTAL</a>
+     </div>
+     <p style="color:#555;font-size:12px;line-height:1.6;">If the button doesn't work, copy and paste this link: <br/> <a href="${loginUrl}" style="color:#e50914;">${loginUrl}</a></p>`,
+    `Team ${teamName},\n\nYou have been officially recruited for RevengersHack. The underground awaits your arrival.\n\nAccess the portal here: ${loginUrl}`
+  );
+}
+
+function renderVerifiedEmail(vars: Record<string, string | number>): RenderedEmail {
+  const loginUrl = vars.loginUrl as string;
+  return renderStandardEmail(
+    `[REVENGERSHACK] Clearance level upgraded.`,
+    `Clearance level upgraded.`,
+    `VERIFICATION SUCCESS`,
+    `<p style="color:#ccc;font-size:14px;line-height:1.6;">Your email has been verified.</p>
+     <p style="color:#ccc;font-size:14px;line-height:1.6;">To proceed, you must now lock in your team details. Proceed to the dashboard to complete your squad profile.</p>
+     <div style="margin:32px 0;">
+       <a href="${loginUrl}" style="background:#e50914;color:#fff;text-decoration:none;padding:12px 24px;font-size:14px;letter-spacing:2px;font-weight:bold;display:inline-block;">COMPLETE PROFILE</a>
+     </div>`,
+    `Your email has been verified.\n\nTo proceed, you must now lock in your team details. Access the dashboard to complete your squad profile: ${loginUrl}`
+  );
+}
+
+function renderApprovedEmail(vars: Record<string, string | number>): RenderedEmail {
+  const teamName = vars.teamName as string;
+  const loginUrl = vars.loginUrl as string;
+  return renderStandardEmail(
+    `[REVENGERSHACK] Clearance granted.`,
+    `Clearance granted.`,
+    `APPLICATION APPROVED`,
+    `<p style="color:#ccc;font-size:14px;line-height:1.6;">Team <strong>${teamName}</strong>,</p>
+     <p style="color:#ccc;font-size:14px;line-height:1.6;">Your team profile has been approved by central command. The dashboard is now fully unlocked.</p>
+     <p style="color:#ccc;font-size:14px;line-height:1.6;">Stand by for the first round to begin.</p>
+     <div style="margin:32px 0;">
+       <a href="${loginUrl}" style="background:#e50914;color:#fff;text-decoration:none;padding:12px 24px;font-size:14px;letter-spacing:2px;font-weight:bold;display:inline-block;">ENTER DASHBOARD</a>
+     </div>`,
+    `Team ${teamName},\n\nYour team profile has been approved by central command. The dashboard is now fully unlocked.\n\nEnter Dashboard: ${loginUrl}`
+  );
+}
+
+function renderRejectedEmail(vars: Record<string, string | number>): RenderedEmail {
+  const teamName = vars.teamName as string;
+  return renderStandardEmail(
+    `[REVENGERSHACK] Clearance denied.`,
+    `Clearance denied.`,
+    `APPLICATION REJECTED`,
+    `<p style="color:#ccc;font-size:14px;line-height:1.6;">Team <strong>${teamName}</strong>,</p>
+     <p style="color:#ccc;font-size:14px;line-height:1.6;">We regret to inform you that your application has been rejected by central command.</p>
+     <p style="color:#555;font-size:12px;line-height:1.6;border-top:1px solid #1f1f1f;padding-top:20px;margin-top:20px;">
+       Decisions are final. We thank you for your interest.
+     </p>`,
+    `Team ${teamName},\n\nWe regret to inform you that your application has been rejected by central command.\n\nDecisions are final. We thank you for your interest.`
+  );
+}
+
+function renderNeedChangesEmail(vars: Record<string, string | number>): RenderedEmail {
+  const teamName = vars.teamName as string;
+  const notes = vars.notes as string;
+  const loginUrl = vars.loginUrl as string;
+  return renderStandardEmail(
+    `[REVENGERSHACK] Intel required.`,
+    `Intel required.`,
+    `APPLICATION INCOMPLETE`,
+    `<p style="color:#ccc;font-size:14px;line-height:1.6;">Team <strong>${teamName}</strong>,</p>
+     <p style="color:#ccc;font-size:14px;line-height:1.6;">Admin has requested changes to your team profile before it can be approved.</p>
+     <div style="background:#1a1a1a;border-left:3px solid #f59e0b;padding:16px;margin:24px 0;">
+       <p style="margin:0;color:#ccc;font-size:13px;line-height:1.5;"><em>"${notes}"</em></p>
+     </div>
+     <p style="color:#ccc;font-size:14px;line-height:1.6;">Please log in to address these issues and resubmit.</p>
+     <div style="margin:32px 0;">
+       <a href="${loginUrl}" style="background:#e50914;color:#fff;text-decoration:none;padding:12px 24px;font-size:14px;letter-spacing:2px;font-weight:bold;display:inline-block;">UPDATE PROFILE</a>
+     </div>`,
+    `Team ${teamName},\n\nAdmin has requested changes to your team profile before it can be approved:\n\n"${notes}"\n\nPlease log in to address these issues and resubmit: ${loginUrl}`
+  );
+}
+
+function renderReminderEmail(vars: Record<string, string | number>): RenderedEmail {
+  const teamName = vars.teamName as string;
+  const hoursLeft = vars.hoursLeft as string | number;
+  const loginUrl = vars.loginUrl as string;
+  return renderStandardEmail(
+    `[REVENGERSHACK] Tick tock. ${hoursLeft} hours remain.`,
+    `Time is running out.`,
+    `SUBMISSION DEADLINE`,
+    `<p style="color:#ccc;font-size:14px;line-height:1.6;">Team <strong>${teamName}</strong>,</p>
+     <p style="color:#ccc;font-size:14px;line-height:1.6;">Tick tock. You only have <strong style="color:#fff;">${hoursLeft} hours</strong> remaining to transmit your payload.</p>
+     <p style="color:#ccc;font-size:14px;line-height:1.6;">Lock in your code, defend your turf, or perish.</p>
+     <div style="margin:32px 0;">
+       <a href="${loginUrl}" style="background:#e50914;color:#fff;text-decoration:none;padding:12px 24px;font-size:14px;letter-spacing:2px;font-weight:bold;display:inline-block;">SUBMIT NOW</a>
+     </div>`,
+    `Team ${teamName},\n\nTick tock. You only have ${hoursLeft} hours remaining to transmit your payload.\n\nLock in your code, defend your turf, or perish.\n\nSubmit now: ${loginUrl}`
+  );
+}
 
 function renderTemplate(
   template: EmailTemplate,
@@ -140,15 +283,18 @@ function renderTemplate(
   switch (template) {
     case 'otp':
       return renderOtpEmail(variables);
-
-    // TODO Phase 11: implement remaining templates
     case 'invitation':
+      return renderInvitationEmail(variables);
     case 'verified':
+      return renderVerifiedEmail(variables);
     case 'approved':
+      return renderApprovedEmail(variables);
     case 'rejected':
+      return renderRejectedEmail(variables);
     case 'needChanges':
+      return renderNeedChangesEmail(variables);
     case 'reminder':
-      throw new Error(`Email template "${template}" not yet implemented (Phase 11).`);
+      return renderReminderEmail(variables);
   }
 }
 
@@ -204,37 +350,68 @@ export async function sendEmail(options: SendEmailOptions): Promise<SendEmailRes
     return { success: true, messageId: null, error: null, devMode: true };
   }
 
-  // ─── Production: send via Resend ────────────────────────────────────────
-  try {
-    const result = await resend.emails.send({
-      from: `${env.EMAIL_FROM_NAME} <${env.EMAIL_FROM}>`,
-      to,
-      subject: rendered.subject,
-      html: rendered.html,
-      text: rendered.text,
-    });
+  // ─── Production: send via Resend with retry ─────────────────────────────
+  let attempt = 0;
+  let lastError = '';
+  const maxRetries = 3;
 
-    if (result.error) {
+  while (attempt < maxRetries) {
+    try {
+      attempt++;
+      const result = await resend.emails.send({
+        from: `${env.EMAIL_FROM_NAME} <${env.EMAIL_FROM}>`,
+        to,
+        subject: rendered.subject,
+        html: rendered.html,
+        text: rendered.text,
+      });
+
+      if (result.error) {
+        lastError = result.error.message;
+        if (result.error.message.includes('rate limit') || result.error.message.includes('timeout')) {
+            await new Promise((res) => setTimeout(res, 1000 * attempt)); // exponential backoff
+            continue; // retry
+        } else {
+            break; // don't retry on formatting/auth errors
+        }
+      }
+
+      // Success
+      await logEmailAttempt(to, template, true, null, result.data?.id);
       return {
-        success: false,
-        messageId: null,
-        error: result.error.message,
+        success: true,
+        messageId: result.data?.id ?? null,
+        error: null,
         devMode: false,
       };
+    } catch (err) {
+      lastError = err instanceof Error ? err.message : 'Unknown error';
+      await new Promise((res) => setTimeout(res, 1000 * attempt));
     }
-
-    return {
-      success: true,
-      messageId: result.data?.id ?? null,
-      error: null,
-      devMode: false,
-    };
-  } catch (err) {
-    return {
-      success: false,
-      messageId: null,
-      error: err instanceof Error ? err.message : 'Unknown error',
-      devMode: false,
-    };
   }
+
+  // Failure after retries
+  await logEmailAttempt(to, template, false, lastError, null);
+  return {
+    success: false,
+    messageId: null,
+    error: lastError,
+    devMode: false,
+  };
+}
+
+async function logEmailAttempt(to: string, template: string, success: boolean, error: string | null, messageId: string | null | undefined) {
+    try {
+        const db = getAdminDb();
+        await db.collection('emailLogs').add({
+            to,
+            template,
+            success,
+            error,
+            messageId: messageId || null,
+            timestamp: FieldValue.serverTimestamp()
+        });
+    } catch (e) {
+        console.error("Failed to write to emailLogs", e);
+    }
 }

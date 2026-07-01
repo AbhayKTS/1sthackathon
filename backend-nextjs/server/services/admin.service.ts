@@ -9,6 +9,8 @@ import { getAdminDb } from '@/lib/firebase-admin';
 import { Errors } from '@/lib/errors';
 import { writeAuditLog, type AuditAction } from './audit.service';
 import { createTeamNotification } from './notification.service';
+import { sendEmail } from './email.service';
+import { env } from '@/lib/env';
 
 export type ReviewAction = 'approve' | 'reject' | 'needChanges';
 
@@ -31,6 +33,9 @@ export async function reviewTeam(adminUid: string, input: ReviewTeamInput): Prom
     throw Errors.validation("Notes are required when requesting changes.");
   }
 
+  let leaderId = '';
+  let teamName = 'Hacker';
+
   await db.runTransaction(async (tx) => {
     const snap = await tx.get(teamRef);
     if (!snap.exists) {
@@ -38,6 +43,8 @@ export async function reviewTeam(adminUid: string, input: ReviewTeamInput): Prom
     }
 
     const teamData = snap.data()!;
+    leaderId = teamData['leaderId'];
+    teamName = teamData['name'] || 'Hacker';
     const serverUpdatedAt = teamData['updatedAt'];
     let serverUpdatedMs = 0;
 
@@ -103,13 +110,28 @@ export async function reviewTeam(adminUid: string, input: ReviewTeamInput): Prom
     ip: null,
   });
 
-  // Notifications
-  if (input.action === 'approve') {
-      await createTeamNotification(input.teamId, 'team_approved', 'Clearance Granted', 'Your team profile has been approved. The dashboard is now fully unlocked.');
-  } else if (input.action === 'reject') {
-      await createTeamNotification(input.teamId, 'team_rejected', 'Clearance Denied', 'Your team application has been rejected by central command.');
-  } else if (input.action === 'needChanges') {
-      await createTeamNotification(input.teamId, 'team_need_changes', 'Intel Required', 'Admin has requested changes to your team profile. Please address them and resubmit.');
+  // Notifications and Emails
+  try {
+      if (leaderId) {
+          const userSnap = await db.collection('users').doc(leaderId).get();
+          if (userSnap.exists) {
+              const leaderEmail = userSnap.data()!.email;
+              const loginUrl = env.NEXT_PUBLIC_APP_URL ? `${env.NEXT_PUBLIC_APP_URL}/login` : 'https://revengershack.com/login';
+
+              if (input.action === 'approve') {
+                  await createTeamNotification(input.teamId, 'team_approved', 'Clearance Granted', 'Your team profile has been approved. The dashboard is now fully unlocked.');
+                  sendEmail({ to: leaderEmail, template: 'approved', variables: { teamName, loginUrl } }).catch(console.error);
+              } else if (input.action === 'reject') {
+                  await createTeamNotification(input.teamId, 'team_rejected', 'Clearance Denied', 'Your team application has been rejected by central command.');
+                  sendEmail({ to: leaderEmail, template: 'rejected', variables: { teamName } }).catch(console.error);
+              } else if (input.action === 'needChanges') {
+                  await createTeamNotification(input.teamId, 'team_need_changes', 'Intel Required', 'Admin has requested changes to your team profile. Please address them and resubmit.');
+                  sendEmail({ to: leaderEmail, template: 'needChanges', variables: { teamName, notes: input.notes || '', loginUrl } }).catch(console.error);
+              }
+          }
+      }
+  } catch (e) {
+      console.error("Failed to send review notifications/emails", e);
   }
 }
 

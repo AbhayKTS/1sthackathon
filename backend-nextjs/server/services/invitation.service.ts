@@ -8,6 +8,8 @@ import { FieldValue } from 'firebase-admin/firestore';
 import { getAdminDb } from '@/lib/firebase-admin';
 import { writeAuditLog } from './audit.service';
 import type { UserRole } from '@/types/auth';
+import { sendEmail } from './email.service';
+import { env } from '@/lib/env';
 
 export interface CsvRow {
   teamName: string;
@@ -96,6 +98,17 @@ export async function importInvitations(
     try {
       await batch.commit();
       result.imported += chunk.length;
+      
+      // Phase 11: Fire off invitation emails asynchronously
+      const loginUrl = env.NEXT_PUBLIC_APP_URL ? `${env.NEXT_PUBLIC_APP_URL}/login` : 'https://revengershack.com/login';
+      Promise.allSettled(chunk.map(record => 
+        sendEmail({
+            to: record.leaderEmail.toLowerCase().trim(),
+            template: 'invitation',
+            variables: { teamName: record.teamName, loginUrl }
+        })
+      )).catch(e => console.error("Error triggering invitation emails", e));
+      
     } catch (err) {
       console.error(`Failed to commit batch during CSV import`, err);
       // If a batch fails, we count all of its items as failed
