@@ -33,13 +33,32 @@ export async function submitPayload(userUid: string, input: SubmitPayloadInput):
     throw Errors.validation(`Your team is currently '${teamData['status']}' and cannot submit. Contact admin.`);
   }
 
-  // Ensure caller is the leader (or at least a member, we'll check if they are the leader)
+  // Ensure caller is the team leader
   if (teamData['leaderId'] !== userUid) {
-     // Check if they are a member
-     const isMember = teamData['members']?.some((m: any) => m.email && m.email.length > 0);
-     if (!isMember) {
-        throw Errors.unauthorized("You are not authorized to submit for this team.");
-     }
+      throw Errors.unauthorized("Only the team leader can submit the payload.");
+  }
+
+  // 1.5 Verify round deadline
+  const roundRef = db.collection('rounds').doc(input.roundId);
+  const roundSnap = await roundRef.get();
+  
+  if (!roundSnap.exists) {
+      throw Errors.notFound("Round not found.");
+  }
+  
+  const roundData = roundSnap.data()!;
+  if (!roundData.isActive) {
+      throw Errors.validation("This round is not currently active.");
+  }
+  
+  if (roundData.submissionDeadline) {
+      const deadlineMs = roundData.submissionDeadline.toMillis 
+          ? roundData.submissionDeadline.toMillis() 
+          : new Date(roundData.submissionDeadline).getTime();
+          
+      if (Date.now() > deadlineMs) {
+          throw Errors.validation("The submission deadline for this round has passed.");
+      }
   }
 
   // 2. Upsert submission document using composite ID
@@ -52,6 +71,7 @@ export async function submitPayload(userUid: string, input: SubmitPayloadInput):
     githubLink: input.githubLink,
     demoLink: input.demoLink || null,
     submittedBy: userUid,
+    status: 'Submitted',
     submittedAt: FieldValue.serverTimestamp()
   }, { merge: true }); // Merge so we don't destroy any admin-added metadata if they exist
 

@@ -27,7 +27,9 @@ export function OPTIONS(request: NextRequest): NextResponse {
 const submissionSchema = z.object({
   teamId: z.string().min(1, 'Team ID is required'),
   roundId: z.string().min(1, 'Round ID is required'),
-  githubLink: z.string().url('Must be a valid URL'),
+  githubLink: z.string().url('Must be a valid URL').refine(val => val.startsWith('https://github.com/'), {
+    message: "GitHub link must start with https://github.com/",
+  }),
   demoLink: z.string().url('Must be a valid URL').optional().or(z.literal('')),
 });
 

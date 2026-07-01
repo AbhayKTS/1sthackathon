@@ -647,7 +647,7 @@ if (submissionForm) {
     } catch (error) {
         console.error("Submission error:", error);
         if (submissionStatus) {
-            submissionStatus.textContent = "Transmission failed. Check permissions.";
+            submissionStatus.textContent = error.message || "Transmission failed. Check permissions.";
             submissionStatus.style.color = "var(--strike-red)";
         }
     } finally {
