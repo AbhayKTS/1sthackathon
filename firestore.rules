@@ -25,13 +25,9 @@ service cloud.firestore {
     // ─── Phase 1: Users ───────────────────────────────────────────────────
     // Read: own doc only (no bulk listing).
     // Write: ALL writes via Admin SDK (Next.js API routes) — deny client writes.
-    // The client-side auth.js creates user docs directly; this will be
-    // migrated in Phase 3. Until then, client create is allowed for backward compat.
-    // TODO Phase 3: change create to `if false` once OTP flow replaces client create.
     match /users/{userId} {
       allow read: if request.auth != null && request.auth.uid == userId;
-      allow create: if request.auth != null && request.auth.uid == userId; // TODO: Phase 3 → deny
-      allow update, delete: if isAdminOrSuperAdmin();
+      allow write: if isAdminOrSuperAdmin();
     }
 
     // ─── Phase 1: OTP Codes ───────────────────────────────────────────────
