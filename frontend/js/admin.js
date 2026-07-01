@@ -171,31 +171,119 @@ function loadTeams() {
         statTotalTeams.textContent = snapshot.size;
         
         if (snapshot.empty) {
-            teamsTableBody.innerHTML = `<tr><td colspan="3" style="text-align: center; color: rgba(255,255,255,0.5);">No teams found.</td></tr>`;
+            teamsTableBody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: rgba(255,255,255,0.5);">No teams found.</td></tr>`;
             return;
         }
         
         teamsTableBody.innerHTML = "";
         snapshot.forEach((doc) => {
             const team = doc.data();
+            const teamId = doc.id;
             
             // Populate persistent teamCache
-            teamCache.set(doc.id, team.teamName || 'Unnamed');
+            teamCache.set(teamId, team.teamName || 'Unnamed');
 
             const tr = document.createElement("tr");
             
             const membersList = team.members ? team.members.map(m => sanitizeHTML(m.name)).join(", ") : "None";
             
+            let statusColor = "rgba(255,255,255,0.5)";
+            let statusText = team.status || "Unknown";
+            if (statusText === 'Approved') statusColor = "#4ade80";
+            if (statusText === 'Rejected') statusColor = "var(--strike-red)";
+            if (statusText === 'Submitted') statusColor = "#fbbf24";
+            if (statusText === 'Incomplete') statusColor = "#f97316";
+
+            let actionHtml = '';
+            if (statusText === 'Submitted') {
+                const updatedMs = team.updatedAt?.toMillis ? team.updatedAt.toMillis() : Date.now();
+                actionHtml = `
+                    <button class="btn-outline review-btn" data-action="approve" data-id="${sanitizeHTML(teamId)}" data-updated="${updatedMs}" style="padding: 4px 8px; font-size: 0.7rem; border-color: #4ade80; color: #4ade80; margin-right: 5px;">APPROVE</button>
+                    <button class="btn-outline review-btn" data-action="reject" data-id="${sanitizeHTML(teamId)}" data-updated="${updatedMs}" style="padding: 4px 8px; font-size: 0.7rem; border-color: var(--strike-red); color: var(--strike-red); margin-right: 5px;">REJECT</button>
+                    <button class="btn-outline review-btn" data-action="needChanges" data-id="${sanitizeHTML(teamId)}" data-updated="${updatedMs}" style="padding: 4px 8px; font-size: 0.7rem; border-color: #f97316; color: #f97316;">CHANGES</button>
+                `;
+            } else if (statusText === 'Incomplete' && team.needChangesHistory && team.needChangesHistory.length > 0) {
+                // Show latest note snippet
+                const latestNote = team.needChangesHistory[team.needChangesHistory.length - 1].notes;
+                actionHtml = `<span style="font-size: 0.7rem; color: rgba(255,255,255,0.5); font-style: italic;">Note: ${sanitizeHTML(latestNote.substring(0, 20))}...</span>`;
+            } else {
+                actionHtml = `<span style="font-size: 0.7rem; color: rgba(255,255,255,0.3);">NO ACTION</span>`;
+            }
+
             tr.innerHTML = `
                 <td><strong>${sanitizeHTML(team.teamName || 'Unnamed')}</strong></td>
                 <td>${membersList}</td>
-                <td><span style="font-family: var(--font-mono); font-size: 0.8rem; color: rgba(255,255,255,0.5);">${sanitizeHTML(doc.id)}</span></td>
+                <td><span style="font-family: var(--font-mono); font-size: 0.8rem; font-weight: bold; color: ${statusColor};">${sanitizeHTML(statusText)}</span></td>
+                <td>${actionHtml}</td>
+                <td><span style="font-family: var(--font-mono); font-size: 0.8rem; color: rgba(255,255,255,0.5);">${sanitizeHTML(teamId)}</span></td>
             `;
             teamsTableBody.appendChild(tr);
         });
+
+        // Attach event listeners to newly rendered review buttons
+        document.querySelectorAll('.review-btn').forEach(btn => {
+            btn.addEventListener('click', handleReviewAction);
+        });
+
     }, (error) => {
         console.error("Error loading teams:", error);
     });
+}
+
+// Handle Admin Review Actions
+async function handleReviewAction(e) {
+    const btn = e.target;
+    const action = btn.getAttribute('data-action');
+    const teamId = btn.getAttribute('data-id');
+    const lastUpdatedAt = parseInt(btn.getAttribute('data-updated'), 10);
+
+    let notes = '';
+    if (action === 'needChanges') {
+        notes = prompt("Enter the required changes (will be shown to the team):");
+        if (notes === null || notes.trim() === '') return; // User cancelled or left empty
+    } else if (action === 'reject') {
+        const confirmReject = confirm("Are you sure you want to REJECT this team? They will be locked out.");
+        if (!confirmReject) return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = "WAIT...";
+
+    try {
+        const idToken = await auth.currentUser.getIdToken(true);
+        const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+            ? 'http://localhost:3001/api' 
+            : '/api';
+
+        const payload = {
+            teamId,
+            action,
+            lastUpdatedAt,
+            ...(notes ? { notes: notes.trim() } : {})
+        };
+
+        const response = await fetch(`${API_BASE}/admin/review-team`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${idToken}`
+            },
+            body: JSON.stringify(payload)
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            throw new Error(result.error?.message || 'Review action failed');
+        }
+
+        // We don't need to manually update the UI; the onSnapshot listener will re-render automatically.
+    } catch (error) {
+        console.error("Review action error:", error);
+        alert(`Error: ${error.message}`);
+        btn.disabled = false;
+        btn.textContent = action.toUpperCase();
+    }
 }
 
 // Load Submissions
@@ -265,7 +353,7 @@ function loadSubmissions() {
     });
 }
 
-// Activate Round — SECURED: No hardcoded password, relies on Firebase Auth admin role check
+// Activate Round — SECURED via Next.js API
 activateRoundBtn.addEventListener("click", async () => {
     const selectedRoundTitle = roundSelect.value;
     if (!selectedRoundTitle) {
@@ -280,12 +368,14 @@ activateRoundBtn.addEventListener("click", async () => {
         return;
     }
 
-    // Confirm action instead of using a hardcoded password
+    // Confirm action
     const confirmed = confirm(`Are you sure you want to activate "${selectedRoundTitle}"? This will deactivate all other rounds.`);
     if (!confirmed) return;
 
+    activateRoundBtn.disabled = true;
+    activateRoundBtn.textContent = "ACTIVATING...";
+
     try {
-        // Map dropdown values to fixed doc IDs and metadata
         const roundMap = {
             "Round 1": { id: "round-1", title: "Round 1", desc: "Show Us What You Got" },
             "Round 2": { id: "round-2", title: "Round 2", desc: "We Ride At Midnight" },
@@ -295,28 +385,44 @@ activateRoundBtn.addEventListener("click", async () => {
         const chosen = roundMap[selectedRoundTitle];
         if (!chosen) { alert("Invalid round selected."); return; }
         
-        // Deactivate all 3 fixed rounds, then activate chosen
-        const allRoundIds = ["round-1", "round-2", "round-3"];
-        
-        const deactivatePromises = allRoundIds.map(rid =>
-            setDoc(doc(db, "rounds", rid), {
-                title: roundMap[Object.keys(roundMap).find(k => roundMap[k].id === rid)].title,
-                desc: roundMap[Object.keys(roundMap).find(k => roundMap[k].id === rid)].desc,
-                isActive: rid === chosen.id,
-                updatedAt: serverTimestamp()
-            })
-        );
-        
-        await Promise.all(deactivatePromises);
+        const idToken = await auth.currentUser.getIdToken(true);
+        const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+            ? 'http://localhost:3001/api' 
+            : '/api';
+
+        const payload = {
+            roundId: chosen.id,
+            roundTitle: chosen.title,
+            roundDesc: chosen.desc
+        };
+
+        const response = await fetch(`${API_BASE}/admin/activate-round`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${idToken}`
+            },
+            body: JSON.stringify(payload)
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            throw new Error(result.error?.message || 'Failed to activate round');
+        }
+
         alert("Round successfully activated!");
     } catch (error) {
         console.error("Error activating round:", error);
         alert("Error activating round: " + error.message);
+    } finally {
+        activateRoundBtn.disabled = false;
+        activateRoundBtn.textContent = "ACTIVATE CHOSEN ROUND";
     }
 });
 
 
-// Broadcast Announcement Form
+// Broadcast Announcement Form via API
 announcementForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     annSubmitBtn.disabled = true;
@@ -324,12 +430,30 @@ announcementForm.addEventListener("submit", async (e) => {
     annStatus.textContent = "";
     
     try {
-        await addDoc(collection(db, "announcements"), {
+        const idToken = await auth.currentUser.getIdToken(true);
+        const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+            ? 'http://localhost:3001/api' 
+            : '/api';
+
+        const payload = {
             title: sanitizeHTML(annTitle.value),
-            message: sanitizeHTML(annMessage.value),
-            timestamp: serverTimestamp(),
-            createdBy: auth.currentUser.uid
+            message: sanitizeHTML(annMessage.value)
+        };
+
+        const response = await fetch(`${API_BASE}/admin/announcement`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${idToken}`
+            },
+            body: JSON.stringify(payload)
         });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            throw new Error(result.error?.message || 'Failed to broadcast announcement');
+        }
         
         annStatus.textContent = "Broadcast transmitted to all dashboards.";
         annStatus.style.color = "#4ade80";
@@ -338,7 +462,7 @@ announcementForm.addEventListener("submit", async (e) => {
         setTimeout(() => { annStatus.textContent = ""; }, 4000);
     } catch (error) {
         console.error("Error sending broadcast:", error);
-        annStatus.textContent = "Transmission failed.";
+        annStatus.textContent = `Transmission failed: ${error.message}`;
         annStatus.style.color = "var(--strike-red)";
     } finally {
         annSubmitBtn.disabled = false;

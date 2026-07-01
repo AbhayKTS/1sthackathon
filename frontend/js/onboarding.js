@@ -24,6 +24,21 @@ document.addEventListener("DOMContentLoaded", () => {
     const errorEl = document.getElementById("formError");
     const submitBtn = document.getElementById("submitBtn");
 
+    // Check for rejection notes
+    const notesJson = sessionStorage.getItem('rh_need_changes');
+    if (notesJson) {
+        try {
+            const history = JSON.parse(notesJson);
+            if (history && history.length > 0) {
+                const latestNote = history[history.length - 1].notes;
+                document.getElementById("rejectionNotesContainer").classList.remove("hidden");
+                document.getElementById("rejectionNotesText").textContent = latestNote;
+            }
+        } catch(e) {
+            console.error(e);
+        }
+    }
+
     let memberCount = 2;
 
     // Wait for auth state

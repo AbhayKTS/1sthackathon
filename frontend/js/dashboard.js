@@ -160,6 +160,33 @@ async function loadTeamData(teamId) {
         
         if (teamSnap.exists()) {
             const team = teamSnap.data();
+
+            // Block access if not Approved
+            if (team.status === 'Incomplete') {
+                sessionStorage.setItem('rh_need_changes', JSON.stringify(team.needChangesHistory || []));
+                window.location.href = '/onboarding.html';
+                return;
+            }
+            if (team.status === 'Rejected') {
+                document.body.innerHTML = `
+                    <div style="text-align:center; margin-top:20%; color: var(--strike-red); font-family: 'Zen Dots', sans-serif;">
+                        <h1>ACCESS DENIED</h1>
+                        <p style="font-family: 'JetBrains Mono', monospace; font-size: 1rem; color: rgba(255,255,255,0.6); margin-top: 20px;">Your team's application has been rejected by central command.</p>
+                    </div>
+                `;
+                return;
+            }
+            if (team.status === 'Submitted') {
+                document.body.innerHTML = `
+                    <div style="text-align:center; margin-top:20%; color: white; font-family: 'JetBrains Mono', monospace;">
+                        <h2 style="font-family: 'Zen Dots', sans-serif; font-size: 2rem; margin-bottom: 20px;">TRANSMISSION RECEIVED</h2>
+                        <p style="color: rgba(255,255,255,0.6); margin-bottom: 30px;">Awaiting administrator clearance. Check back later.</p>
+                        <button onclick="sessionStorage.clear(); window.location.href='/login'" style="padding:10px 20px; background:var(--strike-red); border:none; color:white; cursor:pointer; font-family: 'Bebas Neue', sans-serif; letter-spacing: 2px;">LOGOUT</button>
+                    </div>
+                `;
+                return;
+            }
+
             teamNameDisplay.textContent = team.teamName || "Unknown Team";
             teamIdDisplay.textContent = teamId;
             
