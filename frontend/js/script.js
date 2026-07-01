@@ -28,14 +28,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const navbar = document.getElementById('navbar');
 
-    // Navbar Scroll Effect
-    window.addEventListener('scroll', () => {
-        if (window.scrollY > 50) {
-            navbar.classList.add('scrolled');
-        } else {
-            navbar.classList.remove('scrolled');
-        }
-    });
+    // Navbar Scroll Effect — optimized with state check and passive flag
+    let isScrolled = false;
+    if (navbar) {
+        window.addEventListener('scroll', () => {
+            const scrolled = window.scrollY > 50;
+            if (scrolled !== isScrolled) {
+                isScrolled = scrolled;
+                if (isScrolled) {
+                    navbar.classList.add('scrolled');
+                } else {
+                    navbar.classList.remove('scrolled');
+                }
+            }
+        }, { passive: true });
+    }
 
     // Smooth Scroll
     // Guard: skip anchors where href is exactly "#" — querySelector("#") is an invalid
@@ -137,12 +144,19 @@ document.addEventListener('DOMContentLoaded', () => {
         const fog = hero.querySelector('.fog-container');
         const titleGroup = hero.querySelector('.hero-title-group');
 
-        hero.addEventListener('mousemove', (e) => {
-            const cx = e.clientX / window.innerWidth - 0.5;
-            const cy = e.clientY / window.innerHeight - 0.5;
+        let ticking = false;
+        let mouseEvent = null;
+
+        function updateParallax() {
+            if (!mouseEvent) {
+                ticking = false;
+                return;
+            }
+            const cx = mouseEvent.clientX / window.innerWidth - 0.5;
+            const cy = mouseEvent.clientY / window.innerHeight - 0.5;
 
             if (bgImage) {
-                const tx = cx * 12; // small translation
+                const tx = cx * 12;
                 const ty = cy * 8;
                 bgImage.style.transform = `scale(1.08) translate(${tx}px, ${ty}px)`;
             }
@@ -157,6 +171,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (titleGroup) {
                 titleGroup.style.transform = `perspective(900px) rotateX(${6 + cy * 4}deg) translateY(${8 + cy * -6}px) translateX(${cx * 8}px)`;
+            }
+
+            ticking = false;
+        }
+
+        hero.addEventListener('mousemove', (e) => {
+            mouseEvent = e;
+            if (!ticking) {
+                requestAnimationFrame(updateParallax);
+                ticking = true;
             }
         });
     }
