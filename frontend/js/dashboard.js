@@ -123,14 +123,13 @@ onAuthStateChanged(auth, async (user) => {
         if (userSnap.exists()) {
             currentUserDoc = userSnap.data();
             currentTeamId = currentUserDoc.teamId;
-            
-            if (currentTeamId) {
-                await loadTeamData(currentTeamId);
-            } else {
-                teamNameDisplay.textContent = "Unassigned Agent";
-                teamIdDisplay.textContent = "N/A";
-                teamMembersList.innerHTML = `<li><span style="color: var(--strike-red);">You are not assigned to a team yet. Contact admin.</span></li>`;
+            if (!currentTeamId) {
+                // Not assigned to a team -> redirect to Team Completion Wizard
+                window.location.href = '/onboarding.html';
+                return;
             }
+            
+            await loadTeamData(currentTeamId);
         }
         
         // Load global dashboard data
