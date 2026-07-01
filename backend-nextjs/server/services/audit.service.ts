@@ -22,6 +22,7 @@ export type AuditAction =
   | 'team.approved'
   | 'team.rejected'
   | 'team.need_changes'
+  | 'team.updated'
   | 'team.member_removed'
   | 'team.member_added'
   | 'round.activated'

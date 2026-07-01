@@ -105,3 +105,81 @@ export async function submitTeamProfile(
 
   return teamId;
 }
+
+/**
+ * Updates an existing team profile.
+ * Only allowed if the team is in 'Incomplete' status (or hasn't been submitted fully, though here it must exist).
+ */
+export async function updateTeamDetails(
+  uid: string,
+  input: Partial<TeamProfileInput>
+): Promise<void> {
+  const db = getAdminDb();
+
+  if (input.members && (input.members.length < 2 || input.members.length > 5)) {
+    throw Errors.validation('A team must have between 2 and 5 members.');
+  }
+
+  await db.runTransaction(async (tx) => {
+    const userRef = db.collection('users').doc(uid);
+    const userSnap = await tx.get(userRef);
+
+    if (!userSnap.exists) {
+      throw Errors.unauthorized('User record not found.');
+    }
+
+    const userData = userSnap.data()!;
+    const currentTeamId = userData['teamId'] as string | null;
+
+    if (!currentTeamId) {
+      throw Errors.validation('No team profile found to update.');
+    }
+
+    const teamRef = db.collection('teams').doc(currentTeamId);
+    const teamSnap = await tx.get(teamRef);
+
+    if (!teamSnap.exists) {
+      throw Errors.notFound('Team not found.');
+    }
+
+    const teamData = teamSnap.data()!;
+
+    if (teamData['leaderId'] !== uid) {
+      throw Errors.forbidden('Only the team leader can update the profile.');
+    }
+
+    if (teamData['status'] === 'Submitted' || teamData['status'] === 'Approved' || teamData['status'] === 'Rejected') {
+      throw Errors.forbidden(`Team profile is locked because it is currently '${teamData['status']}'.`);
+    }
+
+    const updateData: any = { updatedAt: FieldValue.serverTimestamp() };
+    if (input.teamName) updateData.teamName = input.teamName;
+    if (input.college) updateData.college = input.college;
+    if (input.members) updateData.members = input.members;
+
+    // If it was incomplete and they update, we switch it back to 'Submitted' so admins can review again.
+    // Or we leave it as Incomplete and require a distinct submission? 
+    // Usually if they fix it, it goes back into the queue. Let's set it to 'Submitted'.
+    updateData.status = 'Submitted';
+
+    tx.update(teamRef, updateData);
+
+    if (teamData['invitedTeamId']) {
+      const inviteRef = db.collection('invitedTeams').doc(teamData['invitedTeamId']);
+      tx.update(inviteRef, { status: 'Submitted', updatedAt: FieldValue.serverTimestamp() });
+    }
+  });
+
+  const userSnap = await db.collection('users').doc(uid).get();
+  const teamId = userSnap.data()?.['teamId'];
+
+  await writeAuditLog({
+    action: 'team.updated',
+    actorUid: uid,
+    actorRole: 'participant_leader',
+    targetId: teamId,
+    targetType: 'teams',
+    metadata: { updatedFields: Object.keys(input) },
+    ip: null,
+  });
+}
