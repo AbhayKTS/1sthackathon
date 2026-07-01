@@ -2,18 +2,81 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // ─── Users Collection ───────────────────────────────────────
-    // Users can only read and create their own document. Updates are admin-only.
-    match /users/{userId} {
-      allow read: if request.auth != null && request.auth.uid == userId;
-      allow create: if request.auth != null && request.auth.uid == userId;
-      allow update, delete: if request.auth != null
+    // ─────────────────────────────────────────────────────────────────────────
+    // HELPER FUNCTION: Verify caller is an admin by reading their users doc.
+    // Used by rules that need admin-only access from client SDK.
+    // Note: privileged mutations should go through the Next.js API (Admin SDK).
+    // This helper is retained for backward compatibility with the Vite frontend.
+    // ─────────────────────────────────────────────────────────────────────────
+    function isAdmin() {
+      return request.auth != null
         && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
-    // ─── Join Gang Leads (Registration Form) ────────────────────
+    function isSuperAdmin() {
+      return request.auth != null
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'super_admin';
+    }
+
+    function isAdminOrSuperAdmin() {
+      return isAdmin() || isSuperAdmin();
+    }
+
+    // ─── Phase 1: Users ───────────────────────────────────────────────────
+    // Read: own doc only (no bulk listing).
+    // Write: ALL writes via Admin SDK (Next.js API routes) — deny client writes.
+    // The client-side auth.js creates user docs directly; this will be
+    // migrated in Phase 3. Until then, client create is allowed for backward compat.
+    // TODO Phase 3: change create to `if false` once OTP flow replaces client create.
+    match /users/{userId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow create: if request.auth != null && request.auth.uid == userId; // TODO: Phase 3 → deny
+      allow update, delete: if isAdminOrSuperAdmin();
+    }
+
+    // ─── Phase 1: OTP Codes ───────────────────────────────────────────────
+    // Server-only via Admin SDK. Zero client access.
+    match /otpCodes/{docId} {
+      allow read, write: if false;
+    }
+
+    // ─── Phase 1: OTP Rate Limits ─────────────────────────────────────────
+    // Server-only via Admin SDK. Zero client access.
+    match /otpRateLimits/{docId} {
+      allow read, write: if false;
+    }
+
+    // ─── Phase 2: Invited Teams ───────────────────────────────────────────
+    // Admin read/write only. No client access from participants.
+    match /invitedTeams/{docId} {
+      allow read, write: if isAdminOrSuperAdmin();
+    }
+
+    // ─── Phase 5: Audit Logs ─────────────────────────────────────────────
+    // Admin read only. No client writes — append-only via Admin SDK.
+    match /auditLogs/{docId} {
+      allow read: if isAdminOrSuperAdmin();
+      allow write: if false;
+    }
+
+    // ─── Phase 11: Email Logs ─────────────────────────────────────────────
+    // Admin read only. No client writes — written by email service (Admin SDK).
+    match /emailLogs/{docId} {
+      allow read: if isAdminOrSuperAdmin();
+      allow write: if false;
+    }
+
+    // ─── Phase 10: Notifications ─────────────────────────────────────────
+    // Participants read/update own notifications (to mark as read).
+    // No client create — created by Admin SDK as side-effect of other actions.
+    match /notifications/{docId} {
+      allow read, update: if request.auth != null
+        && resource.data.userId == request.auth.uid;
+      allow create, delete: if false;
+    }
+
+    // ─── Existing: Join Gang Leads (Landing page interest form) ──────────
     // Any authenticated user (including anonymous) can create.
-    // No one can read/update/delete from client.
     match /joinGangLeads/{docId} {
       allow create: if request.auth != null
         && request.resource.data.keys().hasAll(['name', 'email', 'number', 'teamName'])
@@ -21,47 +84,42 @@ service cloud.firestore {
         && request.resource.data.email is string
         && request.resource.data.number is string
         && request.resource.data.teamName is string;
-      allow read, update, delete: if request.auth != null
-        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+      allow read, update, delete: if isAdminOrSuperAdmin();
     }
 
-    // ─── Teams ──────────────────────────────────────────────────
-    // Any authenticated user can read. Only admins can write.
+    // ─── Existing: Teams ─────────────────────────────────────────────────
+    // TODO Phase 4: scope read to own team only (currently all auth users can read)
     match /teams/{teamId} {
       allow read: if request.auth != null;
-      allow write: if request.auth != null
-        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+      allow write: if isAdminOrSuperAdmin();
     }
 
-    // ─── Rounds ─────────────────────────────────────────────────
+    // ─── Existing: Rounds ────────────────────────────────────────────────
     // Any authenticated user can read. Only admins can write.
     match /rounds/{roundId} {
       allow read: if request.auth != null;
-      allow write: if request.auth != null
-        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+      allow write: if isAdminOrSuperAdmin();
     }
 
-    // ─── Announcements ──────────────────────────────────────────
-    // Any authenticated user can read. Only admins can create.
+    // ─── Existing: Announcements ─────────────────────────────────────────
+    // Any authenticated user can read. Admin creates — no client update/delete.
     match /announcements/{annId} {
       allow read: if request.auth != null;
-      allow create: if request.auth != null
-        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
-      allow update, delete: if false;
+      allow create: if isAdminOrSuperAdmin();
+      allow update, delete: if false; // TODO Phase 7: admin edits via Admin SDK
     }
 
-    // ─── Submissions ────────────────────────────────────────────
+    // ─── Existing: Submissions ───────────────────────────────────────────
     // Any authenticated (non-anonymous) user can create.
-    // Any authenticated user can read. Only admins can update/delete.
+    // TODO Phase 9: restrict create to leader of an approved team, enforce deadline via Admin SDK.
     match /submissions/{subId} {
       allow read: if request.auth != null;
       allow create: if request.auth != null
         && request.auth.token.firebase.sign_in_provider != 'anonymous';
-      allow update, delete: if request.auth != null
-        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+      allow update, delete: if isAdminOrSuperAdmin();
     }
 
-    // ─── Default: Deny Everything Else ──────────────────────────
+    // ─── Default: Deny Everything Else ───────────────────────────────────
     match /{document=**} {
       allow read, write: if false;
     }

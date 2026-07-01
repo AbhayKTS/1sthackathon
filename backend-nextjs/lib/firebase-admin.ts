@@ -31,6 +31,15 @@ function initAdmin(): App {
     return getApps()[0] as App;
   }
 
+  // If running against emulators, no real credentials are required
+  if (process.env.FIRESTORE_EMULATOR_HOST || process.env.FIREBASE_AUTH_EMULATOR_HOST) {
+    const projectId = process.env.FIREBASE_ADMIN_PROJECT_ID || 'demo-revengershack';
+    return initializeApp({
+      projectId,
+      storageBucket: `${projectId}.appspot.com`,
+    });
+  }
+
   // Support both: single JSON string or individual env vars (D-008)
   const serviceAccountJson = process.env.FIREBASE_ADMIN_SERVICE_ACCOUNT_JSON;
 
