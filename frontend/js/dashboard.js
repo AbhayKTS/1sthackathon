@@ -12,7 +12,8 @@ import {
     serverTimestamp,
     onSnapshot,
     orderBy,
-    limit
+    limit,
+    setDoc
 } from "firebase/firestore";
 
 const firebaseConfig = {
@@ -433,32 +434,102 @@ function listenToAnnouncements() {
     if (announcementsUnsubscriber) announcementsUnsubscriber();
 
     const annRef = collection(db, "announcements");
-    const q = query(annRef, orderBy("timestamp", "desc"), limit(5));
+    const q = query(annRef, orderBy("timestamp", "desc"), limit(20));
     
-    announcementsUnsubscriber = onSnapshot(q, (snapshot) => {
-        if (snapshot.empty) {
+    announcementsUnsubscriber = onSnapshot(q, async (snapshot) => {
+        // filter out soft-deleted announcements
+        const visibleDocs = snapshot.docs.filter(docSnap => docSnap.data().isVisible !== false);
+
+        if (visibleDocs.length === 0) {
             announcementsFeed.innerHTML = `<p style="color: rgba(255,255,255,0.5); font-size: 0.9rem; padding: 20px; text-align: center;">No new communications.</p>`;
+            updateUnreadBadge(0);
             return;
         }
         
         announcementsFeed.innerHTML = "";
-        snapshot.forEach((doc) => {
-            const data = doc.data();
+        let newUnreadCount = 0;
+
+        for (const docSnap of visibleDocs) {
+            const data = docSnap.data();
+            const annId = docSnap.id;
+            const annVersion = data.version || 1;
             const date = data.timestamp ? data.timestamp.toDate().toLocaleString() : "Just now";
             
+            // Check read state
+            let isUnread = true;
+            try {
+                const readStateRef = doc(db, "announcements", annId, "ReadState", auth.currentUser.uid);
+                const readSnap = await getDoc(readStateRef);
+                if (readSnap.exists()) {
+                    const readData = readSnap.data();
+                    if (readData.version >= annVersion) {
+                        isUnread = false;
+                    }
+                }
+            } catch (err) {
+                console.error("Error fetching read state:", err);
+            }
+
+            if (isUnread) newUnreadCount++;
+
             const item = document.createElement("div");
-            item.className = "announcement-item";
+            item.className = "announcement-item border-b border-border/50 p-4 transition-colors hover:bg-white/5";
+            item.style.cursor = "pointer";
+            if (isUnread) {
+                item.style.borderLeft = "2px solid var(--strike-red)";
+                item.style.backgroundColor = "rgba(229, 9, 20, 0.05)";
+            }
             
             item.innerHTML = `
-                <div class="announcement-time">${date}</div>
-                <div class="announcement-title">${data.title || 'Intel Update'}</div>
-                <div class="announcement-body">${data.message || ''}</div>
+                <div class="announcement-time flex items-center justify-between font-mono text-[10px] text-muted-foreground mb-2" style="font-family: 'JetBrains Mono', monospace;">
+                    <span>${date}</span>
+                    ${isUnread ? '<span class="text-blood border border-blood px-1 rounded-[2px]" style="animation: flicker 2s infinite">NEW</span>' : ''}
+                </div>
+                <div class="announcement-title font-impact tracking-widest text-lg mb-1" style="font-family: 'Bebas Neue', sans-serif;">${sanitizeHTML(data.title) || 'Intel Update'}</div>
+                <div class="announcement-body font-jp text-xs text-muted-foreground leading-relaxed" style="font-family: 'Noto Sans JP', sans-serif;">${sanitizeHTML(data.message) || ''}</div>
             `;
+            
+            // Click to mark as read
+            item.addEventListener("click", async () => {
+                if (isUnread) {
+                    try {
+                        const readStateRef = doc(db, "announcements", annId, "ReadState", auth.currentUser.uid);
+                        await setDoc(readStateRef, {
+                            readAt: serverTimestamp(),
+                            version: annVersion
+                        }, { merge: true });
+                        
+                        // Optimistic UI update
+                        item.style.borderLeft = "none";
+                        item.style.backgroundColor = "transparent";
+                        const badgeEl = item.querySelector('.text-blood');
+                        if (badgeEl) badgeEl.remove();
+                        isUnread = false;
+                        newUnreadCount = Math.max(0, newUnreadCount - 1);
+                        updateUnreadBadge(newUnreadCount);
+                    } catch (e) {
+                        console.error("Error marking as read", e);
+                    }
+                }
+            });
+
             announcementsFeed.appendChild(item);
-        });
+        }
+        updateUnreadBadge(newUnreadCount);
     }, (error) => {
         console.error("Error listening to announcements:", error);
     });
+}
+
+function updateUnreadBadge(count) {
+    const badge = document.getElementById("unreadBadge");
+    if (!badge) return;
+    if (count > 0) {
+        badge.textContent = `${count} NEW`;
+        badge.classList.remove("hidden");
+    } else {
+        badge.classList.add("hidden");
+    }
 }
 
 // Load Leaderboard from teams collection

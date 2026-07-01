@@ -154,7 +154,11 @@ export async function createAnnouncement(adminUid: string, title: string, messag
     title,
     message,
     timestamp: FieldValue.serverTimestamp(),
-    createdBy: adminUid
+    createdBy: adminUid,
+    updatedBy: null,
+    updatedAt: null,
+    isVisible: true,
+    version: 1
   });
 
   await writeAuditLog({
@@ -164,6 +168,56 @@ export async function createAnnouncement(adminUid: string, title: string, messag
     targetId: docRef.id,
     targetType: 'announcements',
     metadata: { title },
+    ip: null,
+  });
+}
+
+/**
+ * Edits an existing announcement.
+ */
+export async function editAnnouncement(adminUid: string, annId: string, title: string, message: string): Promise<void> {
+  const db = getAdminDb();
+  const ref = db.collection('announcements').doc(annId);
+
+  await ref.update({
+    title,
+    message,
+    updatedBy: adminUid,
+    updatedAt: FieldValue.serverTimestamp(),
+    version: FieldValue.increment(1)
+  });
+
+  await writeAuditLog({
+    action: 'announcement.updated',
+    actorUid: adminUid,
+    actorRole: 'admin',
+    targetId: annId,
+    targetType: 'announcements',
+    metadata: { title },
+    ip: null,
+  });
+}
+
+/**
+ * Soft deletes an announcement.
+ */
+export async function deleteAnnouncement(adminUid: string, annId: string): Promise<void> {
+  const db = getAdminDb();
+  const ref = db.collection('announcements').doc(annId);
+
+  await ref.update({
+    isVisible: false,
+    updatedBy: adminUid,
+    updatedAt: FieldValue.serverTimestamp()
+  });
+
+  await writeAuditLog({
+    action: 'announcement.deleted',
+    actorUid: adminUid,
+    actorRole: 'admin',
+    targetId: annId,
+    targetType: 'announcements',
+    metadata: {},
     ip: null,
   });
 }
