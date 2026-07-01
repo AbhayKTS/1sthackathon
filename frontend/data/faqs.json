@@ -1,0 +1,26 @@
+[
+  {
+    "question": "What is the team size limit?",
+    "answer": "Teams must have a minimum of 2 members and a maximum of 6 members (including the leader)."
+  },
+  {
+    "question": "Can I be part of multiple teams?",
+    "answer": "No. A participant can only be registered under one team. Any duplicate registrations will lead to disqualification of both teams."
+  },
+  {
+    "question": "Do we need to build the project from scratch?",
+    "answer": "Yes. While you can use open-source libraries and frameworks, the core logic and application must be built during the hackathon timeframe. Pre-built projects will be instantly disqualified."
+  },
+  {
+    "question": "How are the rounds structured?",
+    "answer": "Round 1 focuses on ideation and the problem statement (Presentation Deck). Round 2 is the core development phase (GitHub Code). Round 3 is the final presentation and judging."
+  },
+  {
+    "question": "Who retains the IP of the projects built?",
+    "answer": "The intellectual property of the projects remains entirely with the creators (the participants)."
+  },
+  {
+    "question": "Can we change our team name or track after registering?",
+    "answer": "Team names and tracks can only be modified before the Round 1 submission deadline. Once Round 1 closes, they are locked."
+  }
+]
