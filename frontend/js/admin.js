@@ -345,3 +345,64 @@ announcementForm.addEventListener("submit", async (e) => {
         annSubmitBtn.textContent = "TRANSMIT";
     }
 });
+
+// CSV Import
+const importCsvForm = document.getElementById("importCsvForm");
+const csvFileInput = document.getElementById("csvFileInput");
+const importSubmitBtn = document.getElementById("importSubmitBtn");
+const importStatus = document.getElementById("importStatus");
+
+if (importCsvForm) {
+    importCsvForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        
+        const file = csvFileInput.files[0];
+        if (!file) return;
+
+        importSubmitBtn.disabled = true;
+        importSubmitBtn.textContent = "UPLOADING...";
+        importStatus.textContent = "";
+
+        try {
+            // Get fresh Firebase ID token
+            const idToken = await auth.currentUser.getIdToken(true);
+            
+            const formData = new FormData();
+            formData.append('file', file);
+
+            // Using local dev API url for now; in prod this should hit the production domain
+            const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+                ? 'http://localhost:3001/api' 
+                : '/api';
+
+            const response = await fetch(`${API_BASE}/admin/import-csv`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${idToken}`
+                },
+                body: formData
+            });
+
+            const result = await response.json();
+
+            if (!response.ok) {
+                throw new Error(result.error?.message || 'Import failed');
+            }
+
+            importStatus.innerHTML = `✅ <strong>Success!</strong><br>
+                Imported: ${result.data.stats.imported}<br>
+                Skipped (duplicates): ${result.data.stats.skipped}<br>
+                Failed: ${result.data.stats.failed}`;
+            importStatus.style.color = "#4ade80";
+            importCsvForm.reset();
+            
+        } catch (error) {
+            console.error("CSV Import Error:", error);
+            importStatus.textContent = `❌ Error: ${error.message}`;
+            importStatus.style.color = "var(--strike-red)";
+        } finally {
+            importSubmitBtn.disabled = false;
+            importSubmitBtn.textContent = "UPLOAD TEAMS";
+        }
+    });
+}

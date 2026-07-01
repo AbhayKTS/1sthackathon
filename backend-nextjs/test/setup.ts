@@ -17,9 +17,3 @@ process.env.NEXT_PHASE = 'phase-production-build'; // Bypass some env checks if 
 process.env.FIRESTORE_EMULATOR_HOST = '127.0.0.1:8080';
 process.env.FIREBASE_AUTH_EMULATOR_HOST = '127.0.0.1:9099';
 process.env.GCLOUD_PROJECT = 'demo-revengershack';
-
-beforeAll(() => {
-  // Ensure the Admin SDK is initialized before tests run
-  // We can just import getAdminDb to trigger initialization
-  // but to avoid side-effects in setup, we'll let the services import it.
-});

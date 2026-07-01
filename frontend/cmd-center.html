@@ -230,6 +230,20 @@
         <!-- Sidebar Column -->
         <div class="sidebar-column">
             
+            <!-- Team Invitation Import -->
+            <div class="card">
+                <div class="card-header">Team Import</div>
+                <h4 style="font-family: var(--font-mono); color: var(--strike-red); font-size: 0.9rem; margin-bottom: 10px;">UPLOAD SHORTLIST (CSV)</h4>
+                <p style="font-size: 0.8rem; color: rgba(255,255,255,0.6); margin-bottom: 15px;">Columns: teamName, leaderName, leaderEmail, leaderPhone, college</p>
+                <form id="importCsvForm" class="dash-form">
+                    <div class="form-group">
+                        <input type="file" id="csvFileInput" accept=".csv" required style="width: 100%; color: var(--white); background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.2); padding: 10px;">
+                    </div>
+                    <button type="submit" class="btn-primary" style="width: 100%; margin-bottom: 5px;" id="importSubmitBtn">UPLOAD TEAMS</button>
+                    <div id="importStatus" style="font-size: 0.8rem; font-family: var(--font-mono); min-height: 20px;"></div>
+                </form>
+            </div>
+
             <!-- Round Control -->
             <div class="card">
                 <div class="card-header">Round Control</div>

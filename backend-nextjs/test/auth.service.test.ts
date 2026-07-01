@@ -134,7 +134,7 @@ describe('Auth Service (Phase 1 OTP)', () => {
       
       // Check attempts incremented
       const otps = await db.collection('otpCodes').where('email', '==', testEmail).get();
-      expect(otps.docs[0].data().attempts).toBe(1);
+      expect(otps.docs[0]?.data()?.attempts).toBe(1);
     });
 
     it('successfully verifies, creates user, and issues custom token', async () => {
@@ -148,7 +148,7 @@ describe('Auth Service (Phase 1 OTP)', () => {
 
       // Verify OTP is marked used
       const otps = await db.collection('otpCodes').where('email', '==', testEmail).get();
-      expect(otps.docs[0].data().used).toBe(true);
+      expect(otps.docs[0]?.data()?.used).toBe(true);
 
       // Verify Users doc is created
       const userDoc = await db.collection('users').doc(result.uid).get();
