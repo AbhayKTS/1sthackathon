@@ -75,6 +75,7 @@ let activeRoundId = null;
 let roundsUnsubscribers = [];
 let announcementsUnsubscriber = null;
 let leaderboardUnsubscriber = null;
+let notificationsUnsubscriber = null;
 let countdownInterval = null;
 
 function cleanupListeners() {
@@ -87,6 +88,10 @@ function cleanupListeners() {
     if (leaderboardUnsubscriber) {
         leaderboardUnsubscriber();
         leaderboardUnsubscriber = null;
+    }
+    if (notificationsUnsubscriber) {
+        notificationsUnsubscriber();
+        notificationsUnsubscriber = null;
     }
     if (countdownInterval) {
         clearInterval(countdownInterval);
@@ -137,6 +142,7 @@ onAuthStateChanged(auth, async (user) => {
         loadActiveRounds();
         listenToAnnouncements();
         loadLeaderboard();
+        listenToNotifications();
 
     } catch (error) {
         console.error("Error loading dashboard data:", error);
@@ -655,3 +661,101 @@ if (submissionForm) {
     }
   });
 }
+
+// Notifications Logic
+const notifBtn = document.getElementById("notifBtn");
+const notifDropdown = document.getElementById("notifDropdown");
+const notifList = document.getElementById("notifList");
+const notifBadge = document.getElementById("notifBadge");
+
+if (notifBtn && notifDropdown) {
+    notifBtn.addEventListener("click", () => {
+        notifDropdown.classList.toggle("hidden");
+    });
+    
+    // Close when clicking outside
+    document.addEventListener("click", (e) => {
+        if (!notifBtn.contains(e.target) && !notifDropdown.contains(e.target)) {
+            notifDropdown.classList.add("hidden");
+        }
+    });
+}
+
+function listenToNotifications() {
+    if (notificationsUnsubscriber) notificationsUnsubscriber();
+
+    const notifRef = collection(db, "notifications");
+    const q = query(notifRef, where("userId", "==", auth.currentUser.uid), orderBy("createdAt", "desc"), limit(10));
+    
+    notificationsUnsubscriber = onSnapshot(q, (snapshot) => {
+        if (!notifList) return;
+        
+        if (snapshot.empty) {
+            notifList.innerHTML = `<div class="p-4 text-center font-mono text-xs text-muted-foreground">No alerts.</div>`;
+            if (notifBadge) notifBadge.classList.add("hidden");
+            return;
+        }
+        
+        let unreadCount = 0;
+        notifList.innerHTML = "";
+        
+        snapshot.forEach((docSnap) => {
+            const data = docSnap.data();
+            const id = docSnap.id;
+            
+            if (!data.isRead) unreadCount++;
+            
+            const item = document.createElement("div");
+            item.className = \`p-4 border-b border-border/30 transition-colors \${data.isRead ? 'opacity-70' : 'bg-white/5 hover:bg-white/10'}\`;
+            item.style.cursor = data.isRead ? 'default' : 'pointer';
+            
+            let iconColor = 'var(--muted-foreground)';
+            if (data.type === 'team_approved') iconColor = '#4ade80';
+            if (data.type === 'team_rejected') iconColor = 'var(--strike-red)';
+            if (data.type === 'team_need_changes') iconColor = '#f59e0b';
+            if (data.type === 'submission_received') iconColor = '#3b82f6';
+            
+            item.innerHTML = \`
+                <div class="flex gap-3">
+                    <div class="mt-1 h-2 w-2 rounded-full shrink-0" style="background-color: \${data.isRead ? 'transparent' : iconColor}; border: 1px solid \${iconColor}"></div>
+                    <div>
+                        <div class="font-impact text-sm tracking-widest text-foreground" style="font-family: 'Bebas Neue', sans-serif;">\${sanitizeHTML(data.title)}</div>
+                        <div class="font-jp text-xs text-muted-foreground mt-1" style="font-family: 'Noto Sans JP', sans-serif;">\${sanitizeHTML(data.message)}</div>
+                        <div class="font-mono text-[9px] text-muted-foreground mt-2" style="font-family: 'JetBrains Mono', monospace;">\${data.createdAt ? data.createdAt.toDate().toLocaleString() : 'Just now'}</div>
+                    </div>
+                </div>
+            \`;
+            
+            if (!data.isRead) {
+                item.addEventListener("click", async () => {
+                    try {
+                        const idToken = await auth.currentUser.getIdToken();
+                        const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+                            ? 'http://localhost:3001/api' 
+                            : '/api';
+                            
+                        await fetch(\`\${API_BASE}/notifications/\${id}\`, {
+                            method: 'PATCH',
+                            headers: { 'Authorization': \`Bearer \${idToken}\` }
+                        });
+                    } catch (e) {
+                        console.error("Failed to mark as read", e);
+                    }
+                });
+            }
+            
+            notifList.appendChild(item);
+        });
+        
+        if (notifBadge) {
+            if (unreadCount > 0) {
+                notifBadge.classList.remove("hidden");
+            } else {
+                notifBadge.classList.add("hidden");
+            }
+        }
+    }, (error) => {
+        console.error("Error listening to notifications:", error);
+    });
+}
+

@@ -8,6 +8,7 @@ import { FieldValue } from 'firebase-admin/firestore';
 import { getAdminDb } from '@/lib/firebase-admin';
 import { Errors } from '@/lib/errors';
 import { writeAuditLog } from './audit.service';
+import { createTeamNotification } from './notification.service';
 
 export interface SubmitPayloadInput {
   teamId: string;
@@ -89,4 +90,7 @@ export async function submitPayload(userUid: string, input: SubmitPayloadInput):
     },
     ip: null,
   });
+
+  // Notification side-effect
+  await createTeamNotification(input.teamId, 'submission_received', 'Transmission Received', `Your payload for round ${input.roundId} has been successfully transmitted.`);
 }

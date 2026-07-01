@@ -8,6 +8,7 @@ import { FieldValue } from 'firebase-admin/firestore';
 import { getAdminDb } from '@/lib/firebase-admin';
 import { Errors } from '@/lib/errors';
 import { writeAuditLog, type AuditAction } from './audit.service';
+import { createTeamNotification } from './notification.service';
 
 export type ReviewAction = 'approve' | 'reject' | 'needChanges';
 
@@ -101,6 +102,15 @@ export async function reviewTeam(adminUid: string, input: ReviewTeamInput): Prom
     metadata: { action: input.action, notes: input.notes || null },
     ip: null,
   });
+
+  // Notifications
+  if (input.action === 'approve') {
+      await createTeamNotification(input.teamId, 'team_approved', 'Clearance Granted', 'Your team profile has been approved. The dashboard is now fully unlocked.');
+  } else if (input.action === 'reject') {
+      await createTeamNotification(input.teamId, 'team_rejected', 'Clearance Denied', 'Your team application has been rejected by central command.');
+  } else if (input.action === 'needChanges') {
+      await createTeamNotification(input.teamId, 'team_need_changes', 'Intel Required', 'Admin has requested changes to your team profile. Please address them and resubmit.');
+  }
 }
 
 /**
