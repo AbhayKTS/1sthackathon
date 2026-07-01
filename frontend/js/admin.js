@@ -40,7 +40,7 @@ function resetInactivityTimer() {
             sessionStorage.clear();
             localStorage.removeItem('rh_login_attempts');
             alert('Session expired due to inactivity. Please log in again.');
-            window.location.href = '/login.html';
+            window.location.href = '/login';
         });
     }, SESSION_TIMEOUT_MS);
 }
@@ -119,7 +119,7 @@ onAuthStateChanged(auth, async (user) => {
     cleanupListeners();
 
     if (!user) {
-        window.location.href = '/login.html';
+        window.location.href = '/login';
         return;
     }
     
@@ -144,7 +144,7 @@ onAuthStateChanged(auth, async (user) => {
             
         } else {
             // No user doc found, redirect to login
-            window.location.href = '/login.html';
+            window.location.href = '/login';
         }
     } catch (error) {
         console.error("Error verifying admin:", error);
@@ -158,7 +158,7 @@ logoutBtn.addEventListener("click", () => {
     signOut(auth).then(() => {
         sessionStorage.clear();
         localStorage.removeItem('rh_login_attempts');
-        window.location.href = '/login.html';
+        window.location.href = '/login';
     });
 });
 
@@ -276,7 +276,7 @@ activateRoundBtn.addEventListener("click", async () => {
     // Verify admin is still authenticated
     if (!auth.currentUser) {
         alert("Session expired. Please log in again.");
-        window.location.href = '/login.html';
+        window.location.href = '/login';
         return;
     }
 

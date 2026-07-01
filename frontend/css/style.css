@@ -520,16 +520,12 @@ ul {
 
 .countdown {
     margin-top: 12px;
-    font-family: var(--font-mono);
-    color: #ffece6;
-    background: rgba(0, 0, 0, 0.28);
     display: inline-block;
-    padding: 14px 24px;
-    border-radius: 6px;
-    letter-spacing: 1.5px;
-    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
-    font-size: 1rem;
-    line-height: 1.15;
+    color: #ff4444;
+    font-family: monospace;
+    font-size: 1.2rem;
+    letter-spacing: 2px;
+    opacity: 0.8;
 }
 
 .hero-timers {
@@ -898,9 +894,9 @@ section {
     position: relative;
     min-height: 100vh;
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     justify-content: center;
-    padding: 0 20px 36px;
+    padding: 80px 20px;
     overflow: hidden;
     background: var(--void-black);
     border: none;
@@ -992,13 +988,13 @@ section {
 
 .mission-grid-cards {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 22px;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
 }
 
 .mission-card {
     background: rgba(0, 0, 0, 0.5);
-    padding: 28px;
+    padding: 20px;
     border: 1px solid rgba(196, 30, 58, 0.2);
     transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
@@ -1013,15 +1009,16 @@ section {
 .mission-card h3 {
     font-family: var(--font-serif);
     color: var(--strike-red);
-    font-size: 1.5rem;
-    margin-bottom: 20px;
+    font-size: 1.3rem;
+    margin-bottom: 12px;
     letter-spacing: 1px;
 }
 
 .mission-card p {
-    font-size: 0.95rem;
-    line-height: 1.6;
-    color: rgba(220, 220, 220, 0.8);
+    font-size: 1.3rem;
+    font-weight: 700;
+    line-height: 1.4;
+    color: #ffffff;
 }
 
 .btn-primary {
@@ -1953,41 +1950,17 @@ footer .container {
 }
 
 .tracks-grid {
-    display: grid;
-    grid-template-columns: repeat(6, 1fr);
+    display: flex;
+    flex-wrap: wrap;
     gap: 30px;
     max-width: 1400px;
     margin: 0 auto;
-    align-items: start;
+    align-items: stretch;
     justify-content: center;
 }
 
-/* Top row: 3 cards each span 2 columns */
-.track-card:nth-child(1) {
-    grid-column: 1 / 3;
-}
-
-.track-card:nth-child(2) {
-    grid-column: 3 / 5;
-}
-
-.track-card:nth-child(3) {
-    grid-column: 5 / 7;
-}
-
-/* Bottom row: 2 centered cards */
-.track-card:nth-child(4) {
-    grid-column: 2 / 4;
-    justify-self: center;
-    max-width: 460px;
-    width: 100%;
-}
-
-.track-card:nth-child(5) {
-    grid-column: 4 / 6;
-    justify-self: center;
-    max-width: 460px;
-    width: 100%;
+.track-card {
+    width: calc((100% - 60px) / 3);
 }
 
 .track-card {
@@ -2223,14 +2196,11 @@ footer .container {
 
 @media (max-width: 1200px) {
     .tracks-grid {
-        grid-template-columns: repeat(2, 1fr);
         gap: 24px;
     }
 
-    /* Keep the bottom card centered on tablet */
-    .track-card:nth-child(5) {
-        justify-self: center;
-        max-width: 85%;
+    .track-card {
+        width: calc(50% - 12px);
     }
 
     .track-image {
@@ -2244,14 +2214,11 @@ footer .container {
     }
 
     .tracks-grid {
-        grid-template-columns: 1fr;
         gap: 20px;
     }
 
     .track-card {
-        grid-column: auto !important;
-        max-width: 100%;
-        justify-self: stretch;
+        width: 100%;
     }
 
     .track-image {
@@ -3117,10 +3084,10 @@ footer .container {
     font-family: var(--font-mono);
     font-size: 12px; /* Increased from 8.5px for high visibility */
     font-weight: bold;
-    color: #ff3333; /* Upgraded to glowing primary red for readability */
+    color: #ffffff; /* Changed to white as requested */
     letter-spacing: 1.5px;
     margin-top: 5px;
-    text-shadow: 0 0 6px rgba(255, 51, 51, 0.65);
+    text-shadow: 0 0 6px rgba(255, 255, 255, 0.4);
 }
 
 /* --- Fixed Bottom HUD Panels --- */
@@ -3253,13 +3220,13 @@ footer .container {
     left: 45px;
     z-index: 15;
     background: rgba(11, 11, 11, 0.85);
-    border: 1.2px solid rgba(0, 212, 255, 0.4);
-    border-left: 3px solid #00d4ff;
+    border: 1.2px solid rgba(255, 0, 60, 0.4);
+    border-left: 3px solid #ff003c;
     padding: 10px 14px;
     width: 180px;
     border-radius: 1px;
     backdrop-filter: blur(8px);
-    box-shadow: 0 4px 15px rgba(0, 212, 255, 0.15);
+    box-shadow: 0 4px 15px rgba(255, 0, 60, 0.15);
     pointer-events: none;
 }
 
@@ -3267,8 +3234,8 @@ footer .container {
     font-family: var(--font-heading);
     font-size: 11px;
     letter-spacing: 1px;
-    color: #00d4ff;
-    text-shadow: 0 0 6px rgba(0, 212, 255, 0.6);
+    color: #ff003c;
+    text-shadow: 0 0 6px rgba(255, 0, 60, 0.6);
     margin-bottom: 5px;
 }
 
@@ -3292,22 +3259,22 @@ footer .container {
 }
 
 .date-present {
-    color: #00d4ff;
-    text-shadow: 0 0 6px rgba(0, 212, 255, 0.7);
+    color: #ff003c;
+    text-shadow: 0 0 6px rgba(255, 0, 60, 0.7);
     animation: tl-date-glitch 4s step-end infinite;
 }
 
 .hud-tl-arrow {
     font-family: var(--font-mono);
     font-size: 9px;
-    color: #00d4ff;
+    color: #ff003c;
     animation: arrow-blink 1.2s step-end infinite;
 }
 
 .hud-tl-status-msg {
     font-family: var(--font-mono);
     font-size: 8px;
-    color: rgba(0, 212, 255, 0.7);
+    color: rgba(255, 0, 60, 0.7);
     letter-spacing: 0.5px;
     text-transform: uppercase;
 }
@@ -3395,6 +3362,10 @@ footer .container {
     cursor: pointer;
     z-index: 20;
     transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.checkpoint:hover {
+    z-index: 9999 !important;
 }
 
 /* Dim other checkpoints slightly on node hover */
@@ -3546,11 +3517,15 @@ footer .container {
 }
 
 .cp-popup--right {
-    left: 50%;
+    left: 0;
+    transform: translateX(0) scale(0.9);
 }
 
 .cp-popup--left {
-    left: 50%;
+    left: auto;
+    right: 50%;
+    bottom: calc(100% + 18px);
+    transform: translateX(-20px) scale(0.9);
 }
 
 .cp-popup--bottom {
@@ -3560,14 +3535,23 @@ footer .container {
     transform: translateX(-50%) scale(0.9);
 }
 
+.checkpoint:hover .cp-popup {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateX(-50%) scale(1.02);
+    z-index: 999;
+}
+
 .checkpoint:hover .cp-popup--bottom {
     transform: translateX(-50%) scale(1.02);
 }
 
-.checkpoint:hover .cp-popup {
-    opacity: 1;
-    transform: translateX(-50%) scale(1.02);
-    pointer-events: auto;
+.checkpoint:hover .cp-popup--left {
+    transform: translateX(-20px) scale(1.02);
+}
+
+.checkpoint:hover .cp-popup--right {
+    transform: translateX(0) scale(1.02);
 }
 
 .cp-popup-inner {
@@ -3805,6 +3789,98 @@ footer .container {
     }
 }
 
+/* ==========================================================================
+   SPONSORS SECTION
+   ========================================================================== */
+
+.sponsors-section {
+    padding: 100px 0;
+    text-align: center;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    background: radial-gradient(circle at center, rgba(15, 10, 10, 0.4) 0%, transparent 60%);
+}
+
+.sponsors-head {
+    margin-bottom: 50px;
+}
+
+.sponsors-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 30px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+@media (max-width: 900px) {
+    .sponsors-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 500px) {
+    .sponsors-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.sponsor-tier {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: rgba(20, 20, 22, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    padding: 30px 20px;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(5px);
+}
+
+.sponsor-tier:hover {
+    transform: translateY(-5px);
+    border-color: rgba(255, 255, 255, 0.15);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.tier-name {
+    font-family: var(--font-mono);
+    font-size: 1.2rem;
+    letter-spacing: 3px;
+    margin-bottom: 20px;
+    color: #fff;
+    text-transform: uppercase;
+    font-weight: bold;
+}
+
+/* Specific Tier Coloring */
+.platinum-tier .tier-name { color: #e5e4e2; text-shadow: 0 0 10px rgba(229, 228, 226, 0.5); }
+.gold-tier .tier-name { color: #ffd700; text-shadow: 0 0 10px rgba(255, 215, 0, 0.5); }
+.silver-tier .tier-name { color: #c0c0c0; text-shadow: 0 0 10px rgba(192, 192, 192, 0.5); }
+.bronze-tier .tier-name { color: #cd7f32; text-shadow: 0 0 10px rgba(205, 127, 50, 0.5); }
+
+.platinum-tier { border-top: 3px solid #e5e4e2; }
+.gold-tier { border-top: 3px solid #ffd700; }
+.silver-tier { border-top: 3px solid #c0c0c0; }
+.bronze-tier { border-top: 3px solid #cd7f32; }
+
+.sponsor-box {
+    width: 100%;
+    height: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px dashed rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+}
+
+.tba-text {
+    font-family: var(--font-mono);
+    color: rgba(255, 255, 255, 0.3);
+    font-size: 1rem;
+    letter-spacing: 2px;
+}
+
 /* Desktop popup coordinates aligned exactly over generated cityscape landmarks using viewport relative offsets */
 @media (min-width: 769px) {
     #cp1 .cp-popup {
@@ -3819,14 +3895,14 @@ footer .container {
     }
 
     #cp2 .cp-popup {
-        left: -6vw !important;
-        top: -35vh !important; /* Adjusted top slightly upward for taller cards */
+        left: 50% !important;
+        top: calc(100% + 18px) !important;
         bottom: auto !important;
-        transform: scale(0.9) !important;
-        transform-origin: top left !important;
+        transform: translateX(-50%) scale(0.9) !important;
+        transform-origin: top center !important;
     }
     #cp2:hover .cp-popup {
-        transform: scale(1.02) !important;
+        transform: translateX(-50%) scale(1.02) !important;
     }
 
     #cp3 .cp-popup {
@@ -3841,14 +3917,14 @@ footer .container {
     }
 
     #cp4 .cp-popup {
-        left: -6vw !important;
-        top: -32vh !important; /* Adjusted top slightly upward for taller cards */
+        left: 50% !important;
+        top: calc(100% + 18px) !important;
         bottom: auto !important;
-        transform: scale(0.9) !important;
-        transform-origin: top left !important;
+        transform: translateX(-50%) scale(0.9) !important;
+        transform-origin: top center !important;
     }
     #cp4:hover .cp-popup {
-        transform: scale(1.02) !important;
+        transform: translateX(-50%) scale(1.02) !important;
     }
 
     #cp5 .cp-popup {
@@ -3863,11 +3939,12 @@ footer .container {
     }
 
     #cp6 .cp-popup {
-        left: -7vw !important;
-        top: -32vh !important; /* Adjusted top slightly upward for taller cards */
+        left: auto !important;
+        right: 50% !important;
+        top: -30vh !important;
         bottom: auto !important;
         transform: scale(0.9) !important;
-        transform-origin: top left !important;
+        transform-origin: top right !important;
     }
     #cp6:hover .cp-popup {
         transform: scale(1.02) !important;
@@ -4254,19 +4331,7 @@ footer a:hover {
         --section-gap: 60px;
     }
     
-    /* Tracks specific overrides */
-    .tracks-grid > .track-card,
-    .track-card:nth-child(1),
-    .track-card:nth-child(2),
-    .track-card:nth-child(3),
-    .track-card:nth-child(4),
-    .track-card:nth-child(5) {
-        grid-column: 1 / -1 !important;
-        justify-self: center !important;
-        max-width: 100% !important;
-        width: 100% !important;
-        min-height: auto;
-    }
+
 
     /* Squad Slider Adjustments */
     .squad-carousel-container {

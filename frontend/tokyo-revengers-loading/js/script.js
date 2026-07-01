@@ -1,6 +1,6 @@
 const CONFIG = {
     loadingDuration: 6000, // 6 seconds
-    redirectUrl: 'landing.html'
+    redirectUrl: '/home'
 };
 
 const LOADING_MESSAGES = [

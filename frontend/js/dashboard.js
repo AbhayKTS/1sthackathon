@@ -38,7 +38,7 @@ function resetInactivityTimer() {
         signOut(auth).then(() => {
             sessionStorage.clear();
             alert('Session expired due to inactivity. Please log in again.');
-            window.location.href = '/login.html';
+            window.location.href = '/login';
         });
     }, SESSION_TIMEOUT_MS);
 }
@@ -110,7 +110,7 @@ onAuthStateChanged(auth, async (user) => {
     cleanupListeners();
 
     if (!user) {
-        window.location.href = '/login.html';
+        window.location.href = '/login';
         return;
     }
     
@@ -149,7 +149,7 @@ logoutBtn.addEventListener("click", () => {
     cleanupListeners();
     signOut(auth).then(() => {
         sessionStorage.clear();
-        window.location.href = '/login.html';
+        window.location.href = '/login';
     });
 });
 
