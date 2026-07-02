@@ -295,3 +295,47 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
+
+// Preloader Animation Logic
+document.addEventListener("DOMContentLoaded", () => {
+    const animationSection = document.getElementById('animationSection');
+    
+    // Check if GSAP, SplitType are loaded and the animation section exists
+    if (typeof gsap !== 'undefined' && typeof SplitType !== 'undefined' && animationSection) {
+        
+        // Lock scrolling during animation
+        document.body.style.overflow = 'hidden';
+        window.scrollTo(0, 0);
+
+        // Split the text into characters
+        const text = new SplitType('#loader-text', { types: 'chars' });
+        const chars = text.chars;
+
+        // Create the GSAP timeline
+        const tl = gsap.timeline({
+            onComplete: () => {
+                document.body.style.overflow = ''; // Unlock scrolling
+                animationSection.style.display = 'none'; // Hide the loader completely
+            },
+            delay: 0.2 // Small delay before starting
+        });
+
+        // Make loader text container visible now that we are ready to animate characters
+        gsap.set('#loader-text', { opacity: 1 });
+
+        // 1. Animate characters popping up one by one
+        tl.fromTo(chars, 
+            { opacity: 0, y: 100 }, 
+            { opacity: 1, y: 0, stagger: 0.07, ease: 'power2.out', duration: 0.8 }
+        );
+        
+        // 2. Enlarge the text slightly
+        tl.to('#loader-text', { scale: 1.2, duration: 0.8, delay: 0.6, ease: 'power1.inOut' });
+        
+        // 3. Shrink the text down to 0
+        tl.to('#loader-text', { scale: 0, duration: 0.5, ease: 'back.in(1.5)' });
+        
+        // 4. Slide the entire loader background up to reveal the website
+        tl.to('#animationSection', { yPercent: -100, duration: 1, ease: 'power3.inOut' });
+    }
+});
