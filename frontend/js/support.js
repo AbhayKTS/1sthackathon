@@ -5,7 +5,8 @@ import {
     query,
     where,
     orderBy,
-    onSnapshot
+    onSnapshot,
+    API_BASE
 } from "./firebase-init.js";
 
 // DOM Elements
@@ -154,15 +155,11 @@ if (createTicketForm) {
             // Wait, we need to send teamId. If we don't have it on client, server can look it up.
             // But we actually only require userId. Let's send what we have.
             
-            const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-                ? 'http://localhost:3001/api' 
-                : '/api';
-
-            const res = await fetch(\`\${API_BASE}/tickets\`, {
+            const res = await fetch(`${API_BASE}/tickets`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    "Authorization": \`Bearer \${currentToken}\`
+                    "Authorization": `Bearer ${currentToken}`
                 },
                 body: JSON.stringify({ subject, category, message })
             });

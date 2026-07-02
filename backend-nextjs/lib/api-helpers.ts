@@ -47,7 +47,7 @@ export async function withAuth(request: NextRequest): Promise<AuthenticatedToken
 
     // Fetch role from Firestore — token custom claims are not set yet in this impl,
     // so role is always read from the Users doc server-side (see D-005).
-    const userSnap = await getAdminDb().collection('Users').doc(decoded.uid).get();
+    const userSnap = await getAdminDb().collection('users').doc(decoded.uid).get();
 
     if (!userSnap.exists) {
       throw Errors.unauthorized('User account not found. Please contact support.');

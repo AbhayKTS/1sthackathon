@@ -33,6 +33,7 @@ const envSchema = z.object({
 
   // Email
   RESEND_API_KEY: z.string().optional(), // Optional: if not set, OTPs are logged to console in dev
+  POSTMARK_SERVER_TOKEN: z.string().optional(),
   EMAIL_FROM: z.string().email().default('noreply@revengershack.tech'),
   EMAIL_FROM_NAME: z.string().min(1).default('RevengersHack'),
 

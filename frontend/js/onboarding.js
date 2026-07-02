@@ -1,21 +1,5 @@
-import { initializeApp } from "firebase/app";
-import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
+import { auth, API_BASE, onAuthStateChanged, signOut } from "./firebase-init.js";
 
-const firebaseConfig = {
-    apiKey: "AIzaSyBA9iXHl8WQdmoJ7QUiABxu7AXfizeRzfk",
-    authDomain: "sthack-88def.firebaseapp.com",
-    projectId: "sthack-88def",
-    storageBucket: "sthack-88def.firebasestorage.app",
-    messagingSenderId: "676755311648",
-    appId: "1:676755311648:web:77041fc026d8a7b5910045"
-};
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-
-const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-    ? 'http://localhost:3001/api/team' 
-    : '/api/team';
 
 document.addEventListener("DOMContentLoaded", () => {
     const form = document.getElementById("onboardingForm");
@@ -123,7 +107,7 @@ document.addEventListener("DOMContentLoaded", () => {
             
             const token = await user.getIdToken();
             
-            const res = await fetch(`${API_BASE}/submit`, {
+            const res = await fetch(`${API_BASE}/team/submit`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

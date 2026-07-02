@@ -36,7 +36,13 @@ export default defineConfig({
         home: resolve(__dirname, 'home.html'),
         login: resolve(__dirname, 'login.html'),
         dashboard: resolve(__dirname, 'dashboard.html'),
-        admin: resolve(__dirname, 'cmd-center.html')
+        admin: resolve(__dirname, 'cmd-center.html'),
+        onboarding: resolve(__dirname, 'onboarding.html'),
+        profile: resolve(__dirname, 'profile.html'),
+        support: resolve(__dirname, 'support.html'),
+        faqs: resolve(__dirname, 'faqs.html'),
+        problemStatements: resolve(__dirname, 'problem-statements.html'),
+        resources: resolve(__dirname, 'resources.html')
       }
     }
   }

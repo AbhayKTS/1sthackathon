@@ -2,7 +2,8 @@ import {
     auth,
     db,
     doc,
-    getDoc
+    getDoc,
+    API_BASE
 } from "./firebase-init.js";
 
 const logoutBtn = document.getElementById("logoutBtn");
@@ -182,21 +183,17 @@ if (profileForm) {
         saveBtn.textContent = "TRANSMITTING...";
 
         try {
-            const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-                ? 'http://localhost:3001/api' 
-                : '/api';
-
             const payload = {
                 teamName: teamNameInput.value,
                 college: collegeInput.value,
                 members: membersList
             };
 
-            const res = await fetch(\`\${API_BASE}/team/update\`, {
+            const res = await fetch(`${API_BASE}/team/update`, {
                 method: "PATCH",
                 headers: {
                     "Content-Type": "application/json",
-                    "Authorization": \`Bearer \${currentToken}\`
+                    "Authorization": `Bearer ${currentToken}`
                 },
                 body: JSON.stringify(payload)
             });

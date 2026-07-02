@@ -309,95 +309,187 @@ function getResend(): Resend | null {
 }
 
 /**
+ * Direct call to Postmark's HTTP Send API.
+ * Avoids adding an extra npm package dependency.
+ */
+async function sendPostmarkEmail(
+  to: string,
+  subject: string,
+  html: string,
+  text: string,
+): Promise<{ success: boolean; messageId: string | null; error: string | null }> {
+  try {
+    const res = await fetch('https://api.postmarkapp.com/email', {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'X-Postmark-Server-Token': env.POSTMARK_SERVER_TOKEN as string,
+      },
+      body: JSON.stringify({
+        From: `${env.EMAIL_FROM_NAME} <${env.EMAIL_FROM}>`,
+        To: to,
+        Subject: subject,
+        HtmlBody: html,
+        TextBody: text,
+      }),
+    });
+
+    const data = (await res.json()) as { MessageID?: string; Message?: string };
+
+    if (!res.ok) {
+      return {
+        success: false,
+        messageId: null,
+        error: data.Message || 'Failed to send via Postmark',
+      };
+    }
+
+    return {
+      success: true,
+      messageId: data.MessageID || null,
+      error: null,
+    };
+  } catch (err) {
+    return {
+      success: false,
+      messageId: null,
+      error: err instanceof Error ? err.message : 'Unknown network error',
+    };
+  }
+}
+
+/**
  * Sends a templated email.
  *
- * - If RESEND_API_KEY is set: sends via Resend API
- * - If not set + NODE_ENV=development: logs OTP to console (DEV MODE)
- * - If not set + NODE_ENV=production: throws an error
+ * - If POSTMARK_SERVER_TOKEN is set: sends via Postmark HTTP API (primary)
+ * - If RESEND_API_KEY is set: sends via Resend API (fallback)
+ * - If neither is set + NODE_ENV=development: logs OTP to console (DEV MODE)
+ * - If neither is set + NODE_ENV=production: throws an error
  */
 export async function sendEmail(options: SendEmailOptions): Promise<SendEmailResult> {
   const { to, template, variables } = options;
   const rendered = renderTemplate(template, variables);
+
+  // ─── Postmark Provider (takes precedence) ──────────────────────────────
+  if (env.POSTMARK_SERVER_TOKEN) {
+    let attempt = 0;
+    let lastError = '';
+    const maxRetries = 3;
+
+    while (attempt < maxRetries) {
+      try {
+        attempt++;
+        const result = await sendPostmarkEmail(to, rendered.subject, rendered.html, rendered.text);
+        
+        if (result.success) {
+          await logEmailAttempt(to, template, true, null, result.messageId);
+          return {
+            success: true,
+            messageId: result.messageId,
+            error: null,
+            devMode: false,
+          };
+        }
+
+        lastError = result.error ?? 'Failed to send';
+        // Retry on network/rate-limiting/timeout errors
+        await new Promise((res) => setTimeout(res, 1000 * attempt));
+      } catch (err) {
+        lastError = err instanceof Error ? err.message : 'Unknown error';
+        await new Promise((res) => setTimeout(res, 1000 * attempt));
+      }
+    }
+
+    await logEmailAttempt(to, template, false, lastError, null);
+    return {
+      success: false,
+      messageId: null,
+      error: lastError,
+      devMode: false,
+    };
+  }
+
+  // ─── Resend Provider (fallback) ─────────────────────────────────────────
   const resend = getResend();
 
-  // ─── Dev mode fallback ──────────────────────────────────────────────────
-  if (!resend) {
-    if (process.env.NODE_ENV === 'production') {
-      throw new Error(
-        'RESEND_API_KEY is not set in production. Cannot send emails.',
-      );
-    }
+  if (resend) {
+    let attempt = 0;
+    let lastError = '';
+    const maxRetries = 3;
 
-    // Development: log to console so developers can test without a real email
-    // eslint-disable-next-line no-console -- intentional: dev-only feedback
-    console.log(
-      [
-        '',
-        '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
-        '  📧  DEV MODE EMAIL (RESEND_API_KEY not set)',
-        '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
-        `  To:       ${to}`,
-        `  Template: ${template}`,
-        `  Subject:  ${rendered.subject}`,
-        '',
-        '  ─── Email Body (plain text) ───',
-        rendered.text,
-        '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
-        '',
-      ].join('\n'),
-    );
+    while (attempt < maxRetries) {
+      try {
+        attempt++;
+        const result = await resend.emails.send({
+          from: `${env.EMAIL_FROM_NAME} <${env.EMAIL_FROM}>`,
+          to,
+          subject: rendered.subject,
+          html: rendered.html,
+          text: rendered.text,
+        });
 
-    return { success: true, messageId: null, error: null, devMode: true };
-  }
-
-  // ─── Production: send via Resend with retry ─────────────────────────────
-  let attempt = 0;
-  let lastError = '';
-  const maxRetries = 3;
-
-  while (attempt < maxRetries) {
-    try {
-      attempt++;
-      const result = await resend.emails.send({
-        from: `${env.EMAIL_FROM_NAME} <${env.EMAIL_FROM}>`,
-        to,
-        subject: rendered.subject,
-        html: rendered.html,
-        text: rendered.text,
-      });
-
-      if (result.error) {
-        lastError = result.error.message;
-        if (result.error.message.includes('rate limit') || result.error.message.includes('timeout')) {
-            await new Promise((res) => setTimeout(res, 1000 * attempt)); // exponential backoff
-            continue; // retry
-        } else {
-            break; // don't retry on formatting/auth errors
+        if (result.error) {
+          lastError = result.error.message;
+          if (result.error.message.includes('rate limit') || result.error.message.includes('timeout')) {
+              await new Promise((res) => setTimeout(res, 1000 * attempt)); // exponential backoff
+              continue; // retry
+          } else {
+              break; // don't retry on formatting/auth errors
+          }
         }
-      }
 
-      // Success
-      await logEmailAttempt(to, template, true, null, result.data?.id);
-      return {
-        success: true,
-        messageId: result.data?.id ?? null,
-        error: null,
-        devMode: false,
-      };
-    } catch (err) {
-      lastError = err instanceof Error ? err.message : 'Unknown error';
-      await new Promise((res) => setTimeout(res, 1000 * attempt));
+        // Success
+        await logEmailAttempt(to, template, true, null, result.data?.id);
+        return {
+          success: true,
+          messageId: result.data?.id ?? null,
+          error: null,
+          devMode: false,
+        };
+      } catch (err) {
+        lastError = err instanceof Error ? err.message : 'Unknown error';
+        await new Promise((res) => setTimeout(res, 1000 * attempt));
+      }
     }
+
+    // Failure after retries
+    await logEmailAttempt(to, template, false, lastError, null);
+    return {
+      success: false,
+      messageId: null,
+      error: lastError,
+      devMode: false,
+    };
   }
 
-  // Failure after retries
-  await logEmailAttempt(to, template, false, lastError, null);
-  return {
-    success: false,
-    messageId: null,
-    error: lastError,
-    devMode: false,
-  };
+  // ─── Dev mode fallback (neither provider configured) ───────────────────────
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error(
+      'Neither POSTMARK_SERVER_TOKEN nor RESEND_API_KEY is configured in production. Cannot send emails.',
+    );
+  }
+
+  // Development: log to console so developers can test without a real email
+  // eslint-disable-next-line no-console -- intentional: dev-only feedback
+  console.log(
+    [
+      '',
+      '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
+      '  📧  DEV MODE EMAIL (No provider configured)',
+      '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
+      `  To:       ${to}`,
+      `  Template: ${template}`,
+      `  Subject:  ${rendered.subject}`,
+      '',
+      '  ─── Email Body (plain text) ───',
+      rendered.text,
+      '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
+      '',
+    ].join('\n'),
+  );
+
+  return { success: true, messageId: null, error: null, devMode: true };
 }
 
 async function logEmailAttempt(to: string, template: string, success: boolean, error: string | null, messageId: string | null | undefined) {

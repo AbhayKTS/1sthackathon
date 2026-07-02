@@ -1,26 +1,8 @@
-import { initializeApp } from "firebase/app";
-import { getAuth, onAuthStateChanged, signInWithCustomToken } from "firebase/auth";
-import { getFirestore, doc, getDoc, setDoc } from "firebase/firestore";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyBA9iXHl8WQdmoJ7QUiABxu7AXfizeRzfk",
-  authDomain: "sthack-88def.firebaseapp.com",
-  projectId: "sthack-88def",
-  storageBucket: "sthack-88def.firebasestorage.app",
-  messagingSenderId: "676755311648",
-  appId: "1:676755311648:web:77041fc026d8a7b5910045",
-  measurementId: "G-K8NRWB6NXF"
-};
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
+import { auth, db, API_BASE, doc, getDoc, setDoc } from "./firebase-init.js";
+import { signInWithCustomToken } from "firebase/auth";
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 const RESEND_COOLDOWN_SEC = 60;
-const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-    ? 'http://localhost:3001/api/auth' 
-    : '/api/auth';
 
 document.addEventListener("DOMContentLoaded", () => {
     const loginForm = document.getElementById("loginForm");
@@ -98,7 +80,7 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     const requestOtp = async (email) => {
-        const res = await fetch(`${API_BASE}/request-otp`, {
+        const res = await fetch(`${API_BASE}/auth/request-otp`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email })
@@ -163,7 +145,7 @@ document.addEventListener("DOMContentLoaded", () => {
             verifyOtpBtn.textContent = "AUTHENTICATING...";
 
             try {
-                const res = await fetch(`${API_BASE}/verify-otp`, {
+                const res = await fetch(`${API_BASE}/auth/verify-otp`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email: currentEmail, code })

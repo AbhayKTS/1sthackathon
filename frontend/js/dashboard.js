@@ -1,33 +1,23 @@
-import { initializeApp } from "firebase/app";
-import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
-import { 
-    getFirestore, 
-    doc, 
-    getDoc, 
-    collection, 
-    query, 
-    where, 
-    getDocs, 
-    addDoc, 
+import {
+    auth,
+    db,
+    API_BASE,
+    doc,
+    getDoc,
+    collection,
+    query,
+    where,
+    getDocs,
+    addDoc,
     serverTimestamp,
     onSnapshot,
     orderBy,
     limit,
-    setDoc
-} from "firebase/firestore";
-
-const firebaseConfig = {
-    apiKey: "AIzaSyBA9iXHl8WQdmoJ7QUiABxu7AXfizeRzfk",
-    authDomain: "sthack-88def.firebaseapp.com",
-    projectId: "sthack-88def",
-    storageBucket: "sthack-88def.firebasestorage.app",
-    messagingSenderId: "676755311648",
-    appId: "1:676755311648:web:77041fc026d8a7b5910045"
-};
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
+    setDoc,
+    updateDoc,
+    onAuthStateChanged,
+    signOut
+} from "./firebase-init.js";
 
 // ─── SECURITY: Session Inactivity Timeout ───────────────────────
 const SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
@@ -618,9 +608,6 @@ if (submissionForm) {
     
     try {
         const idToken = await auth.currentUser.getIdToken(true);
-        const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-            ? 'http://localhost:3001/api' 
-            : '/api';
 
         const payload = {
             teamId: currentTeamId,
@@ -706,7 +693,7 @@ function listenToNotifications() {
             if (!data.isRead) unreadCount++;
             
             const item = document.createElement("div");
-            item.className = \`p-4 border-b border-border/30 transition-colors \${data.isRead ? 'opacity-70' : 'bg-white/5 hover:bg-white/10'}\`;
+            item.className = `p-4 border-b border-border/30 transition-colors ${data.isRead ? 'opacity-70' : 'bg-white/5 hover:bg-white/10'}`;
             item.style.cursor = data.isRead ? 'default' : 'pointer';
             
             let iconColor = 'var(--muted-foreground)';
@@ -715,28 +702,25 @@ function listenToNotifications() {
             if (data.type === 'team_need_changes') iconColor = '#f59e0b';
             if (data.type === 'submission_received') iconColor = '#3b82f6';
             
-            item.innerHTML = \`
+            item.innerHTML = `
                 <div class="flex gap-3">
-                    <div class="mt-1 h-2 w-2 rounded-full shrink-0" style="background-color: \${data.isRead ? 'transparent' : iconColor}; border: 1px solid \${iconColor}"></div>
+                    <div class="mt-1 h-2 w-2 rounded-full shrink-0" style="background-color: ${data.isRead ? 'transparent' : iconColor}; border: 1px solid ${iconColor}"></div>
                     <div>
-                        <div class="font-impact text-sm tracking-widest text-foreground" style="font-family: 'Bebas Neue', sans-serif;">\${sanitizeHTML(data.title)}</div>
-                        <div class="font-jp text-xs text-muted-foreground mt-1" style="font-family: 'Noto Sans JP', sans-serif;">\${sanitizeHTML(data.message)}</div>
-                        <div class="font-mono text-[9px] text-muted-foreground mt-2" style="font-family: 'JetBrains Mono', monospace;">\${data.createdAt ? data.createdAt.toDate().toLocaleString() : 'Just now'}</div>
+                        <div class="font-impact text-sm tracking-widest text-foreground" style="font-family: 'Bebas Neue', sans-serif;">${sanitizeHTML(data.title)}</div>
+                        <div class="font-jp text-xs text-muted-foreground mt-1" style="font-family: 'Noto Sans JP', sans-serif;">${sanitizeHTML(data.message)}</div>
+                        <div class="font-mono text-[9px] text-muted-foreground mt-2" style="font-family: 'JetBrains Mono', monospace;">${data.createdAt ? data.createdAt.toDate().toLocaleString() : 'Just now'}</div>
                     </div>
                 </div>
-            \`;
+            `;
             
             if (!data.isRead) {
                 item.addEventListener("click", async () => {
                     try {
                         const idToken = await auth.currentUser.getIdToken();
-                        const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-                            ? 'http://localhost:3001/api' 
-                            : '/api';
                             
-                        await fetch(\`\${API_BASE}/notifications/\${id}\`, {
+                        await fetch(`${API_BASE}/notifications/${id}`, {
                             method: 'PATCH',
-                            headers: { 'Authorization': \`Bearer \${idToken}\` }
+                            headers: { 'Authorization': `Bearer ${idToken}` }
                         });
                     } catch (e) {
                         console.error("Failed to mark as read", e);

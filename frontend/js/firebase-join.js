@@ -31,8 +31,8 @@ const RECAPTCHA_SITE_KEY = 'YOUR_RECAPTCHA_SITE_KEY'; // ← Replace with real k
 
 import { initializeApp } from "firebase/app";
 import { getAnalytics, isSupported as analyticsSupported } from "firebase/analytics";
-import { getFirestore, addDoc, collection, serverTimestamp } from "firebase/firestore";
-import { getAuth, signInAnonymously } from "firebase/auth";
+import { getFirestore, addDoc, collection, serverTimestamp, connectFirestoreEmulator } from "firebase/firestore";
+import { getAuth, signInAnonymously, connectAuthEmulator } from "firebase/auth";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBA9iXHl8WQdmoJ7QUiABxu7AXfizeRzfk",
@@ -47,6 +47,11 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
+
+if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+  connectAuthEmulator(auth, "http://127.0.0.1:9099");
+  connectFirestoreEmulator(db, "127.0.0.1", 8080);
+}
 
 // Try anonymous sign-in on load so writes that require auth will succeed
 signInAnonymously(auth).catch((err) => {

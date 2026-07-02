@@ -1,32 +1,21 @@
-import { initializeApp } from "firebase/app";
-import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
-import { 
-    getFirestore, 
-    doc, 
-    getDoc, 
+import {
+    auth,
+    db,
+    API_BASE,
+    doc,
+    getDoc,
     setDoc,
-    collection, 
-    query, 
-    getDocs, 
-    addDoc, 
+    collection,
+    query,
+    getDocs,
+    addDoc,
     serverTimestamp,
     onSnapshot,
     orderBy,
-    updateDoc
-} from "firebase/firestore";
-
-const firebaseConfig = {
-    apiKey: "AIzaSyBA9iXHl8WQdmoJ7QUiABxu7AXfizeRzfk",
-    authDomain: "sthack-88def.firebaseapp.com",
-    projectId: "sthack-88def",
-    storageBucket: "sthack-88def.firebasestorage.app",
-    messagingSenderId: "676755311648",
-    appId: "1:676755311648:web:77041fc026d8a7b5910045"
-};
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
+    updateDoc,
+    onAuthStateChanged,
+    signOut
+} from "./firebase-init.js";
 
 // ─── SECURITY: Session Inactivity Timeout ───────────────────────
 const SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
@@ -131,7 +120,7 @@ onAuthStateChanged(auth, async (user) => {
         
         if (userSnap.exists()) {
             const data = userSnap.data();
-            if (data.role !== "admin") {
+            if (data.role !== "admin" && data.role !== "super_admin") {
                 // Not an admin, kick to dashboard
                 window.location.href = '/dashboard.html';
                 return;
@@ -157,10 +146,6 @@ onAuthStateChanged(auth, async (user) => {
 async function fetchAnalytics(user) {
     try {
         const token = await user.getIdToken();
-        const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-            ? 'http://localhost:3001/api' 
-            : '/api';
-
         const res = await fetch(`${API_BASE}/admin/analytics`, {
             headers: {
                 "Authorization": `Bearer ${token}`
@@ -284,9 +269,6 @@ async function handleReviewAction(e) {
 
     try {
         const idToken = await auth.currentUser.getIdToken(true);
-        const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-            ? 'http://localhost:3001/api' 
-            : '/api';
 
         const payload = {
             teamId,
@@ -419,9 +401,6 @@ activateRoundBtn.addEventListener("click", async () => {
         if (!chosen) { alert("Invalid round selected."); return; }
         
         const idToken = await auth.currentUser.getIdToken(true);
-        const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-            ? 'http://localhost:3001/api' 
-            : '/api';
 
         const payload = {
             roundId: chosen.id,
@@ -464,9 +443,6 @@ announcementForm.addEventListener("submit", async (e) => {
     
     try {
         const idToken = await auth.currentUser.getIdToken(true);
-        const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-            ? 'http://localhost:3001/api' 
-            : '/api';
 
         const payload = {
             title: sanitizeHTML(annTitle.value),
@@ -526,11 +502,6 @@ if (importCsvForm) {
             
             const formData = new FormData();
             formData.append('file', file);
-
-            // Using local dev API url for now; in prod this should hit the production domain
-            const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-                ? 'http://localhost:3001/api' 
-                : '/api';
 
             const response = await fetch(`${API_BASE}/admin/import-csv`, {
                 method: 'POST',

@@ -90,9 +90,12 @@ service cloud.firestore {
     }
 
     // ─── Existing: Teams ─────────────────────────────────────────────────
-    // TODO Phase 4: scope read to own team only (currently all auth users can read)
+    // Participants can only read their own team. Admins can read all.
     match /teams/{teamId} {
-      allow read: if request.auth != null;
+      allow read: if request.auth != null && (
+        isAdminOrSuperAdmin() ||
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.teamId == teamId
+      );
       allow write: if isAdminOrSuperAdmin();
     }
 
@@ -116,9 +119,13 @@ service cloud.firestore {
     }
 
     // ─── Existing: Submissions ───────────────────────────────────────────
-    // Any authenticated user can read. Writes are handled via the Admin SDK API.
+    // Participants can only read their own team's submissions. Admins can read all.
+    // All writes are handled via the Admin SDK API (server-side).
     match /submissions/{subId} {
-      allow read: if request.auth != null;
+      allow read: if request.auth != null && (
+        isAdminOrSuperAdmin() ||
+        resource.data.teamId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.teamId
+      );
       allow create, update, delete: if false;
     }
 
