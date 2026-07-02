@@ -30,3 +30,4 @@ temp_repo
 
 # MCP Server
 .playwright-mcp
+backend-nextjs/.env.vercel
