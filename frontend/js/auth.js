@@ -1,5 +1,5 @@
 import { auth, db, API_BASE, doc, getDoc, setDoc } from "./firebase-init.js";
-import { signInWithCustomToken } from "firebase/auth";
+import { signInWithCustomToken, onAuthStateChanged } from "firebase/auth";
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 const RESEND_COOLDOWN_SEC = 60;
