@@ -339,3 +339,91 @@ document.addEventListener("DOMContentLoaded", () => {
         tl.to('#animationSection', { yPercent: -100, duration: 1, ease: 'power3.inOut' });
     }
 });
+
+// Scroll Animations
+document.addEventListener("DOMContentLoaded", () => {
+    if (typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined') {
+        gsap.registerPlugin(ScrollTrigger);
+
+        // 1. Mission Section: Slide from left (only the content box)
+        const missionContent = document.querySelector('.mission-content');
+        if (missionContent) {
+            gsap.fromTo(missionContent, {
+                xPercent: -100,
+                scale: 0.2,
+                opacity: 0,
+            }, {
+                scrollTrigger: {
+                    trigger: '#mission',
+                    start: "top 80%", // Starts when top of mission section hits 80% down the viewport
+                    end: "top 30%",   // Ends when it reaches 30% from the top
+                    scrub: 1          // Ties animation progress directly to scrollbar
+                },
+                xPercent: 0,
+                scale: 1,
+                opacity: 1,
+                ease: "power2.out"
+            });
+        }
+
+        // 2. Track Cards: Pop up sequentially
+        const tracks = document.querySelectorAll('.track-card');
+        if (tracks.length > 0) {
+            gsap.fromTo(tracks, {
+                scale: 0.2,
+                opacity: 0,
+            }, {
+                scrollTrigger: {
+                    trigger: "#tracks",
+                    start: "top 80%",
+                    end: "top 20%",
+                    scrub: 1
+                },
+                scale: 1,
+                opacity: 1,
+                stagger: 0.1,
+                ease: "power2.out"
+            });
+        }
+
+        // 3. Treasury Cards: Pop up sequentially
+        const treasuryCards = document.querySelectorAll('.treasury-card');
+        if (treasuryCards.length > 0) {
+            gsap.fromTo(treasuryCards, {
+                scale: 0.2,
+                opacity: 0,
+            }, {
+                scrollTrigger: {
+                    trigger: "#treasury",
+                    start: "top 80%",
+                    end: "top 30%",
+                    scrub: 1
+                },
+                scale: 1,
+                opacity: 1,
+                stagger: 0.1,
+                ease: "power2.out"
+            });
+        }
+
+        // 4. Sponsor Tiers: Pop up sequentially
+        const sponsorTiers = document.querySelectorAll('.sponsor-tier');
+        if (sponsorTiers.length > 0) {
+            gsap.fromTo(sponsorTiers, {
+                scale: 0.2,
+                opacity: 0,
+            }, {
+                scrollTrigger: {
+                    trigger: "#sponsors",
+                    start: "top 80%",
+                    end: "top 30%",
+                    scrub: 1
+                },
+                scale: 1,
+                opacity: 1,
+                stagger: 0.1,
+                ease: "power2.out"
+            });
+        }
+    }
+});
