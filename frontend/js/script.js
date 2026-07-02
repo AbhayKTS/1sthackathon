@@ -1,3 +1,9 @@
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import SplitType from 'split-type';
+
+gsap.registerPlugin(ScrollTrigger);
+
 document.addEventListener('DOMContentLoaded', () => {
     const scrollWrapper = document.querySelector('.scroll-wrapper');
     const scrollContainer = document.querySelector('.scroll-container');
@@ -300,50 +306,62 @@ document.addEventListener('DOMContentLoaded', () => {
 document.addEventListener("DOMContentLoaded", () => {
     const animationSection = document.getElementById('animationSection');
     
-    // Check if GSAP, SplitType are loaded and the animation section exists
-    if (typeof gsap !== 'undefined' && typeof SplitType !== 'undefined' && animationSection) {
-        
-        // Lock scrolling during animation
-        document.body.style.overflow = 'hidden';
-        window.scrollTo(0, 0);
+    // Failsafe function to hide loader if anything goes wrong
+    const hideLoaderFailsafe = () => {
+        if (animationSection) {
+            animationSection.style.display = 'none';
+            document.body.style.overflow = '';
+        }
+    };
 
-        // Split the text into characters
-        const text = new SplitType('#loader-text', { types: 'chars' });
-        const chars = text.chars;
+    try {
+        // Check if the animation section exists
+        if (animationSection) {
+            
+            // Lock scrolling during animation
+            document.body.style.overflow = 'hidden';
+            window.scrollTo(0, 0);
 
-        // Create the GSAP timeline
-        const tl = gsap.timeline({
-            onComplete: () => {
-                document.body.style.overflow = ''; // Unlock scrolling
-                animationSection.style.display = 'none'; // Hide the loader completely
-            },
-            delay: 0.2 // Small delay before starting
-        });
+            // Split the text into characters
+            const text = new SplitType('#loader-text', { types: 'chars' });
+            const chars = text.chars;
 
-        // Make loader text container visible now that we are ready to animate characters
-        gsap.set('#loader-text', { opacity: 1 });
+            // Create the GSAP timeline
+            const tl = gsap.timeline({
+                onComplete: hideLoaderFailsafe,
+                delay: 0.2 // Small delay before starting
+            });
 
-        // 1. Animate characters popping up one by one
-        tl.fromTo(chars, 
-            { opacity: 0, y: 100 }, 
-            { opacity: 1, y: 0, stagger: 0.07, ease: 'power2.out', duration: 0.8 }
-        );
-        
-        // 2. Enlarge the text slightly
-        tl.to('#loader-text', { scale: 1.2, duration: 0.8, delay: 0.6, ease: 'power1.inOut' });
-        
-        // 3. Shrink the text down to 0
-        tl.to('#loader-text', { scale: 0, duration: 0.5, ease: 'back.in(1.5)' });
-        
-        // 4. Slide the entire loader background up to reveal the website
-        tl.to('#animationSection', { yPercent: -100, duration: 1, ease: 'power3.inOut' });
+            // Make loader text container visible now that we are ready to animate characters
+            gsap.set('#loader-text', { opacity: 1 });
+
+            // 1. Animate characters popping up one by one
+            tl.fromTo(chars, 
+                { opacity: 0, y: 100 }, 
+                { opacity: 1, y: 0, stagger: 0.07, ease: 'power2.out', duration: 0.8 }
+            );
+            
+            // 2. Enlarge the text slightly
+            tl.to('#loader-text', { scale: 1.2, duration: 0.8, delay: 0.6, ease: 'power1.inOut' });
+            
+            // 3. Shrink the text down to 0
+            tl.to('#loader-text', { scale: 0, duration: 0.5, ease: 'back.in(1.5)' });
+            
+            // 4. Slide the entire loader background up to reveal the website
+            tl.to('#animationSection', { yPercent: -100, duration: 1, ease: 'power3.inOut' });
+        } else {
+            // Libraries failed to load over CDN, immediately hide preloader
+            hideLoaderFailsafe();
+        }
+    } catch (error) {
+        console.error("Error in preloader animation:", error);
+        hideLoaderFailsafe(); // Recover from error so site isn't bricked
     }
 });
 
 // Scroll Animations
 document.addEventListener("DOMContentLoaded", () => {
-    if (typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined') {
-        gsap.registerPlugin(ScrollTrigger);
+    if (true) {
 
         // 1. Mission Section: Slide from left (only the content box)
         const missionContent = document.querySelector('.mission-content');
