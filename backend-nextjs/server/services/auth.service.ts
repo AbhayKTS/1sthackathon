@@ -84,7 +84,30 @@ export async function checkInviteStatus(email: string): Promise<InviteRecord> {
     .get();
 
   if (snap.empty) {
-    throw Errors.notInvited();
+    // Check if the email belongs to a member of an Approved team
+    const teamSnap = await db
+      .collection('teams')
+      .where('memberEmails', 'array-contains', normalizedEmail)
+      .where('status', '==', 'Approved')
+      .limit(1)
+      .get();
+
+    if (teamSnap.empty) {
+      throw Errors.notInvited();
+    }
+
+    const teamDoc = teamSnap.docs[0]!;
+    const teamData = teamDoc.data();
+    const member = (teamData.members || []).find(
+      (m: any) => (m.email || '').toLowerCase() === normalizedEmail
+    );
+
+    return {
+      id: `member-${teamDoc.id}-${normalizedEmail}`,
+      teamName: teamData.teamName as string,
+      leaderName: member ? (member.name as string) : 'Team Member',
+      status: 'Approved',
+    };
   }
 
   const doc = snap.docs[0]!;
@@ -248,6 +271,10 @@ export async function verifyOtpAndCreateSession(
     }
   }
 
+  let isMember = false;
+  let memberTeamId = '';
+  let memberInvitedTeamId = '';
+
   if (!isAdmin) {
     const inviteSnap = await db
       .collection('invitedTeams')
@@ -256,10 +283,26 @@ export async function verifyOtpAndCreateSession(
       .get();
 
     if (inviteSnap.empty) {
-      throw Errors.notInvited();
-    }
+      // Check if they are a member of an Approved team
+      const teamSnap = await db
+        .collection('teams')
+        .where('memberEmails', 'array-contains', normalizedEmail)
+        .where('status', '==', 'Approved')
+        .limit(1)
+        .get();
 
-    invitedTeamId = inviteSnap.docs[0]!.id;
+      if (teamSnap.empty) {
+        throw Errors.notInvited();
+      }
+
+      isMember = true;
+      const teamDoc = teamSnap.docs[0]!;
+      memberTeamId = teamDoc.id;
+      memberInvitedTeamId = teamDoc.data().invitedTeamId || '';
+      invitedTeamId = `member-${memberTeamId}-${normalizedEmail}`;
+    } else {
+      invitedTeamId = inviteSnap.docs[0]!.id;
+    }
   }
 
   // ─── 2. Find a valid OTP (query by email only, filter in memory) ─────────
@@ -345,7 +388,13 @@ export async function verifyOtpAndCreateSession(
   }
 
   // ─── 7. Upsert the Firestore users doc ───────────────────────────────────
-  const role: UserRole = isAdmin && existingRole ? existingRole : 'participant_leader';
+  let role: UserRole = 'participant_leader';
+  if (isAdmin && existingRole) {
+    role = existingRole;
+  } else if (isMember) {
+    role = 'participant_member';
+  }
+
   const userRef = db.collection('users').doc(uid);
   const userDocSnap = await userRef.get();
 
@@ -354,8 +403,8 @@ export async function verifyOtpAndCreateSession(
       uid,
       email: normalizedEmail,
       role,
-      teamId: null,
-      invitedTeamId: isAdmin ? null : invitedTeamId,
+      teamId: isMember ? memberTeamId : null,
+      invitedTeamId: isAdmin ? null : (isMember ? memberInvitedTeamId : invitedTeamId),
       displayName: null,
       createdAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),
@@ -363,14 +412,19 @@ export async function verifyOtpAndCreateSession(
       isActive: true,
     });
   } else {
-    await userRef.update({
+    const updateData: any = {
       lastLoginAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),
-    });
+    };
+    if (isMember && !userDocSnap.data()?.teamId) {
+      updateData.teamId = memberTeamId;
+      updateData.role = 'participant_member';
+    }
+    await userRef.update(updateData);
   }
 
   // ─── 8. Update invitedTeams status → Verified ────────────────────────────
-  if (!isAdmin) {
+  if (!isAdmin && !isMember) {
     await db.collection('invitedTeams').doc(invitedTeamId).update({
       status: 'Verified',
       verifiedAt: FieldValue.serverTimestamp(),

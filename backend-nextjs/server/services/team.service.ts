@@ -64,6 +64,7 @@ export async function submitTeamProfile(
       leaderId: uid,
       invitedTeamId,
       members: input.members,
+      memberEmails: input.members.map((m) => m.email.toLowerCase()),
       status: 'Submitted', // Requires Admin approval
       updatedAt: FieldValue.serverTimestamp(),
     };
