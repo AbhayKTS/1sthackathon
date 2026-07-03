@@ -46,7 +46,7 @@ if (window.location.hostname === 'localhost' || window.location.hostname === '12
 
 const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
     ? 'http://localhost:3001/api'
-    : (import.meta.env.VITE_API_BASE || '/api');
+    : 'https://revengershack.vercel.app/api';
 
 export {
     app,
