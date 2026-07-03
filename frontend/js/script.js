@@ -1,3 +1,9 @@
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import SplitType from 'split-type';
+
+gsap.registerPlugin(ScrollTrigger);
+
 document.addEventListener('DOMContentLoaded', () => {
     const scrollWrapper = document.querySelector('.scroll-wrapper');
     const scrollContainer = document.querySelector('.scroll-container');
@@ -293,5 +299,149 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.body.style.overflow = '';
             }
         });
+    }
+});
+
+// Preloader Animation Logic
+document.addEventListener("DOMContentLoaded", () => {
+    const animationSection = document.getElementById('animationSection');
+    
+    // Failsafe function to hide loader if anything goes wrong
+    const hideLoaderFailsafe = () => {
+        if (animationSection) {
+            animationSection.style.display = 'none';
+            document.body.style.overflow = '';
+        }
+    };
+
+    try {
+        // Check if the animation section exists
+        if (animationSection) {
+            
+            // Lock scrolling during animation
+            document.body.style.overflow = 'hidden';
+            window.scrollTo(0, 0);
+
+            // Split the text into characters
+            const text = new SplitType('#loader-text', { types: 'chars' });
+            const chars = text.chars;
+
+            // Create the GSAP timeline
+            const tl = gsap.timeline({
+                onComplete: hideLoaderFailsafe,
+                delay: 0.2 // Small delay before starting
+            });
+
+            // Make loader text container visible now that we are ready to animate characters
+            gsap.set('#loader-text', { opacity: 1 });
+
+            // 1. Animate characters popping up one by one
+            tl.fromTo(chars, 
+                { opacity: 0, y: 100 }, 
+                { opacity: 1, y: 0, stagger: 0.07, ease: 'power2.out', duration: 0.8 }
+            );
+            
+            // 2. Enlarge the text slightly
+            tl.to('#loader-text', { scale: 1.2, duration: 0.8, delay: 0.6, ease: 'power1.inOut' });
+            
+            // 3. Shrink the text down to 0
+            tl.to('#loader-text', { scale: 0, duration: 0.5, ease: 'back.in(1.5)' });
+            
+            // 4. Slide the entire loader background up to reveal the website
+            tl.to('#animationSection', { yPercent: -100, duration: 1, ease: 'power3.inOut' });
+        } else {
+            // Libraries failed to load over CDN, immediately hide preloader
+            hideLoaderFailsafe();
+        }
+    } catch (error) {
+        console.error("Error in preloader animation:", error);
+        hideLoaderFailsafe(); // Recover from error so site isn't bricked
+    }
+});
+
+// Scroll Animations
+document.addEventListener("DOMContentLoaded", () => {
+    if (true) {
+
+        // 1. Mission Section: Slide from left (only the content box)
+        const missionContent = document.querySelector('.mission-content');
+        if (missionContent) {
+            gsap.fromTo(missionContent, {
+                xPercent: -100,
+                scale: 0.2,
+                opacity: 0,
+            }, {
+                scrollTrigger: {
+                    trigger: '#mission',
+                    start: "top 80%", // Starts when top of mission section hits 80% down the viewport
+                    end: "top 30%",   // Ends when it reaches 30% from the top
+                    scrub: 1          // Ties animation progress directly to scrollbar
+                },
+                xPercent: 0,
+                scale: 1,
+                opacity: 1,
+                ease: "power2.out"
+            });
+        }
+
+        // 2. Track Cards: Pop up sequentially
+        const tracks = document.querySelectorAll('.track-card');
+        if (tracks.length > 0) {
+            gsap.fromTo(tracks, {
+                scale: 0.2,
+                opacity: 0,
+            }, {
+                scrollTrigger: {
+                    trigger: "#tracks",
+                    start: "top 80%",
+                    end: "top 20%",
+                    scrub: 1
+                },
+                scale: 1,
+                opacity: 1,
+                stagger: 0.1,
+                ease: "power2.out"
+            });
+        }
+
+        // 3. Treasury Cards: Pop up sequentially
+        const treasuryCards = document.querySelectorAll('.treasury-card');
+        if (treasuryCards.length > 0) {
+            gsap.fromTo(treasuryCards, {
+                scale: 0.2,
+                opacity: 0,
+            }, {
+                scrollTrigger: {
+                    trigger: "#treasury",
+                    start: "top 80%",
+                    end: "top 30%",
+                    scrub: 1
+                },
+                scale: 1,
+                opacity: 1,
+                stagger: 0.1,
+                ease: "power2.out"
+            });
+        }
+
+        // 4. Sponsor Tiers: Pop up sequentially
+        const sponsorTiers = document.querySelectorAll('.sponsor-tier');
+        if (sponsorTiers.length > 0) {
+            gsap.fromTo(sponsorTiers, {
+                scale: 0.2,
+                opacity: 0,
+            }, {
+                scrollTrigger: {
+                    trigger: "#sponsors",
+                    start: "top 80%",
+                    end: "top 30%",
+                    scrub: 1
+                },
+                scale: 1,
+                opacity: 1,
+                stagger: 0.1,
+                ease: "power2.out"
+            });
+        }
     }
 });

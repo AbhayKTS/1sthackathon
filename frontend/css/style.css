@@ -1131,30 +1131,26 @@ section {
     transform: translateY(-10px);
 }
 
+/* Removed translateY styles that were causing black strip at the top of first 3 cards */
 .tracks-grid>.track-card:nth-child(1) .track-image img,
 .tracks-grid>.track-card:nth-child(2) .track-image img,
 .tracks-grid>.track-card:nth-child(3) .track-image img {
     object-position: center 5% !important;
-    transform: translateY(18px) !important;
 }
 
 @media (max-width: 1200px) {
-
     .tracks-grid>.track-card:nth-child(1) .track-image img,
     .tracks-grid>.track-card:nth-child(2) .track-image img,
     .tracks-grid>.track-card:nth-child(3) .track-image img {
         object-position: center 5% !important;
-        transform: translateY(10px) !important;
     }
 }
 
 @media (max-width: 768px) {
-
     .tracks-grid>.track-card:nth-child(1) .track-image img,
     .tracks-grid>.track-card:nth-child(2) .track-image img,
     .tracks-grid>.track-card:nth-child(3) .track-image img {
         object-position: center 5% !important;
-        transform: translateY(0) !important;
     }
 }
 
@@ -1951,35 +1947,36 @@ footer .container {
 
 .tracks-grid {
     display: flex;
-    flex-wrap: wrap;
-    gap: 30px;
+    flex-wrap: nowrap;
+    gap: 12px;
     max-width: 1400px;
     margin: 0 auto;
-    align-items: stretch;
+    align-items: center;
     justify-content: center;
+    height: 600px;
 }
 
 .track-card {
-    width: calc((100% - 60px) / 3);
-}
-
-.track-card {
+    width: 120px;
     background: rgba(0, 0, 0, 0.5);
     border: 2px solid;
-    border-radius: 5px;
+    border-radius: 4rem;
     overflow: hidden;
-    transition: all 0.3s ease;
+    transition: all 0.5s cubic-bezier(0.25, 1, 0.5, 1);
     cursor: pointer;
     backdrop-filter: blur(10px);
     display: flex;
     flex-direction: column;
     height: 100%;
-    min-height: 500px;
+    position: relative;
+    filter: saturate(0);
 }
 
 .track-card:hover {
-    transform: translateY(-10px);
-    box-shadow: 0 0 30px rgba(0, 217, 255, 0.4);
+    width: 450px;
+    border-radius: 1.5rem;
+    filter: saturate(100%);
+    box-shadow: 0 0 30px rgba(255, 255, 255, 0.1);
 }
 
 /* Track-specific colors */
@@ -2030,19 +2027,28 @@ footer .container {
 
 .track-image {
     width: 100%;
-    height: 380px;
-    overflow: hidden;
-    background: linear-gradient(135deg, rgba(0, 0, 0, 0.18), rgba(0, 0, 0, 0.45));
-    position: relative;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
+}
+
+.track-image::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.1) 50%, transparent 100%);
+    pointer-events: none;
 }
 
 .track-image img {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    object-position: center 10%;
-    transition: opacity 0.28s ease, transform 0.6s ease;
-    transform-origin: center;
+    object-position: center;
+    transform: scale(1.05);
+    transition: opacity 0.4s ease;
 }
 
 .track-image .normal-img {
@@ -2065,11 +2071,22 @@ footer .container {
 }
 
 .track-content {
-    padding: 25px 22px 15px;
-    flex-grow: 1;
+    padding: 25px 22px 25px;
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
+    position: relative;
+    z-index: 2;
+    height: 100%;
+    opacity: 0;
+    transform: translateY(40px);
+    transition: all 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+    text-align: center;
+}
+
+.track-card:hover .track-content {
+    opacity: 1;
+    transform: translateY(0);
 }
 
 .track-content h3 {
@@ -2112,9 +2129,7 @@ footer .container {
     font-size: 14px;
     line-height: 1.6;
     margin-bottom: 0;
-    flex-grow: 1;
 }
-
 .track-skills {
     display: none;
     flex-wrap: wrap;
@@ -2196,15 +2211,11 @@ footer .container {
 
 @media (max-width: 1200px) {
     .tracks-grid {
-        gap: 24px;
+        height: 400px;
     }
 
-    .track-card {
-        width: calc(50% - 12px);
-    }
-
-    .track-image {
-        height: 320px;
+    .track-card:hover {
+        width: 320px;
     }
 }
 
@@ -2214,19 +2225,22 @@ footer .container {
     }
 
     .tracks-grid {
-        gap: 20px;
+        height: 350px;
+        gap: 8px;
     }
 
     .track-card {
-        width: 100%;
+        width: 50px;
+        border-radius: 3rem;
     }
 
-    .track-image {
-        height: 280px;
+    .track-card:hover {
+        width: 240px;
+        border-radius: 1rem;
     }
 
     .tracks-section {
-        padding: 80px 20px 40px;
+        padding: 80px 10px 40px;
     }
 }
 
