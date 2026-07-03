@@ -9,28 +9,63 @@ admin.initializeApp({
 });
 
 const db = admin.firestore();
+const auth = admin.auth();
 
 async function run() {
-  const email = 'q.a@revengershack.tech';
+  // CHANGE THIS EMAIL to add/promote other admin users (e.g. your friends)
+  const email = 'anshloverao@gmail.com';
+  const normalizedEmail = email.toLowerCase().trim();
   
-  console.log(`Searching for user with email "${email}" in production...`);
+  console.log(`Setting up Admin rights for: ${normalizedEmail}...`);
 
-  const snap = await db.collection('users')
-    .where('email', '==', email.toLowerCase())
-    .limit(1)
-    .get();
+  let uid = '';
 
-  if (snap.empty) {
-    console.log(`Error: No user document found for ${email}.`);
-    console.log('Make sure you have logged in at least once with this email on the site first so your user account is created!');
-    process.exit(1);
+  // 1. Get or Create in Firebase Auth
+  try {
+    const existingUser = await auth.getUserByEmail(normalizedEmail);
+    uid = existingUser.uid;
+    console.log(`- Found existing Firebase Auth account (UID: ${uid})`);
+  } catch (err) {
+    if (err.code === 'auth/user-not-found') {
+      const newUser = await auth.createUser({
+        email: normalizedEmail,
+        emailVerified: true
+      });
+      uid = newUser.uid;
+      console.log(`- Created new Firebase Auth account (UID: ${uid})`);
+    } else {
+      throw err;
+    }
   }
 
-  const userDoc = snap.docs[0];
-  console.log(`Found user: ${email} (UID: ${userDoc.id}). Upgrading role to "admin"...`);
+  // 2. Upsert in Firestore Users collection
+  const userRef = db.collection('users').doc(uid);
+  const userSnap = await userRef.get();
 
-  await userDoc.ref.update({ role: 'admin' });
-  console.log(`Successfully upgraded ${email} to admin!`);
+  if (!userSnap.exists) {
+    await userRef.set({
+      uid,
+      email: normalizedEmail,
+      role: 'admin',
+      teamId: null,
+      invitedTeamId: null,
+      displayName: 'Admin User',
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      lastLoginAt: null,
+      isActive: true
+    });
+    console.log(`- Created new Firestore user document with "admin" role.`);
+  } else {
+    await userRef.update({
+      role: 'admin',
+      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    });
+    console.log(`- Updated existing Firestore user document to "admin" role.`);
+  }
+
+  console.log(`\n🎉 Success! ${normalizedEmail} is now a live Administrator.`);
+  console.log(`They can log in at https://revengershack.tech/login and access https://revengershack.tech/cmd-center.html`);
   process.exit(0);
 }
 
