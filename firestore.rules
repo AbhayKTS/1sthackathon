@@ -90,12 +90,10 @@ service cloud.firestore {
     }
 
     // ─── Existing: Teams ─────────────────────────────────────────────────
-    // Participants can only read their own team. Admins can read all.
+    // Anyone logged in can read team names and scores for the leaderboard.
+    // All writes are restricted to admins.
     match /teams/{teamId} {
-      allow read: if request.auth != null && (
-        isAdminOrSuperAdmin() ||
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.teamId == teamId
-      );
+      allow read: if request.auth != null;
       allow write: if isAdminOrSuperAdmin();
     }
 
@@ -107,9 +105,9 @@ service cloud.firestore {
     }
 
     // ─── Existing: Announcements ─────────────────────────────────────────
-    // Any authenticated user can read if it's visible (or if they are admin). Writes via Admin SDK.
+    // Any authenticated user can read announcements. Writes via Admin SDK.
     match /announcements/{annId} {
-      allow read: if request.auth != null && (resource.data.isVisible == true || isAdminOrSuperAdmin());
+      allow read: if request.auth != null;
       allow create, update, delete: if false; 
       
       // Phase 7: Subcollection for tracking user read states
