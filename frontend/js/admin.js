@@ -198,7 +198,6 @@ function loadTeams() {
 
     const teamsRef = collection(db, "teams");
     teamsUnsubscriber = onSnapshot(teamsRef, (snapshot) => {
-        statTotalTeams.textContent = snapshot.size;
         
         if (snapshot.empty) {
             teamsTableBody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: rgba(255,255,255,0.5);">No teams found.</td></tr>`;
@@ -321,7 +320,6 @@ function loadSubmissions() {
     const q = query(submissionsRef, orderBy("submittedAt", "desc"));
     
     submissionsUnsubscriber = onSnapshot(q, (snapshot) => {
-        statTotalSubmissions.textContent = snapshot.size;
         
         if (snapshot.empty) {
             submissionsTableBody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: rgba(255,255,255,0.5);">No submissions found.</td></tr>`;
