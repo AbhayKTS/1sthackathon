@@ -44,7 +44,7 @@ export async function reviewTeam(adminUid: string, input: ReviewTeamInput): Prom
 
     const teamData = snap.data()!;
     leaderId = teamData['leaderId'];
-    teamName = teamData['name'] || 'Hacker';
+    teamName = teamData['teamName'] || 'Hacker';
     const serverUpdatedAt = teamData['updatedAt'];
     let serverUpdatedMs = 0;
 
@@ -152,15 +152,12 @@ export async function activateRound(adminUid: string, roundId: string, roundTitl
   allRoundIds.forEach(rid => {
     const ref = db.collection('rounds').doc(rid);
     const isActive = rid === roundId;
-    
-    // We only update the title/desc for the active one to keep it simple, 
-    // or just leave them alone and let the UI drive it.
-    // The legacy code wrote title/desc to all of them based on a map.
-    // We will just do a simple update for isActive.
     batch.set(ref, {
         isActive,
-        updatedAt: FieldValue.serverTimestamp()
-    }, { merge: true }); // Use merge so we don't destroy title/desc
+        ...(isActive ? { title: roundTitle, description: roundDesc } : {}),
+        updatedAt: FieldValue.serverTimestamp(),
+        updatedBy: adminUid,
+    }, { merge: true });
   });
 
   await batch.commit();

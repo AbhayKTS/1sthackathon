@@ -6,15 +6,15 @@
 
 | Conflict | Status | Resolved |
 |---|---|---|
-| #1 Team name bug | 🟡 PENDING CONFIRMATION | Batch 2 |
+| #1 Team name bug | ✅ RESOLVED 2026-07-05 | admin.service.ts teamData['name'] -> teamData['teamName'] |
 | #2 member invitedTeamId synthetic string | 🟡 PENDING CONFIRMATION | Batch 5 |
 | #3 importedAt vs invitedAt | ✅ RESOLVED 2026-07-05 | SCHEMA.md updated |
 | #4 emailLogs field shape | ✅ RESOLVED 2026-07-05 | SCHEMA.md updated |
 | #5 Security rule escalation | 🟡 PENDING CONFIRMATION | Batch 4 |
 | #6 joinGangLeads unread | 🟡 PENDING CONFIRMATION | Batch 3c |
-| #7 rounds missing title | 🟡 PENDING CONFIRMATION | Batch 3a |
+| #7 rounds missing title | ✅ RESOLVED 2026-07-05 | activateRound() now writes title+description+updatedBy |
 | #8 needChangesHistory field names | ✅ RESOLVED 2026-07-05 | SCHEMA.md updated |
-| #9 member notifications skipped | 🟡 PENDING CONFIRMATION | Batch 3b |
+| #9 member notifications skipped | ✅ RESOLVED 2026-07-05 | createTeamNotification() queries users by teamId |
 
 ---
 

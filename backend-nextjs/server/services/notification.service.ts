@@ -64,24 +64,21 @@ export async function createTeamNotification(
   const db = getAdminDb();
   const teamRef = db.collection('teams').doc(teamId);
   const teamSnap = await teamRef.get();
-  
+
   if (!teamSnap.exists) return;
-  
-  const teamData = teamSnap.data()!;
-  
-  // Notify leader
-  if (teamData.leaderId) {
-    await createNotification({
-      userId: teamData.leaderId,
-      type,
-      title,
-      message,
-      actionLink
-    });
-  }
-  
-  // Notify members (assuming members array exists but only has email/name strings right now? 
-  // Wait, members array might not have uids, because members sign up later or don't have accounts yet?
-  // Let's check how members are handled. If they don't have uid yet, we can't notify them.
-  // We'll just notify the leader for now.)
+
+  // Query all users linked to this team — catches both leader and members who have logged in
+  const usersSnap = await db.collection('users').where('teamId', '==', teamId).get();
+
+  await Promise.all(
+    usersSnap.docs.map((userDoc) =>
+      createNotification({
+        userId: userDoc.id,
+        type,
+        title,
+        message,
+        actionLink,
+      })
+    )
+  );
 }
