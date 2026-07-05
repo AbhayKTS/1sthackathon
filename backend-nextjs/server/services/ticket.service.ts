@@ -158,7 +158,8 @@ export async function adminReplyTicket(
       const userSnap = await db.collection('users').doc(ticketData.userId).get();
       if (userSnap.exists) {
           const email = userSnap.data()!.email;
-          const loginUrl = env.NEXT_PUBLIC_APP_URL ? `${env.NEXT_PUBLIC_APP_URL}/login` : 'https://revengershack.com/login';
+          const baseUrl = process.env.NODE_ENV === 'production' ? 'https://revengershack.tech' : (env.NEXT_PUBLIC_APP_URL || 'http://localhost:5173');
+          const loginUrl = `${baseUrl}/login`;
           // We don't have a specific "ticket" email template yet in Phase 11. 
           // We can reuse a generic reminder/notification if needed, or just skip email for now
           // as Phase 11 didn't specify a ticket email template. Let's skip email for support to keep scope tight.

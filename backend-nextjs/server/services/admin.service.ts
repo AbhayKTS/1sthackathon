@@ -116,7 +116,8 @@ export async function reviewTeam(adminUid: string, input: ReviewTeamInput): Prom
           const userSnap = await db.collection('users').doc(leaderId).get();
           if (userSnap.exists) {
               const leaderEmail = userSnap.data()!.email;
-              const loginUrl = env.NEXT_PUBLIC_APP_URL ? `${env.NEXT_PUBLIC_APP_URL}/login` : 'https://revengershack.com/login';
+              const baseUrl = process.env.NODE_ENV === 'production' ? 'https://revengershack.tech' : (env.NEXT_PUBLIC_APP_URL || 'http://localhost:5173');
+              const loginUrl = `${baseUrl}/login`;
 
               if (input.action === 'approve') {
                   await createTeamNotification(input.teamId, 'team_approved', 'Clearance Granted', 'Your team profile has been approved. The dashboard is now fully unlocked.');

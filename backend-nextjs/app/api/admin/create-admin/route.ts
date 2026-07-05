@@ -86,7 +86,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     }, { merge: true });
 
     // 4. Send invitation email
-    const loginUrl = `${env.NEXT_PUBLIC_APP_URL}/login`;
+    const baseUrl = process.env.NODE_ENV === 'production' ? 'https://revengershack.tech' : env.NEXT_PUBLIC_APP_URL;
+    const loginUrl = `${baseUrl}/login`;
     await sendEmail({
       to: email,
       template: 'admin_invite',

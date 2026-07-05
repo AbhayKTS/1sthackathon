@@ -100,7 +100,8 @@ export async function importInvitations(
       result.imported += chunk.length;
       
       // Phase 11: Fire off invitation emails asynchronously
-      const loginUrl = env.NEXT_PUBLIC_APP_URL ? `${env.NEXT_PUBLIC_APP_URL}/login` : 'https://revengershack.com/login';
+      const baseUrl = process.env.NODE_ENV === 'production' ? 'https://revengershack.tech' : (env.NEXT_PUBLIC_APP_URL || 'http://localhost:5173');
+      const loginUrl = `${baseUrl}/login`;
       Promise.allSettled(chunk.map(record => 
         sendEmail({
             to: record.leaderEmail.toLowerCase().trim(),

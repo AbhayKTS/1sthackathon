@@ -431,7 +431,8 @@ export async function verifyOtpAndCreateSession(
     });
 
     if (isNewUser) {
-        const loginUrl = env.NEXT_PUBLIC_APP_URL ? `${env.NEXT_PUBLIC_APP_URL}/dashboard` : 'https://revengershack.com/dashboard';
+        const baseUrl = process.env.NODE_ENV === 'production' ? 'https://revengershack.tech' : (env.NEXT_PUBLIC_APP_URL || 'http://localhost:5173');
+        const loginUrl = `${baseUrl}/dashboard`;
         sendEmail({
             to: normalizedEmail,
             template: 'verified',
