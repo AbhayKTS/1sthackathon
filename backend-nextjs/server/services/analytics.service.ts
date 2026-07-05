@@ -12,6 +12,7 @@ export interface AdminAnalytics {
   totalTeamsSubmitted: number;
   totalTeamsApproved: number;
   totalTickets: number;
+  totalLeads: number;
 }
 
 /**
@@ -29,13 +30,15 @@ export async function getAdminAnalytics(): Promise<AdminAnalytics> {
     usersCountSnap,
     submittedCountSnap,
     approvedCountSnap,
-    ticketsCountSnap
+    ticketsCountSnap,
+    leadsCountSnap,
   ] = await Promise.all([
     db.collection('invitedTeams').count().get(),
     db.collection('users').count().get(),
     db.collection('teams').where('status', 'in', ['Submitted', 'Approved', 'Rejected']).count().get(),
     db.collection('teams').where('status', '==', 'Approved').count().get(),
-    db.collection('tickets').count().get()
+    db.collection('tickets').count().get(),
+    db.collection('joinGangLeads').count().get(),
   ]);
 
   return {
@@ -43,6 +46,7 @@ export async function getAdminAnalytics(): Promise<AdminAnalytics> {
     totalUsers: usersCountSnap.data().count,
     totalTeamsSubmitted: submittedCountSnap.data().count,
     totalTeamsApproved: approvedCountSnap.data().count,
-    totalTickets: ticketsCountSnap.data().count
+    totalTickets: ticketsCountSnap.data().count,
+    totalLeads: leadsCountSnap.data().count,
   };
 }
