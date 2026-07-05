@@ -27,7 +27,7 @@ service cloud.firestore {
     // Write: ALL writes via Admin SDK (Next.js API routes) — deny client writes.
     match /users/{userId} {
       allow read: if request.auth != null && request.auth.uid == userId;
-      allow write: if isAdminOrSuperAdmin();
+      allow write: if false; // All mutations via Admin SDK API routes only — prevents client-side role escalation
     }
 
     // ─── Phase 1: OTP Codes ───────────────────────────────────────────────
