@@ -42,6 +42,7 @@
             </div>
             <nav aria-label="Primary navigation" class="hidden md:flex items-center gap-6 font-impact tracking-widest text-sm" style="font-family: 'Bebas Neue', sans-serif;">
                 <a href="/dashboard.html" aria-current="page" class="text-foreground hover:text-blood transition-colors border-b-2 border-blood pb-1 cursor-pointer">DASHBOARD</a>
+                <a href="/leaderboard.html" class="text-muted-foreground hover:text-blood transition-colors cursor-pointer">LEADERBOARD</a>
                 <a href="/problem-statements.html" class="text-muted-foreground hover:text-blood transition-colors cursor-pointer">PROBLEM STATEMENTS</a>
                 <a href="/resources.html" class="text-muted-foreground hover:text-blood transition-colors cursor-pointer">RESOURCES</a>
                 <a href="/faqs.html" class="text-muted-foreground hover:text-blood transition-colors cursor-pointer">FAQs</a>
@@ -171,26 +172,7 @@
                         </div>
                     </div>
 
-                    <!-- Submission Form Logic -->
-                    <div class="mt-8" id="activeRoundFormContainer" style="display: none; position: relative; z-index: 10;">
-                        <div class="border border-blood p-4 mb-4 bg-black/60 backdrop-blur-sm">
-                            <h3 class="font-impact text-xl text-blood tracking-wider mb-1" id="activeRoundTitle" style="font-family: 'Bebas Neue', sans-serif;">Loading...</h3>
-                            <p class="font-jp text-sm text-muted-foreground mb-4" id="activeRoundDesc" style="font-family: 'Noto Sans JP', sans-serif;">Loading...</p>
 
-                            <form id="submissionForm" class="flex flex-col gap-3">
-                                <input type="url" id="githubLink" placeholder="GITHUB REPO URL" required class="bg-input border border-border px-3 py-2 font-mono text-xs focus:outline-none focus:border-blood w-full text-foreground" style="font-family: 'JetBrains Mono', monospace; background-color: var(--input); color: var(--foreground);">
-                                <input type="url" id="demoLink" placeholder="LIVE DEMO URL (OPTIONAL)" class="bg-input border border-border px-3 py-2 font-mono text-xs focus:outline-none focus:border-blood w-full text-foreground" style="font-family: 'JetBrains Mono', monospace; background-color: var(--input); color: var(--foreground);">
-                                <button type="submit" id="submitMissionBtn" class="font-impact tracking-widest text-sm px-6 py-3 bg-blood text-primary-foreground shadow-brutal hover:translate-x-[3px] hover:translate-y-[3px] hover:shadow-none transition-all w-max cursor-pointer" style="font-family: 'Bebas Neue', sans-serif;">
-                                    SUBMIT BUILD →
-                                </button>
-                            </form>
-                            <div id="submissionStatus" class="font-mono text-xs mt-3" style="font-family: 'JetBrains Mono', monospace;"></div>
-                        </div>
-                    </div>
-                    
-                    <div id="heroFooterText" class="mt-8 font-mono text-[10px] tracking-[0.3em] text-muted-foreground relative z-10" style="font-family: 'JetBrains Mono', monospace;">
-                        [ SUBMISSION DEADLINE WILL BE ANNOUNCED SOON ]
-                    </div>
                 </div>
 
                 <!-- Right edge text -->
@@ -231,28 +213,8 @@
                     </div>
                 </div>
 
-                <div class="border border-border bg-card p-6 relative">
-                    <div class="flex items-center gap-4">
-                        <div class="relative shrink-0">
-                            <div class="h-16 w-16 bg-gradient-to-br from-blood to-ink border-2 border-blood flex items-center justify-center font-display text-2xl" style="font-family: 'Zen Dots', sans-serif;">
-                                T
-                            </div>
-                            <div class="absolute -bottom-1 -right-1 h-4 w-4 rounded-full bg-emerald-500 border-2 border-card"></div>
-                        </div>
-                        <div class="min-w-0 flex-1">
-                            <div class="font-mono text-[10px] tracking-[0.3em] text-muted-foreground" style="font-family: 'JetBrains Mono', monospace;">TEAM_ID // <span id="teamIdDisplay">...</span></div>
-                            <div class="font-impact text-2xl tracking-wider truncate" id="teamNameDisplay" style="font-family: 'Bebas Neue', sans-serif;">Loading...</div>
-                            <div class="font-jp text-xs text-blood" id="teamStatusBadge" style="font-family: 'Noto Sans JP', sans-serif;">REVENGERSHACK HACKER</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- MAIN GRID -->
-        <section class="grid lg:grid-cols-3 gap-6">
             <!-- SQUAD -->
-            <div class="lg:col-span-2 border border-border bg-card">
+            <div class="border border-border bg-card">
                 <div class="flex items-center justify-between border-b border-border px-6 py-4">
                     <div class="flex items-center gap-3">
                         <div class="h-2 w-2 bg-blood"></div>
@@ -260,12 +222,17 @@
                     </div>
                     <span class="font-jp text-xs text-muted-foreground" style="font-family: 'Noto Sans JP', sans-serif;"></span>
                 </div>
-                <ul class="divide-y divide-border" id="teamMembersList">
+                <ul class="divide-y divide-border overflow-y-auto max-h-[300px]" id="teamMembersList">
                     <li class="p-4 flex items-center justify-center">
                         <span class="font-mono text-sm text-muted-foreground">Loading members...</span>
                     </li>
                 </ul>
             </div>
+            </div>
+        </section>
+
+        <!-- MAIN GRID -->
+        <section class="grid lg:grid-cols-2 gap-6">
 
             <!-- INFORMATION -->
             <div class="border border-border bg-card">
@@ -285,36 +252,38 @@
                     </li>
                 </ul>
             </div>
+
+            <!-- SUBMISSION -->
+            <div class="border border-border bg-card flex flex-col">
+                <div class="flex items-center justify-between border-b border-border px-6 py-4">
+                    <div class="flex items-center gap-3">
+                        <div class="h-2 w-2 bg-blood" style="animation: pulse-blood 2s infinite"></div>
+                        <h2 class="font-display tracking-widest text-sm" style="font-family: 'Zen Dots', sans-serif;">MISSION SUBMISSION</h2>
+                    </div>
+                    <span class="font-mono text-[10px] text-blood" style="font-family: 'JetBrains Mono', monospace;">ACTIVE</span>
+                </div>
+                <div class="p-6 flex-1 flex flex-col justify-center">
+                    <div id="activeRoundFormContainer" style="display: none;">
+                        <h3 class="font-impact text-xl text-blood tracking-wider mb-1" id="activeRoundTitle" style="font-family: 'Bebas Neue', sans-serif;">Loading...</h3>
+                        <p class="font-jp text-sm text-muted-foreground mb-4" id="activeRoundDesc" style="font-family: 'Noto Sans JP', sans-serif;">Loading...</p>
+
+                        <form id="submissionForm" class="flex flex-col gap-3">
+                            <input type="url" id="githubLink" placeholder="GITHUB REPO URL" required class="bg-input border border-border px-3 py-2 font-mono text-xs focus:outline-none focus:border-blood w-full text-foreground" style="font-family: 'JetBrains Mono', monospace; background-color: var(--input); color: var(--foreground);">
+                            <input type="url" id="demoLink" placeholder="LIVE DEMO URL (OPTIONAL)" class="bg-input border border-border px-3 py-2 font-mono text-xs focus:outline-none focus:border-blood w-full text-foreground" style="font-family: 'JetBrains Mono', monospace; background-color: var(--input); color: var(--foreground);">
+                            <button type="submit" id="submitMissionBtn" class="font-impact tracking-widest text-sm px-6 py-3 bg-blood text-primary-foreground shadow-brutal hover:translate-x-[3px] hover:translate-y-[3px] hover:shadow-none transition-all w-max cursor-pointer" style="font-family: 'Bebas Neue', sans-serif;">
+                                SUBMIT BUILD →
+                            </button>
+                        </form>
+                        <div id="submissionStatus" class="font-mono text-xs mt-3" style="font-family: 'JetBrains Mono', monospace;"></div>
+                    </div>
+                    <div id="heroFooterText" class="mt-8 font-mono text-[10px] tracking-[0.3em] text-muted-foreground" style="font-family: 'JetBrains Mono', monospace;">
+                        [ SUBMISSION DEADLINE WILL BE ANNOUNCED SOON ]
+                    </div>
+                </div>
+            </div>
         </section>
 
-        <!-- LEADERBOARD -->
-        <section class="border border-border bg-card">
-            <div class="flex items-center justify-between border-b border-border px-6 py-4">
-                <div class="flex items-center gap-3">
-                    <div class="h-2 w-2 bg-gold" style="animation: pulse-blood 2s infinite"></div>
-                    <h2 class="font-display tracking-widest text-sm" style="font-family: 'Zen Dots', sans-serif;">GLOBAL LEADERBOARD</h2>
-                </div>
-                <span class="font-mono text-[10px] text-gold" style="font-family: 'JetBrains Mono', monospace;">TOP RANKS</span>
-            </div>
-            <div class="p-0 overflow-x-auto">
-                <table class="w-full text-left font-mono text-sm" style="font-family: 'JetBrains Mono', monospace;">
-                    <thead class="text-xs text-muted-foreground border-b border-border bg-black/20">
-                        <tr>
-                            <th class="py-3 px-6 font-normal tracking-widest">RANK</th>
-                            <th class="py-3 px-6 font-normal tracking-widest">TEAM</th>
-                            <th class="py-3 px-6 font-normal tracking-widest text-right">SCORE</th>
-                        </tr>
-                    </thead>
-                    <tbody id="leaderboardTableBody" class="divide-y divide-border/50">
-                        <tr class="hover:bg-white/5 transition-colors">
-                            <td class="py-4 px-6 text-gold">01</td>
-                            <td class="py-4 px-6 text-foreground font-impact tracking-widest text-lg" style="font-family: 'Bebas Neue', sans-serif;">Loading...</td>
-                            <td class="py-4 px-6 text-blood text-right">---</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </section>
+
 
         <!-- FOOTER -->
         <footer class="pt-8 pb-4 border-t border-border flex flex-wrap items-center justify-between gap-4">
