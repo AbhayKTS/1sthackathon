@@ -1,7 +1,11 @@
 # SCHEMA.md — RevengersHack Firestore Schema
 
-Living document. Updated as each phase is implemented.
-Last updated: Phase 0 (scaffold only — no collections created yet).
+Living document. Updated as each conflict in DATA_WORKFLOW.md is resolved.
+Last updated: 2026-07-05 — Batch 1 reconciliation pass (aligned all field names to actual code).
+
+> **IMPORTANT:** This file must be kept in sync with `/docs/DATA_WORKFLOW.md`.
+> Field names here reflect what the **code actually writes to Firestore**, not the original design spec.
+> When in doubt, trust the code over this document.
 
 ---
 
@@ -51,13 +55,15 @@ Document ID: auto-ID
 ```typescript
 {
   email:      string;     // The email the OTP was sent to
-  code:       string;     // Hashed OTP (never store plain text)
-  expiresAt:  Timestamp;  // 10 minutes from issuance
+  codeHash:   string;     // SHA-256(otp + ':' + projectId pepper) — NEVER plain text
+  expiresAt:  Timestamp;  // 10 minutes from issuance (written as JS Date, Firestore auto-converts)
   attempts:   number;     // Incremented on each failed verify attempt (max 5)
   used:       boolean;    // true once successfully verified
   createdAt:  Timestamp;
 }
 ```
+
+> **Note (CONFLICT #3-related):** Field was named `code` in the original spec. Actual code writes `codeHash`. RESOLVED 2026-07-05.
 
 **Security rule:** NO client access. Admin SDK only.
 
@@ -88,21 +94,22 @@ Document ID: auto-ID
 
 ```typescript
 {
-  teamName:           string;
-  leaderName:         string;
-  leaderEmail:        string;            // Used as the gate key for verification
-  leaderPhone:        string;
-  college:            string;
-  city:               string | null;
-  state:              string | null;
-  status:             'Invited' | 'EmailSent' | 'EmailFailed' | 'Verified' | 'Expired';
-  invitedAt:          Timestamp;
-  emailSentAt:        Timestamp | null;
-  verifiedAt:         Timestamp | null;
-  importBatchId:      string;            // ID of the CSV import batch (for re-upload idempotency)
-  round:              number;            // Which round they were shortlisted for (e.g., 2)
+  teamName:      string;
+  leaderName:    string;
+  leaderEmail:   string;       // Normalized to lowercase. The gate key for OTP gating.
+  leaderPhone:   string;
+  college:       string;
+  // city, state, round — NOT written by current import service (CsvRow has no these fields)
+  status:        'Invited' | 'EmailSent' | 'EmailFailed' | 'Verified' | 'Submitted' | 'Approved' | 'Rejected' | 'Incomplete';
+  importBatchId: string;       // UUID from CSV import session (for idempotency)
+  importedAt:    Timestamp;    // Written by invitation.service.ts on import
+  updatedAt:     Timestamp;    // Updated on status transitions
+  // emailSentAt — NOT currently written by code
+  // verifiedAt  — NOT currently written by code
 }
 ```
+
+> **Note (CONFLICT #3):** Original spec had `invitedAt`, `emailSentAt`, `verifiedAt`, `city`, `state`, `round`. Actual code writes `importedAt` and `updatedAt` only. `status` enum expanded to cover full lifecycle. RESOLVED 2026-07-05.
 
 **Security rule:** Admin read/write only. No client access.
 
@@ -185,38 +192,31 @@ Document ID: auto-ID
 ### `Submissions` — Phase 9
 
 One doc per submission attempt per round per team.
-Document ID: auto-ID
+Document ID: `{teamId}_{roundId}` — composite deterministic ID enabling upsert
 
 ```typescript
 {
-  teamId:       string;           // FK → Teams
-  roundId:      string;           // FK → Rounds
-  submittedBy:  string;           // FK → Users.uid (leader only can submit)
+  teamId:      string;   // FK → teams
+  roundId:     string;   // FK → rounds
+  submittedBy: string;   // FK → users.uid (leader only)
 
-  // Submission content
-  githubUrl:    string;
-  demoUrl:      string | null;
-  pptUrl:       string | null;    // Public URL or Storage path
-  videoUrl:     string | null;
-  docsUrl:      string | null;
-  notes:        string | null;
+  // Submission content (currently supported fields)
+  githubLink:  string;          // NOTE: spec originally said githubUrl
+  demoLink:    string | null;   // NOTE: spec originally said demoUrl
+  // pptUrl, videoUrl, docsUrl, notes — NOT written by current code (future fields)
 
   // Status
-  status: 'Draft' | 'Submitted' | 'Locked' | 'Reviewed';
+  status: 'Submitted';  // Only value written currently. 'Draft'/'Locked'/'Reviewed' reserved for future.
 
-  // Judging (future-ready)
-  scores: Array<{
-    judgeUid: string;
-    score:    number;
-    comment:  string | null;
-    at:       Timestamp;
-  }>;
+  // Judging — future-ready, not yet written
+  // scores: Array<{ judgeUid, score, comment, at }>;
 
-  submittedAt:  Timestamp;
-  lockedAt:     Timestamp | null;
-  updatedAt:    Timestamp;
+  submittedAt: Timestamp;
+  // lockedAt, updatedAt — NOT written by current code
 }
 ```
+
+> **Note (DATA_WORKFLOW.md):** Field names changed from spec — `githubUrl` → `githubLink`, `demoUrl` → `demoLink`. Document ID is composite `{teamId}_{roundId}`, not auto-ID. RESOLVED 2026-07-05.
 
 **Security rule:** Team leader can create/update own submission before deadline. Admin can update. Reads: own team only.
 
@@ -252,17 +252,20 @@ Document ID: auto-ID
 {
   title:      string;
   message:    string;
-  createdBy:  string;    // Admin UID
+  createdBy:  string;          // Admin UID
   updatedBy:  string | null;
-  createdAt:  Timestamp;
+  timestamp:  Timestamp;       // Creation time. NOTE: spec said createdAt — actual field is timestamp.
   updatedAt:  Timestamp | null;
-  isVisible:  boolean;   // Soft-delete / hide without removing
+  isVisible:  boolean;         // Soft-delete / hide without removing
+  version:    number;          // Incremented on each edit
 }
 ```
 
+> **Note (DATA_WORKFLOW.md):** Creation timestamp field is `timestamp`, NOT `createdAt`. Any sort by `createdAt` will fail silently. RESOLVED 2026-07-05.
+
 **Subcollection `ReadState`** (per announcement):
 ```typescript
-// Path: Announcements/{annId}/ReadState/{userId}
+// Path: announcements/{annId}/ReadState/{userId}
 {
   readAt: Timestamp;
 }
@@ -279,17 +282,20 @@ Document ID: auto-ID
 
 ```typescript
 {
-  userId:     string;    // FK → Users.uid (recipient)
-  type:       'Approval' | 'Rejection' | 'NeedChanges' | 'Announcement' | 'Submission' | 'Deadline' | 'Mentor';
+  userId:     string;   // FK → users.uid (recipient)
+  type:       'system_alert' | 'team_approved' | 'team_rejected' | 'team_need_changes' | 'submission_received' | 'support_reply';
   title:      string;
-  body:       string;
+  message:    string;   // NOTE: spec said `body` — actual field is `message`
+  actionLink: string | null;
   isRead:     boolean;
-  refId:      string | null;   // ID of the related doc (e.g., annId, teamId)
-  refType:    string | null;   // Collection name (e.g., 'Announcements', 'Teams')
   createdAt:  Timestamp;
-  readAt:     Timestamp | null;
+  // refId, refType, readAt — NOT written by current code (future fields)
 }
 ```
+
+> **Note (DATA_WORKFLOW.md):** Field `body` renamed to `message` in actual code. `refId`, `refType`, `readAt` not written. `type` enum updated to match notification.service.ts values. RESOLVED 2026-07-05.
+
+> **Known gap:** `createTeamNotification()` currently only notifies the team leader, not members. See CONFLICT #9 in DATA_WORKFLOW.md — OPEN.
 
 **Security rule:** User can read/update own notifications only (mark isRead). Only Admin SDK can create.
 
@@ -323,52 +329,73 @@ Document ID: auto-ID
 
 ```typescript
 {
-  recipient:  string;         // Email address
-  template:   'invitation' | 'otp' | 'verified' | 'approved' | 'rejected' | 'needChanges' | 'reminder';
-  status:     'Sent' | 'Failed' | 'Bounced';
-  provider:   'resend' | 'brevo';
-  messageId:  string | null;  // Provider message ID
-  error:      string | null;  // Error message if failed
-  retries:    number;
-  sentAt:     Timestamp;
-  failedAt:   Timestamp | null;
+  to:        string;          // Email address recipient. NOTE: spec said `recipient`.
+  template:  string;          // Template name (e.g., 'invitation', 'otp', 'approved', 'rejected', 'needChanges')
+  success:   boolean;         // true = send succeeded. NOTE: spec said status enum 'Sent'/'Failed'/'Bounced'.
+  error:     string | null;   // Error message if failed, null on success
+  messageId: string | null;   // Provider-assigned message ID
+  timestamp: Timestamp;       // Log creation time. NOTE: spec said `sentAt`.
+  // provider, retries, failedAt — NOT written by current code
 }
 ```
+
+> **Note (CONFLICT #4):** Entire field shape differs from original spec. `recipient` -> `to`, `status (enum)` -> `success (boolean)`, `sentAt` -> `timestamp`. Provider/retries/failedAt not tracked. RESOLVED 2026-07-05.
 
 **Security rule:** Admin/super_admin read only. NO client writes.
 
 ---
 
-### `SupportTickets` — Phase 12
+### `tickets` — Phase 12
+
+> **Note:** Collection is named `tickets` (lowercase), not `SupportTickets`. Messages are stored as an **embedded array** on the ticket document, NOT a subcollection. RESOLVED 2026-07-05.
 
 Document ID: auto-ID
 
 ```typescript
 {
-  submittedBy:  string;       // FK → Users.uid
-  teamId:       string | null;
-  subject:      string;
-  description:  string;
-  status:       'Open' | 'InProgress' | 'Resolved' | 'Closed';
-  priority:     'Low' | 'Medium' | 'High' | 'Urgent';
-  createdAt:    Timestamp;
-  updatedAt:    Timestamp;
-  resolvedAt:   Timestamp | null;
+  userId:    string;       // FK → users.uid. NOTE: spec said `submittedBy`.
+  teamId:    string | null;
+  subject:   string;
+  category:  'Technical' | 'Submission' | 'General'; // NOTE: spec said `description` field + priority enum.
+  status:    'Open' | 'Pending' | 'Resolved';         // NOTE: spec had 'InProgress'/'Closed' — actual has 'Pending'.
+  messages:  Array<{                                  // Embedded array, NOT a subcollection.
+    sender:     'user' | 'admin';
+    senderUid:  string;
+    senderName: string;            // Display name or email
+    content:    string;
+    timestamp:  string;            // ISO 8601 string, not Timestamp
+  }>;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+  // priority, resolvedAt — NOT written by current code
 }
 ```
 
-**Subcollection `Messages`** (per ticket):
+> **Scalability note:** Embedded messages array will hit Firestore's 1MB document limit at high message volume. Acceptable at current hackathon scale. Migrate to subcollection if volume grows.
+
+**Security rule:** User can read own tickets. Admin can read/update all. All writes via Admin SDK.
+
+---
+
+## Undocumented Collections (Exist in Production, Added Post-Spec)
+
+### `joinGangLeads`
+
+Landing-page interest form. Written directly by client SDK — no backend API route.
+Document ID: auto-ID
+
 ```typescript
-// Path: SupportTickets/{ticketId}/Messages/{msgId}
 {
-  authorUid:  string;
-  authorRole: string;
-  body:       string;
-  createdAt:  Timestamp;
+  name:      string;
+  email:     string;
+  number:    string;   // Phone number
+  teamName:  string;
+  source:    string;   // 'landing-page'
+  createdAt: Timestamp;
 }
 ```
 
-**Security rule:** User can read/create own tickets. Admin can read/update all.
+**Note:** NOT in original spec. Sequential step BEFORE `invitedTeams` — these are leads organizers use to decide who to shortlist. No backend service currently reads this collection. See CONFLICT #6 in DATA_WORKFLOW.md.
 
 ---
 
