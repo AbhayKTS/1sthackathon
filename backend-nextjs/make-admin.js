@@ -13,7 +13,7 @@ const auth = admin.auth();
 
 async function run() {
   // CHANGE THIS EMAIL to add/promote other admin users (e.g. your friends)
-  const email = 'anshloverao@gmail.com';
+  const email = 'team@revengershack.tech';
   const normalizedEmail = email.toLowerCase().trim();
   
   console.log(`Setting up Admin rights for: ${normalizedEmail}...`);
@@ -46,7 +46,7 @@ async function run() {
     await userRef.set({
       uid,
       email: normalizedEmail,
-      role: 'admin',
+      role: 'super_admin',
       teamId: null,
       invitedTeamId: null,
       displayName: 'Admin User',
@@ -58,7 +58,7 @@ async function run() {
     console.log(`- Created new Firestore user document with "admin" role.`);
   } else {
     await userRef.update({
-      role: 'admin',
+      role: 'super_admin',
       updatedAt: admin.firestore.FieldValue.serverTimestamp()
     });
     console.log(`- Updated existing Firestore user document to "admin" role.`);

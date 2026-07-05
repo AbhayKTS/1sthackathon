@@ -16,6 +16,8 @@ import { Errors } from '@/lib/errors';
 import { getAdminDb, getAdminAuth } from '@/lib/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
 import { writeAuditLog } from '@/server/services/audit.service';
+import { sendEmail } from '@/server/services/email.service';
+import { env } from '@/lib/env';
 import { z } from 'zod';
 
 export function OPTIONS(request: NextRequest): NextResponse {
@@ -83,7 +85,17 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       displayName: existingDoc.exists ? existingDoc.data()?.displayName : null,
     }, { merge: true });
 
-    // 4. Write audit log
+    // 4. Send invitation email
+    const loginUrl = `${env.NEXT_PUBLIC_APP_URL}/login`;
+    await sendEmail({
+      to: email,
+      template: 'admin_invite',
+      variables: {
+        loginUrl,
+      },
+    });
+
+    // 5. Write audit log
     await writeAuditLog({
       action: 'admin.created',
       actorUid: token.uid,
@@ -104,8 +116,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         email,
         created,
         message: created
-          ? `New admin account created for ${email}. They can now log in via OTP.`
-          : `Existing user ${email} has been granted admin access.`,
+          ? `New admin account created for ${email} and invite sent. They can now log in via OTP.`
+          : `Existing user ${email} has been granted admin access and notified.`,
       },
       200
     );

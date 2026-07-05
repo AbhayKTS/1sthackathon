@@ -27,7 +27,8 @@ export type EmailTemplate =
   | 'approved'
   | 'rejected'
   | 'needChanges'
-  | 'reminder';
+  | 'reminder'
+  | 'admin_invite';
 
 export interface SendEmailOptions {
   to: string;
@@ -276,6 +277,22 @@ function renderReminderEmail(vars: Record<string, string | number>): RenderedEma
   );
 }
 
+function renderAdminInviteEmail(vars: Record<string, string | number>): RenderedEmail {
+  const loginUrl = vars.loginUrl as string;
+  return renderStandardEmail(
+    `[REVENGERSHACK] Admin Access Granted`,
+    `Admin Access Granted`,
+    `SYSTEM ADMINISTRATION`,
+    `<p style="color:#ccc;font-size:14px;line-height:1.6;">Hello,</p>
+     <p style="color:#ccc;font-size:14px;line-height:1.6;">You have been granted Administrator access to the RevengersHack portal.</p>
+     <p style="color:#ccc;font-size:14px;line-height:1.6;">You can now log in using this email address to access the command center and manage teams.</p>
+     <div style="margin:32px 0;">
+       <a href="${loginUrl}" style="background:#7c3aed;color:#fff;text-decoration:none;padding:12px 24px;font-size:14px;letter-spacing:2px;font-weight:bold;display:inline-block;">ACCESS COMMAND CENTER</a>
+     </div>`,
+    `Hello,\n\nYou have been granted Administrator access to the RevengersHack portal.\nYou can now log in using this email address to access the command center and manage teams.\n\nAccess Command Center: ${loginUrl}`
+  );
+}
+
 function renderTemplate(
   template: EmailTemplate,
   variables: Record<string, string | number>,
@@ -295,6 +312,8 @@ function renderTemplate(
       return renderNeedChangesEmail(variables);
     case 'reminder':
       return renderReminderEmail(variables);
+    case 'admin_invite':
+      return renderAdminInviteEmail(variables);
   }
 }
 
