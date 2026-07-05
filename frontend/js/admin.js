@@ -126,7 +126,17 @@ onAuthStateChanged(auth, async (user) => {
                 return;
             }
             currentAdminDoc = data;
-            userEmailDisplay.textContent = `ADMIN: ${user.email}`;
+            const isSuperAdmin = data.role === 'super_admin';
+            userEmailDisplay.textContent = isSuperAdmin ? `SUPER ADMIN: ${user.email}` : `ADMIN: ${user.email}`;
+            
+            // Unlock super_admin-only UI
+            if (isSuperAdmin) {
+                document.body.classList.add('is-superadmin');
+                // Also show superadmin-only inline elements (overrides display:none)
+                document.querySelectorAll('.superadmin-only').forEach(el => {
+                    el.style.removeProperty('display');
+                });
+            }
             
             // Precache rounds and load admin data
             await precacheRounds();
@@ -160,6 +170,8 @@ async function fetchAnalytics(user) {
                 if (statUsers) statUsers.textContent = metrics.totalUsers;
                 if (statSubmitted) statSubmitted.textContent = metrics.totalTeamsSubmitted;
                 if (statApproved) statApproved.textContent = metrics.totalTeamsApproved;
+                const statLeads = document.getElementById('statLeads');
+                if (statLeads && metrics.totalLeads != null) statLeads.textContent = metrics.totalLeads;
             }
         } else {
             console.error("Failed to fetch analytics", await res.text());
@@ -531,6 +543,54 @@ if (importCsvForm) {
         } finally {
             importSubmitBtn.disabled = false;
             importSubmitBtn.textContent = "UPLOAD TEAMS";
+        }
+    });
+}
+
+// Create Admin (super_admin only)
+const createAdminForm = document.getElementById('createAdminForm');
+const adminEmailInput = document.getElementById('adminEmailInput');
+const createAdminBtn = document.getElementById('createAdminBtn');
+const createAdminStatus = document.getElementById('createAdminStatus');
+
+if (createAdminForm) {
+    createAdminForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = adminEmailInput.value.trim();
+        if (!email) return;
+
+        createAdminBtn.disabled = true;
+        createAdminBtn.textContent = 'GRANTING ACCESS...';
+        createAdminStatus.textContent = '';
+        createAdminStatus.style.color = 'rgba(255,255,255,0.6)';
+
+        try {
+            const idToken = await auth.currentUser.getIdToken(true);
+            const response = await fetch(`${API_BASE}/admin/create-admin`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${idToken}`
+                },
+                body: JSON.stringify({ email })
+            });
+
+            const result = await response.json();
+
+            if (!response.ok) {
+                throw new Error(result.error?.message || 'Failed to grant access');
+            }
+
+            createAdminStatus.textContent = `✅ ${result.data.message}`;
+            createAdminStatus.style.color = '#4ade80';
+            createAdminForm.reset();
+        } catch (error) {
+            console.error('Create admin error:', error);
+            createAdminStatus.textContent = `❌ ${error.message}`;
+            createAdminStatus.style.color = 'var(--strike-red)';
+        } finally {
+            createAdminBtn.disabled = false;
+            createAdminBtn.textContent = 'GRANT ADMIN ACCESS';
         }
     });
 }

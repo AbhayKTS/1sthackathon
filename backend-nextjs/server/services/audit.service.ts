@@ -34,7 +34,9 @@ export type AuditAction =
   | 'ticket.created'
   | 'ticket.replied'
   | 'ticket.responded'
-  | 'ticket.closed';
+  | 'ticket.closed'
+  | 'admin.created'
+  | 'admin.role_changed';
 
 export interface AuditLogEntry {
   action: AuditAction;

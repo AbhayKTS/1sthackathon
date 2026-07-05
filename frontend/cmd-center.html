@@ -150,6 +150,25 @@
             background: rgba(229, 9, 20, 0.2);
             color: var(--white);
         }
+        /* Super Admin only panels */
+        .superadmin-only {
+            display: none;
+        }
+        body.is-superadmin .superadmin-only {
+            display: block;
+        }
+        .superadmin-badge {
+            display: inline-block;
+            font-family: var(--font-mono);
+            font-size: 0.6rem;
+            background: linear-gradient(135deg, #7c3aed, #4f46e5);
+            color: #fff;
+            padding: 2px 8px;
+            border-radius: 3px;
+            letter-spacing: 1px;
+            margin-left: 8px;
+            vertical-align: middle;
+        }
     </style>
 </head>
 <body>
@@ -176,7 +195,7 @@
             <!-- Analytics -->
             <div class="card" style="border-left-color: var(--white);">
                 <div class="card-header">Conversion Funnel & Metrics</div>
-                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; text-align: center; margin-top: 20px;">
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; text-align: center; margin-top: 20px;" id="analyticsGrid">
                     <div>
                         <h3 style="font-family: var(--font-mono); color: var(--strike-red); margin-bottom: 10px; font-size: 0.8rem;">INVITED TEAMS</h3>
                         <h2 id="statInvited" style="font-size: 2.5rem; color: var(--white);">0</h2>
@@ -192,6 +211,10 @@
                     <div>
                         <h3 style="font-family: var(--font-mono); color: var(--strike-red); margin-bottom: 10px; font-size: 0.8rem;">APPROVED TEAMS</h3>
                         <h2 id="statApproved" style="font-size: 2.5rem; color: var(--white);">0</h2>
+                    </div>
+                    <div class="superadmin-only" style="display:none;">
+                        <h3 style="font-family: var(--font-mono); color: #a78bfa; margin-bottom: 10px; font-size: 0.8rem;">JOIN LEADS</h3>
+                        <h2 id="statLeads" style="font-size: 2.5rem; color: var(--white);">0</h2>
                     </div>
                 </div>
             </div>
@@ -289,6 +312,25 @@
                     </div>
                     <button type="submit" class="btn-outline" style="width: 100%; border-color: var(--strike-red); color: var(--strike-red);" id="annSubmitBtn">TRANSMIT</button>
                     <div id="annStatus" style="margin-top: 10px; font-size: 0.8rem; font-family: var(--font-mono);"></div>
+                </form>
+            </div>
+
+        </div>
+
+            <!-- Manage Access (super_admin only) -->
+            <div class="card superadmin-only" id="manageAccessCard" style="border-left-color: #7c3aed;">
+                <div class="card-header">
+                    Manage Access
+                    <span class="superadmin-badge">SUPER ADMIN</span>
+                </div>
+                <p style="font-size: 0.8rem; color: rgba(255,255,255,0.5); margin-bottom: 15px;">Invite a person as an Admin by email. They will be able to log in via OTP and access this portal.</p>
+                <form id="createAdminForm" class="dash-form">
+                    <div class="form-group">
+                        <label style="font-family: var(--font-mono); font-size: 0.8rem; color: rgba(255,255,255,0.5);">EMAIL TO GRANT ACCESS</label>
+                        <input type="email" id="adminEmailInput" placeholder="person@example.com" required style="width: 100%;">
+                    </div>
+                    <button type="submit" id="createAdminBtn" class="btn-primary" style="width: 100%; background: linear-gradient(135deg, #7c3aed, #4f46e5); border: none; margin-bottom: 5px;">GRANT ADMIN ACCESS</button>
+                    <div id="createAdminStatus" style="font-size: 0.8rem; font-family: var(--font-mono); min-height: 20px;"></div>
                 </form>
             </div>
 
