@@ -106,14 +106,12 @@ onAuthStateChanged(auth, async (user) => {
     cleanupListeners();
 
     if (!user) {
-        // TEMPORARY BYPASS
-        user = { uid: "bypass-uid", email: "bypass@test.com" };
-        try {
-            Object.defineProperty(auth, 'currentUser', {
-                get: () => ({ uid: "bypass-uid", email: "bypass@test.com", getIdToken: async () => "dummy-token" })
-            });
-        } catch(e) {}
+        window.location.href = '/login.html';
+        return;
     }
+    
+    // Auth successful, reveal body
+    document.body.style.visibility = '';
     
     userEmailDisplay.textContent = user.email;
 
@@ -195,29 +193,40 @@ async function loadTeamData(teamId) {
             if (team.members && team.members.length > 0) {
                 teamMembersList.innerHTML = "";
                 team.members.forEach(member => {
-                    const li = document.createElement("li");
+                    const div = document.createElement("div");
+                    div.className = "group flex items-center gap-3 rounded-sm border border-border bg-surface-2 p-3 transition-colors hover:border-primary";
                     
-                    const nameSpan = document.createElement("span");
-                    nameSpan.textContent = member.name;
-                    nameSpan.style.color = "var(--white)";
+                    const initials = member.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
                     
-                    const roleSpan = document.createElement("span");
-                    roleSpan.className = "role-tag";
-                    roleSpan.textContent = member.role || "MEMBER";
+                    const avatarDiv = document.createElement("div");
+                    avatarDiv.className = "grid h-9 w-9 place-items-center rounded-sm bg-background font-mono text-[11px] font-bold text-foreground";
+                    avatarDiv.textContent = initials;
                     
-                    // Highlight leader
+                    const infoDiv = document.createElement("div");
+                    infoDiv.className = "min-w-0";
+                    
+                    const nameDiv = document.createElement("div");
+                    nameDiv.className = "truncate text-sm font-medium text-foreground";
+                    nameDiv.textContent = member.name;
+                    
+                    const roleDiv = document.createElement("div");
+                    roleDiv.className = "truncate font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground";
+                    roleDiv.textContent = member.role || "MEMBER";
+                    
                     if (member.role && member.role.toUpperCase() === "LEADER") {
-                        roleSpan.style.background = "rgba(229, 9, 20, 0.3)";
-                        roleSpan.style.color = "var(--strike-red)";
-                        roleSpan.style.border = "1px solid var(--strike-red)";
+                        roleDiv.style.color = "var(--primary)";
+                        avatarDiv.style.color = "var(--primary)";
                     }
 
-                    li.appendChild(nameSpan);
-                    li.appendChild(roleSpan);
-                    teamMembersList.appendChild(li);
+                    infoDiv.appendChild(nameDiv);
+                    infoDiv.appendChild(roleDiv);
+                    div.appendChild(avatarDiv);
+                    div.appendChild(infoDiv);
+                    
+                    teamMembersList.appendChild(div);
                 });
             } else {
-                teamMembersList.innerHTML = `<li><span style="color: rgba(255,255,255,0.5);">No members found.</span></li>`;
+                teamMembersList.innerHTML = `<div class="col-span-2 p-4 text-center font-mono text-xs text-muted-foreground">No members found.</div>`;
             }
         }
     } catch (error) {
@@ -276,18 +285,14 @@ function loadActiveRounds() {
                     if (heroRequirementsTitle) heroRequirementsTitle.textContent = "WHAT TO SUBMIT";
                     if (heroRequirementsList) {
                         heroRequirementsList.innerHTML = `
-                            <div class="flex items-center gap-3">
-                                <div class="h-6 w-6 border border-blood flex items-center justify-center text-blood">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-                                </div>
-                                PROBLEM STATEMENT
-                            </div>
-                            <div class="flex items-center gap-3">
-                                <div class="h-6 w-6 border border-blood flex items-center justify-center text-blood">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x1="12" y2="21"></line></svg>
-                                </div>
-                                PRESENTATION DECK (PPT)
-                            </div>
+                            <span class="inline-flex items-center gap-2 rounded-sm border border-border bg-surface-2/70 px-3 py-1.5">
+                              <span class="text-accent"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-3.5 w-3.5"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg></span>
+                              <span class="font-mono text-[11px] uppercase tracking-[0.16em] text-foreground">Problem Statement</span>
+                            </span>
+                            <span class="inline-flex items-center gap-2 rounded-sm border border-border bg-surface-2/70 px-3 py-1.5">
+                              <span class="text-accent"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-3.5 w-3.5"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></span>
+                              <span class="font-mono text-[11px] uppercase tracking-[0.16em] text-foreground">Presentation Deck (PPT)</span>
+                            </span>
                         `;
                     }
                     if (heroVerticalText) heroVerticalText.textContent = "- FOCUS - PLAN - EXECUTE - DOMINATE -";
@@ -297,18 +302,20 @@ function loadActiveRounds() {
                     roundNum = "02";
                     topText = "WE RIDE";
                     bottomText = "AT MIDNIGHT";
-                    if (heroImageBg) heroImageBg.src = "assets/images/hero-biker.jpg";
+                    if (heroImageBg) heroImageBg.src = "assets/images/round2img.png";
                     if (heroRoundBadge) heroRoundBadge.textContent = `LIVE // ROUND 02`;
                     if (heroRoundDesc) heroRoundDesc.innerHTML = `The underground waits for no one. Lock in your code, defend your turf, and take the throne.`;
                     if (heroRequirementsTitle) heroRequirementsTitle.textContent = "WHAT TO SUBMIT";
                     if (heroRequirementsList) {
                         heroRequirementsList.innerHTML = `
-                            <div class="flex items-center gap-3">
-                                <div class="h-6 w-6 border border-blood flex items-center justify-center text-blood">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
-                                </div>
-                                GITHUB REPOSITORY
-                            </div>
+                            <span class="inline-flex items-center gap-2 rounded-sm border border-border bg-surface-2/70 px-3 py-1.5">
+                              <span class="text-accent"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-3.5 w-3.5"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg></span>
+                              <span class="font-mono text-[11px] uppercase tracking-[0.16em] text-foreground">Source Code (GitHub)</span>
+                            </span>
+                            <span class="inline-flex items-center gap-2 rounded-sm border border-border bg-surface-2/70 px-3 py-1.5">
+                              <span class="text-accent"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-3.5 w-3.5"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></span>
+                              <span class="font-mono text-[11px] uppercase tracking-[0.16em] text-foreground">Live Demo Link</span>
+                            </span>
                         `;
                     }
                     if (heroVerticalText) heroVerticalText.textContent = "- CODE - DEPLOY - DEFEND - CONQUER -";
@@ -473,21 +480,24 @@ function listenToAnnouncements() {
 
             if (isUnread) newUnreadCount++;
 
-            const item = document.createElement("div");
-            item.className = "announcement-item border-b border-border/50 p-4 transition-colors hover:bg-white/5";
-            item.style.cursor = "pointer";
+            const item = document.createElement("li");
+            item.className = "flex flex-col gap-2 border-b border-border pb-3 last:border-b-0 last:pb-0 cursor-pointer hover:bg-white/5 transition-colors p-2 rounded-sm";
             if (isUnread) {
-                item.style.borderLeft = "2px solid var(--strike-red)";
-                item.style.backgroundColor = "rgba(229, 9, 20, 0.05)";
+                item.style.borderLeft = "2px solid var(--primary)";
+                item.style.backgroundColor = "rgba(230, 57, 70, 0.05)";
             }
             
             item.innerHTML = `
-                <div class="announcement-time flex items-center justify-between font-mono text-[10px] text-muted-foreground mb-2" style="font-family: 'JetBrains Mono', monospace;">
-                    <span>${date}</span>
-                    ${isUnread ? '<span class="text-blood border border-blood px-1 rounded-[2px]" style="animation: flicker 2s infinite">NEW</span>' : ''}
+                <div class="flex items-start justify-between gap-4">
+                    <span class="text-sm text-foreground flex items-center gap-2">
+                        ${sanitizeHTML(data.title) || 'Intel Update'}
+                        ${isUnread ? '<span class="text-primary text-[9px] border border-primary px-1 rounded-sm pulse-dot font-mono">NEW</span>' : ''}
+                    </span>
+                    <span class="whitespace-nowrap font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+                        ${date}
+                    </span>
                 </div>
-                <div class="announcement-title font-impact tracking-widest text-lg mb-1" style="font-family: 'Bebas Neue', sans-serif;">${sanitizeHTML(data.title) || 'Intel Update'}</div>
-                <div class="announcement-body font-jp text-xs text-muted-foreground leading-relaxed" style="font-family: 'Noto Sans JP', sans-serif;">${sanitizeHTML(data.message) || ''}</div>
+                ${data.message ? `<div class="text-xs text-muted-foreground mt-1">${sanitizeHTML(data.message)}</div>` : ''}
             `;
             
             // Click to mark as read
@@ -545,7 +555,7 @@ function loadLeaderboard() {
         if (!leaderboardTableBody) return;
         
         if (snapshot.empty) {
-            leaderboardTableBody.innerHTML = `<tr><td colspan="3" style="text-align: center; color: rgba(255,255,255,0.5); padding: 20px;">No teams registered yet.</td></tr>`;
+            leaderboardTableBody.innerHTML = `<li class="p-6 text-center text-sm text-muted-foreground">No teams registered yet.</li>`;
             return;
         }
         
@@ -563,21 +573,33 @@ function loadLeaderboard() {
         
         leaderboardTableBody.innerHTML = "";
         teams.forEach((team, index) => {
-            const tr = document.createElement("tr");
-            tr.className = "hover:bg-white/5 transition-colors";
+            const li = document.createElement("li");
+            const rank = index + 1;
             
-            const rankStr = String(index + 1).padStart(2, '0');
-            let rankClass = "text-muted-foreground";
-            if (index === 0) rankClass = "text-gold";
-            else if (index === 1) rankClass = "text-slate-300";
-            else if (index === 2) rankClass = "text-amber-600";
+            let rankColor = "text-muted-foreground";
+            let borderColor = "border-l-transparent";
             
-            tr.innerHTML = `
-                <td class="py-4 px-6 ${rankClass}">${rankStr}</td>
-                <td class="py-4 px-6 text-foreground font-impact tracking-widest text-lg" style="font-family: 'Bebas Neue', sans-serif;">${sanitizeHTML(team.name)}</td>
-                <td class="py-4 px-6 text-blood text-right font-mono">${team.score}</td>
+            if (rank === 1) {
+                rankColor = "text-[color:var(--color-gold)]";
+                borderColor = "border-l-[color:var(--color-gold)]";
+            } else if (rank === 2) {
+                rankColor = "text-[color:var(--color-silver)]";
+                borderColor = "border-l-[color:var(--color-silver)]";
+            } else if (rank === 3) {
+                rankColor = "text-[color:var(--color-bronze)]";
+                borderColor = "border-l-[color:var(--color-bronze)]";
+            }
+            
+            li.className = `grid grid-cols-[80px_1fr_120px] items-center gap-4 border-b border-border border-l-2 ${borderColor} px-6 py-4 transition-colors last:border-b-0 hover:bg-surface-2`;
+            
+            const rankStr = String(rank).padStart(2, '0');
+            
+            li.innerHTML = `
+                <span class="font-mono text-sm font-bold tabular-nums ${rankColor}">${rankStr}</span>
+                <span class="text-sm font-semibold text-foreground truncate">${sanitizeHTML(team.name)}</span>
+                <span class="text-right font-mono text-sm font-semibold text-accent tabular-nums">${team.score.toLocaleString()}</span>
             `;
-            leaderboardTableBody.appendChild(tr);
+            leaderboardTableBody.appendChild(li);
         });
     }, (error) => {
         console.error("Error listening to leaderboard:", error);

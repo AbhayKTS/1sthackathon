@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="RevengersHack participant dashboard — track rounds, submit your build, and view the leaderboard.">
-    <title>Leaderboard | RevengersHack</title>
+    <title>Discord | RevengersHack</title>
 
     <link rel="stylesheet" href="css/dashboard.css">
     
@@ -12,7 +12,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
-<body class="min-h-screen bg-background text-foreground" style="visibility: hidden;">
+<body class="min-h-screen bg-background text-foreground">
 
     <!-- Navbar -->
     <header class="sticky top-0 z-40 border-b border-border bg-background/90 backdrop-blur">
@@ -30,15 +30,15 @@
           <a href="/dashboard.html" class="relative px-3 py-2 font-mono text-[11px] font-medium uppercase tracking-[0.14em] transition-colors text-muted-foreground hover:text-foreground">
             Dashboard
           </a>
-          <a href="/leaderboard.html" class="relative px-3 py-2 font-mono text-[11px] font-medium uppercase tracking-[0.14em] transition-colors text-foreground">
+          <a href="/leaderboard.html" class="relative px-3 py-2 font-mono text-[11px] font-medium uppercase tracking-[0.14em] transition-colors text-muted-foreground hover:text-foreground">
             Leaderboard
-            <span class="pointer-events-none absolute inset-x-3 -bottom-[1px] h-[2px] bg-primary"></span>
           </a>
           <a href="/support.html" class="relative px-3 py-2 font-mono text-[11px] font-medium uppercase tracking-[0.14em] transition-colors text-muted-foreground hover:text-foreground">
             Support
           </a>
-          <a href="/discord.html" class="relative px-3 py-2 font-mono text-[11px] font-medium uppercase tracking-[0.14em] transition-colors text-muted-foreground hover:text-foreground">
+          <a href="/discord.html" class="relative px-3 py-2 font-mono text-[11px] font-medium uppercase tracking-[0.14em] transition-colors text-foreground">
             Discord
+            <span class="pointer-events-none absolute inset-x-3 -bottom-[1px] h-[2px] bg-primary"></span>
           </a>
         </nav>
 
@@ -105,30 +105,21 @@
               <span class="relative h-2.5 w-2.5 rounded-full bg-primary"></span>
             </span>
             <h1 class="font-display text-sm font-bold uppercase tracking-[0.2em] text-foreground">
-              Global Leaderboard
+              Discord Server
             </h1>
           </div>
-          <span class="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-            Top Ranks
-          </span>
         </div>
 
-        <!-- Column headers -->
-        <div class="grid grid-cols-[80px_1fr_120px] items-center gap-4 border-b border-border px-6 py-3 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-          <span>Rank</span>
-          <span>Team</span>
-          <span class="text-right">Score</span>
+        <div class="p-10 flex flex-col items-center justify-center text-center">
+            <img src="assets/images/REVENGERSHACK%20(1).png" alt="RevengersHack Discord" class="max-w-[300px] mb-8 rounded-sm shadow-2xl">
+            <a href="https://discord.gg/z6DDjXRh6b" target="_blank" class="inline-flex items-center gap-2 rounded-sm bg-primary px-6 py-3 font-mono text-sm font-semibold uppercase tracking-[0.18em] text-primary-foreground transition-transform hover:brightness-110 active:scale-[0.98]">
+                Join our discord server from here
+            </a>
         </div>
-
-        <!-- Rows -->
-        <ul id="leaderboardTableBody">
-          <!-- Rendered by dashboard.js -->
-          <li class="p-6 text-center text-sm text-muted-foreground">Loading leaderboard...</li>
-        </ul>
       </div>
     </main>
 
-    <footer class="mx-auto max-w-[1400px] px-6 pb-10">
+    <footer class="mx-auto max-w-[1400px] px-6 pb-10 mt-10">
       <div
         class="flex flex-wrap items-center justify-between gap-2 border-t border-border pt-6 font-mono text-[10px] uppercase tracking-[0.18em]"
         style="color: #444"

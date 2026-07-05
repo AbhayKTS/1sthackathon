@@ -39,10 +39,7 @@ export default defineConfig({
         admin: resolve(__dirname, 'cmd-center.html'),
         onboarding: resolve(__dirname, 'onboarding.html'),
         profile: resolve(__dirname, 'profile.html'),
-        support: resolve(__dirname, 'support.html'),
-        faqs: resolve(__dirname, 'faqs.html'),
-        problemStatements: resolve(__dirname, 'problem-statements.html'),
-        resources: resolve(__dirname, 'resources.html')
+        support: resolve(__dirname, 'support.html')
       }
     }
   }

@@ -33,6 +33,10 @@ auth.onAuthStateChanged(async (user) => {
         window.location.href = "/login.html";
         return;
     }
+    
+    // Auth successful, reveal body
+    document.body.style.visibility = '';
+    
     currentUser = user;
     currentToken = await user.getIdToken();
     

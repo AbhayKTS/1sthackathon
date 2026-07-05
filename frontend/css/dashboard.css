@@ -1,151 +1,132 @@
-/* 
- * Dashboard styles — Tailwind CSS v4 compiled at build time via @tailwindcss/vite
- * This replaces the unpkg.com CDN script which was blocked by the Content-Security-Policy.
- */
 @import "tailwindcss";
 
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * RevengersHack design system.
+ * Command-center dark palette. Red = signal only. Blue = live/data.
+ */
+
 @theme inline {
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 6px;
+  --radius-xl: 8px;
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
-  --color-popover: var(--popover);
-  --color-popover-foreground: var(--popover-foreground);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-card: var(--surface);
+  --color-card-foreground: var(--foreground);
+  --color-popover: var(--surface);
+  --color-popover-foreground: var(--foreground);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
-  --color-secondary: var(--secondary);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-muted: var(--muted);
+  --color-secondary: var(--surface-2);
+  --color-secondary-foreground: var(--foreground);
+  --color-muted: var(--surface-2);
   --color-muted-foreground: var(--muted-foreground);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
-  --color-destructive: var(--destructive);
-  --color-destructive-foreground: var(--destructive-foreground);
+  --color-destructive: var(--primary);
+  --color-destructive-foreground: var(--primary-foreground);
   --color-border: var(--border);
-  --color-input: var(--input);
-  --color-ring: var(--ring);
-  --color-blood: var(--blood);
-  --color-gold: var(--gold);
-  --color-ink: var(--ink);
-  --color-paper: var(--paper);
-  --font-display: "Zen Dots", sans-serif;
-  --font-impact: "Bebas Neue", sans-serif;
-  --font-jp: "Noto Sans JP", sans-serif;
-  --font-mono: "JetBrains Mono", monospace;
+  --color-border-strong: var(--border-strong);
+  --color-input: var(--border);
+  --color-ring: var(--primary);
+
+  --color-gold: #ffd700;
+  --color-silver: #c0c0c0;
+  --color-bronze: #cd7f32;
+  --color-success: #22c55e;
+
+  --font-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
 }
 
 :root {
-  --radius: 0.25rem;
-  --background: oklch(0.12 0.02 25);
-  --foreground: oklch(0.96 0.01 60);
-  --card: oklch(0.16 0.025 25);
-  --card-foreground: oklch(0.96 0.01 60);
-  --popover: oklch(0.14 0.02 25);
-  --popover-foreground: oklch(0.96 0.01 60);
-  --primary: oklch(0.55 0.24 25);
-  --primary-foreground: oklch(0.98 0.01 60);
-  --secondary: oklch(0.22 0.03 25);
-  --secondary-foreground: oklch(0.96 0.01 60);
-  --muted: oklch(0.2 0.02 25);
-  --muted-foreground: oklch(0.65 0.03 40);
-  --accent: oklch(0.55 0.24 25);
-  --accent-foreground: oklch(0.98 0.01 60);
-  --destructive: oklch(0.55 0.24 25);
-  --destructive-foreground: oklch(0.98 0.01 60);
-  --border: oklch(0.28 0.05 25);
-  --input: oklch(0.22 0.03 25);
-  --ring: oklch(0.55 0.24 25);
-  --blood: oklch(0.5 0.27 22);
-  --gold: oklch(0.82 0.16 85);
-  --ink: oklch(0.08 0.01 25);
-  --paper: oklch(0.94 0.02 80);
-  --gradient-blood: linear-gradient(135deg, oklch(0.5 0.27 22), oklch(0.35 0.2 18));
-  --gradient-shadow: radial-gradient(ellipse at top, oklch(0.18 0.04 25 / 0.8), oklch(0.08 0.01 25));
-  --shadow-blood: 0 0 40px oklch(0.5 0.27 22 / 0.5), 0 0 80px oklch(0.5 0.27 22 / 0.2);
-  --shadow-brutal: 6px 6px 0 oklch(0.5 0.27 22);
+  --background: #0a0a0a;
+  --foreground: #ffffff;
+  --surface: #111111;
+  --surface-2: #1a1a1a;
+  --muted-foreground: #888888;
+  --border: #222222;
+  --border-strong: #2a2a2a;
+  --primary: #e63946;
+  --primary-foreground: #ffffff;
+  --accent: #00b4d8;
+  --accent-foreground: #0a0a0a;
 }
 
 @layer base {
-  * { border-color: var(--color-border); }
+  * {
+    border-color: var(--color-border);
+  }
+
+  html,
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
-    font-family: var(--font-jp);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
   }
-  
-  /* Custom styled scrollbar matching Tokyo Revengers theme */
-  ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+
+  ::selection {
+    background: var(--primary);
+    color: #fff;
   }
-  ::-webkit-scrollbar-track {
-    background: var(--background);
+
+  /* Scrollbar */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--primary) var(--surface-2);
   }
-  ::-webkit-scrollbar-thumb {
-    background: var(--border);
+  *::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  *::-webkit-scrollbar-track {
+    background: var(--surface-2);
+  }
+  *::-webkit-scrollbar-thumb {
+    background: var(--primary);
     border-radius: 4px;
   }
-  ::-webkit-scrollbar-thumb:hover {
-    background: var(--blood);
-  }
 }
 
-@utility text-stroke-blood {
-  -webkit-text-stroke: 2px oklch(0.5 0.27 22);
-  color: transparent;
+@utility ticker-track {
+  animation: ticker 40s linear infinite;
 }
 
-@utility glitch-text {
-  text-shadow: 2px 0 oklch(0.5 0.27 22), -2px 0 oklch(0.6 0.2 200);
-}
-
-@utility scanlines {
-  background-image: repeating-linear-gradient(
-    0deg,
-    transparent,
-    transparent 2px,
-    oklch(0 0 0 / 0.15) 2px,
-    oklch(0 0 0 / 0.15) 4px
-  );
-}
-
-@utility grain {
-  background-image: radial-gradient(oklch(1 0 0 / 0.03) 1px, transparent 1px);
-  background-size: 3px 3px;
-}
-
-@keyframes blood-drip {
-  0%, 100% { transform: translateY(0); opacity: 0.8; }
-  50% { transform: translateY(4px); opacity: 1; }
-}
-
-@keyframes flicker {
-  0%, 100% { opacity: 1; }
-  41.99% { opacity: 1; }
-  42% { opacity: 0; }
-  43% { opacity: 0; }
-  43.01% { opacity: 1; }
-  47.99% { opacity: 1; }
-  48% { opacity: 0; }
-  49% { opacity: 0; }
-  49.01% { opacity: 1; }
-}
-
-@keyframes slide-in {
-  from { transform: translateX(-20px); opacity: 0; }
-  to { transform: translateX(0); opacity: 1; }
-}
-
-@keyframes pulse-blood {
-  0%, 100% { box-shadow: 0 0 20px oklch(0.5 0.27 22 / 0.4); }
-  50% { box-shadow: 0 0 40px oklch(0.5 0.27 22 / 0.8); }
-}
-
-@keyframes marquee {
+@keyframes ticker {
   from { transform: translateX(0); }
   to { transform: translateX(-50%); }
 }
+
+@keyframes shimmer {
+  0% { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+
+@utility skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--surface) 0%,
+    var(--surface-2) 50%,
+    var(--surface) 100%
+  );
+  background-size: 800px 100%;
+  animation: shimmer 1.6s linear infinite;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.8); }
+}
+
+@utility pulse-dot {
+  animation: pulse-dot 1.4s ease-in-out infinite;
+}
+
