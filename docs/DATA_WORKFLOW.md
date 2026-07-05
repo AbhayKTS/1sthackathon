@@ -10,7 +10,7 @@
 | #2 member invitedTeamId synthetic string | 🟡 PENDING CONFIRMATION | Batch 5 |
 | #3 importedAt vs invitedAt | ✅ RESOLVED 2026-07-05 | SCHEMA.md updated |
 | #4 emailLogs field shape | ✅ RESOLVED 2026-07-05 | SCHEMA.md updated |
-| #5 Security rule escalation | 🟡 PENDING CONFIRMATION | Batch 4 |
+| #5 Security rule escalation | ✅ RESOLVED 2026-07-05 | users write -> false; deployed to sthack-88def |
 | #6 joinGangLeads unread | ✅ RESOLVED 2026-07-05 | totalLeads added to analytics.service.ts AdminAnalytics |
 | #7 rounds missing title | ✅ RESOLVED 2026-07-05 | activateRound() now writes title+description+updatedBy |
 | #8 needChangesHistory field names | ✅ RESOLVED 2026-07-05 | SCHEMA.md updated |
