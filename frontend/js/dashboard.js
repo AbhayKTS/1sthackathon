@@ -20,7 +20,7 @@ import {
 } from "./firebase-init.js";
 
 // ─── SECURITY: Session Inactivity Timeout ───────────────────────
-const SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
+const SESSION_TIMEOUT_MS = 24 * 60 * 60 * 1000; // 24 hours
 let inactivityTimer = null;
 
 function resetInactivityTimer() {
