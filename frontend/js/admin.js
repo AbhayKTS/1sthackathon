@@ -13,6 +13,7 @@ import {
     onSnapshot,
     orderBy,
     updateDoc,
+    deleteDoc,
     onAuthStateChanged,
     signOut
 } from "./firebase-init.js";
@@ -60,8 +61,42 @@ const statUsers = document.getElementById("statUsers");
 const statSubmitted = document.getElementById("statSubmitted");
 const statApproved = document.getElementById("statApproved");
 
+const statBoxInvited = document.getElementById("statBoxInvited");
+const statBoxUsers = document.getElementById("statBoxUsers");
+const statBoxSubmitted = document.getElementById("statBoxSubmitted");
+const statBoxApproved = document.getElementById("statBoxApproved");
+
 const teamsTableBody = document.getElementById("teamsTableBody");
+const invitedTeamsTableBody = document.getElementById("invitedTeamsTableBody");
 const submissionsTableBody = document.getElementById("submissionsTableBody");
+
+const teamManagementCard = document.getElementById("teamManagementCard");
+const invitedTeamsCard = document.getElementById("invitedTeamsCard");
+const teamManagementHeader = teamManagementCard ? teamManagementCard.querySelector('.card-header') : null;
+
+// Tab toggling and filter logic
+let currentTeamFilter = 'All';
+
+if (statBoxInvited) {
+    statBoxInvited.addEventListener("click", () => {
+        if (teamManagementCard) teamManagementCard.style.display = "none";
+        if (invitedTeamsCard) invitedTeamsCard.style.display = "block";
+    });
+}
+
+const showTeamManagement = (filter = 'All') => {
+    currentTeamFilter = filter;
+    if (teamManagementCard) teamManagementCard.style.display = "block";
+    if (invitedTeamsCard) invitedTeamsCard.style.display = "none";
+    if (teamManagementHeader) {
+        teamManagementHeader.textContent = filter === 'Approved' ? 'Team Management (Approved)' : 'Team Management (All)';
+    }
+    if (typeof renderTeamsTable === 'function') renderTeamsTable();
+};
+
+if (statBoxUsers) statBoxUsers.addEventListener("click", () => showTeamManagement('All'));
+if (statBoxSubmitted) statBoxSubmitted.addEventListener("click", () => showTeamManagement('All'));
+if (statBoxApproved) statBoxApproved.addEventListener("click", () => showTeamManagement('Approved'));
 
 
 const roundSelect = document.getElementById("roundSelect");
@@ -77,6 +112,7 @@ let currentAdminDoc = null;
 
 // Firebase listener unsubscribers and memory cache
 let teamsUnsubscriber = null;
+let invitedTeamsUnsubscriber = null;
 let submissionsUnsubscriber = null;
 
 const teamCache = new Map();
@@ -86,6 +122,10 @@ function cleanupListeners() {
     if (teamsUnsubscriber) {
         teamsUnsubscriber();
         teamsUnsubscriber = null;
+    }
+    if (invitedTeamsUnsubscriber) {
+        invitedTeamsUnsubscriber();
+        invitedTeamsUnsubscriber = null;
     }
     if (submissionsUnsubscriber) {
         submissionsUnsubscriber();
@@ -141,6 +181,7 @@ onAuthStateChanged(auth, async (user) => {
             // Precache rounds and load admin data
             await precacheRounds();
             loadTeams();
+            loadInvitedTeams();
             loadSubmissions();
             fetchAnalytics(user);
             
@@ -192,83 +233,146 @@ logoutBtn.addEventListener("click", () => {
     });
 });
 
+let currentTeamsDocs = [];
+
+function renderTeamsTable() {
+    teamsTableBody.innerHTML = "";
+    
+    let docsToRender = currentTeamsDocs;
+    if (currentTeamFilter === 'Approved') {
+        docsToRender = currentTeamsDocs.filter(doc => doc.data().status === 'Approved');
+    }
+
+    if (docsToRender.length === 0) {
+        teamsTableBody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: rgba(255,255,255,0.5);">No teams found for this view.</td></tr>`;
+        return;
+    }
+
+    docsToRender.forEach((doc) => {
+        const team = doc.data();
+        const teamId = doc.id;
+        
+        // Populate persistent teamCache
+        teamCache.set(teamId, team.teamName || 'Unnamed');
+
+        const tr = document.createElement("tr");
+        
+        const membersList = team.members && team.members.length > 0 ? team.members.map(m => sanitizeHTML(m.name)).join(", ") : "None";
+        
+        let statusColor = "rgba(255,255,255,0.5)";
+        let statusText = team.status || "Unknown";
+        if (statusText === 'Approved') statusColor = "#4ade80";
+        if (statusText === 'Rejected') statusColor = "var(--strike-red)";
+        if (statusText === 'Submitted') statusColor = "#fbbf24";
+        if (statusText === 'Incomplete') statusColor = "#f97316";
+
+        let actionHtml = `<div style="display: flex; gap: 5px; align-items: center; flex-wrap: wrap;">`;
+        const updatedMs = team.updatedAt?.toMillis ? team.updatedAt.toMillis() : Date.now();
+        
+        if (statusText !== 'Approved' && statusText !== 'Rejected') {
+            actionHtml += `
+                <button class="btn-outline review-btn" data-action="approve" data-id="${sanitizeHTML(teamId)}" data-updated="${updatedMs}" style="padding: 4px 8px; font-size: 0.7rem; border-color: #4ade80; color: #4ade80;">APPROVE</button>
+                <button class="btn-outline review-btn" data-action="reject" data-id="${sanitizeHTML(teamId)}" data-updated="${updatedMs}" style="padding: 4px 8px; font-size: 0.7rem; border-color: var(--strike-red); color: var(--strike-red);">REJECT</button>
+                <button class="btn-outline review-btn" data-action="needChanges" data-id="${sanitizeHTML(teamId)}" data-updated="${updatedMs}" style="padding: 4px 8px; font-size: 0.7rem; border-color: #f97316; color: #f97316;">CHANGES</button>
+            `;
+            if (statusText === 'Incomplete' && team.needChangesHistory && team.needChangesHistory.length > 0) {
+                const latestNote = team.needChangesHistory[team.needChangesHistory.length - 1].notes;
+                actionHtml += `<span style="font-size: 0.6rem; color: rgba(255,255,255,0.5); font-style: italic; width: 100%;">Note: ${sanitizeHTML(latestNote.substring(0, 20))}...</span>`;
+            }
+        } else {
+            actionHtml += `<span style="font-size: 0.7rem; color: rgba(255,255,255,0.3);">NO ACTION</span>`;
+        }
+        
+        actionHtml += `<button class="btn-outline delete-team-btn" data-id="${sanitizeHTML(teamId)}" style="padding: 4px 8px; font-size: 0.7rem; border-color: #ef4444; color: #ef4444; margin-left: auto;">DEL</button>`;
+        actionHtml += `</div>`;
+
+        tr.innerHTML = `
+            <td><strong>${sanitizeHTML(team.teamName || 'Unnamed')}</strong></td>
+            <td>${membersList}</td>
+            <td><span style="font-family: var(--font-mono); font-size: 0.8rem; font-weight: bold; color: ${statusColor};">${sanitizeHTML(statusText)}</span></td>
+            <td>${actionHtml}</td>
+            <td><span style="font-family: var(--font-mono); font-size: 0.8rem; color: rgba(255,255,255,0.5);">${sanitizeHTML(teamId)}</span></td>
+        `;
+        teamsTableBody.appendChild(tr);
+    });
+
+    // Attach event listeners
+    document.querySelectorAll('.review-btn').forEach(btn => {
+        btn.addEventListener('click', handleReviewAction);
+    });
+    document.querySelectorAll('.delete-team-btn').forEach(btn => {
+        btn.addEventListener('click', handleDeleteTeam);
+    });
+}
+
 // Load Teams
 function loadTeams() {
     if (teamsUnsubscriber) teamsUnsubscriber();
 
     const teamsRef = collection(db, "teams");
     teamsUnsubscriber = onSnapshot(teamsRef, (snapshot) => {
-        
+        currentTeamsDocs = snapshot.docs;
+        renderTeamsTable();
+    }, (error) => {
+        console.error("Error loading teams:", error);
+    });
+}
+
+async function handleDeleteTeam(e) {
+    const teamId = e.target.getAttribute('data-id');
+    if (!confirm("Are you sure you want to permanently DELETE this team and all its data?")) return;
+    try {
+        await deleteDoc(doc(db, "teams", teamId));
+    } catch (err) {
+        console.error("Error deleting team:", err);
+        alert("Failed to delete team.");
+    }
+}
+
+// Load Invited Teams
+function loadInvitedTeams() {
+    if (invitedTeamsUnsubscriber) invitedTeamsUnsubscriber();
+
+    const invitedTeamsRef = collection(db, "invitedTeams");
+    invitedTeamsUnsubscriber = onSnapshot(invitedTeamsRef, (snapshot) => {
         if (snapshot.empty) {
-            teamsTableBody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: rgba(255,255,255,0.5);">No teams found.</td></tr>`;
+            invitedTeamsTableBody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: rgba(255,255,255,0.5);">No invited teams found.</td></tr>`;
             return;
         }
-        
-        teamsTableBody.innerHTML = "";
-        snapshot.forEach((doc) => {
-            const team = doc.data();
-            const teamId = doc.id;
-            
-            // Populate persistent teamCache
-            teamCache.set(teamId, team.teamName || 'Unnamed');
+
+        invitedTeamsTableBody.innerHTML = "";
+        snapshot.forEach((docSnap) => {
+            const data = docSnap.data();
+            const inviteId = docSnap.id;
 
             const tr = document.createElement("tr");
-            
-            const membersList = team.members ? team.members.map(m => sanitizeHTML(m.name)).join(", ") : "None";
-            
-            let statusColor = "rgba(255,255,255,0.5)";
-            let statusText = team.status || "Unknown";
-            if (statusText === 'Approved') statusColor = "#4ade80";
-            if (statusText === 'Rejected') statusColor = "var(--strike-red)";
-            if (statusText === 'Submitted') statusColor = "#fbbf24";
-            if (statusText === 'Incomplete') statusColor = "#f97316";
-
-            let actionHtml = '';
-            if (statusText === 'Submitted') {
-                const updatedMs = team.updatedAt?.toMillis ? team.updatedAt.toMillis() : Date.now();
-                actionHtml = `
-                    <button class="btn-outline review-btn" data-action="approve" data-id="${sanitizeHTML(teamId)}" data-updated="${updatedMs}" style="padding: 4px 8px; font-size: 0.7rem; border-color: #4ade80; color: #4ade80; margin-right: 5px;">APPROVE</button>
-                    <button class="btn-outline review-btn" data-action="reject" data-id="${sanitizeHTML(teamId)}" data-updated="${updatedMs}" style="padding: 4px 8px; font-size: 0.7rem; border-color: var(--strike-red); color: var(--strike-red); margin-right: 5px;">REJECT</button>
-                    <button class="btn-outline review-btn" data-action="needChanges" data-id="${sanitizeHTML(teamId)}" data-updated="${updatedMs}" style="padding: 4px 8px; font-size: 0.7rem; border-color: #f97316; color: #f97316;">CHANGES</button>
-                `;
-            } else if (statusText === 'Incomplete' && team.needChangesHistory && team.needChangesHistory.length > 0) {
-                // Show latest note snippet
-                const latestNote = team.needChangesHistory[team.needChangesHistory.length - 1].notes;
-                actionHtml = `<span style="font-size: 0.7rem; color: rgba(255,255,255,0.5); font-style: italic;">Note: ${sanitizeHTML(latestNote.substring(0, 20))}...</span>`;
-            } else {
-                actionHtml = `<span style="font-size: 0.7rem; color: rgba(255,255,255,0.3);">NO ACTION</span>`;
-            }
-
-            if (currentAdminDoc?.role === 'super_admin') {
-                actionHtml += `
-                    <button class="btn-outline edit-team-btn" data-id="${sanitizeHTML(teamId)}" data-name="${sanitizeHTML(team.teamName || '')}" data-college="${sanitizeHTML(team.college || '')}" data-status="${sanitizeHTML(statusText)}" style="padding: 4px 8px; font-size: 0.7rem; border-color: #3b82f6; color: #3b82f6; margin-left: 5px;">EDIT</button>
-                `;
-            }
-
             tr.innerHTML = `
-                <td><strong>${sanitizeHTML(team.teamName || 'Unnamed')}</strong></td>
-                <td>${membersList}</td>
-                <td><span style="font-family: var(--font-mono); font-size: 0.8rem; font-weight: bold; color: ${statusColor};">${sanitizeHTML(statusText)}</span></td>
-                <td>${actionHtml}</td>
-                <td><span style="font-family: var(--font-mono); font-size: 0.8rem; color: rgba(255,255,255,0.5);">${sanitizeHTML(teamId)}</span></td>
+                <td><strong>${sanitizeHTML(data.teamName || 'Unnamed')}</strong></td>
+                <td>${sanitizeHTML(data.leaderName || 'N/A')}</td>
+                <td><span style="font-family: var(--font-mono); font-size: 0.8rem; color: rgba(255,255,255,0.8);">${sanitizeHTML(data.college || 'N/A')}</span></td>
+                <td>
+                    <button class="btn-outline delete-invite-btn" data-id="${sanitizeHTML(inviteId)}" style="padding: 4px 8px; font-size: 0.7rem; border-color: #ef4444; color: #ef4444;">DEL</button>
+                </td>
             `;
-            teamsTableBody.appendChild(tr);
+            invitedTeamsTableBody.appendChild(tr);
         });
 
-        // Attach event listeners to newly rendered buttons
-        document.querySelectorAll('.review-btn').forEach(btn => {
-            btn.addEventListener('click', handleReviewAction);
-        });
-        
-        document.querySelectorAll('.edit-team-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const b = e.target;
-                openEditTeamModal(b.dataset.id, b.dataset.name, b.dataset.college, b.dataset.status);
+        // Delete handlers for invited teams
+        document.querySelectorAll('.delete-invite-btn').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                const id = e.target.getAttribute('data-id');
+                if (!confirm("Are you sure you want to delete this invite?")) return;
+                try {
+                    await deleteDoc(doc(db, "invitedTeams", id));
+                } catch (err) {
+                    console.error("Error deleting invited team:", err);
+                    alert("Failed to delete invited team.");
+                }
             });
         });
 
     }, (error) => {
-        console.error("Error loading teams:", error);
+        console.error("Error loading invited teams:", error);
     });
 }
 
@@ -358,7 +462,10 @@ function loadSubmissions() {
                 <td><span id="sub-round-${subId}">${sanitizeHTML(roundName)}</span></td>
                 <td><a href="${sanitizeHTML(sub.githubLink)}" target="_blank" rel="noopener noreferrer">Repo ↗</a></td>
                 <td><a href="${sanitizeHTML(sub.demoLink)}" target="_blank" rel="noopener noreferrer">Demo ↗</a></td>
-                <td style="font-size: 0.8rem; color: rgba(255,255,255,0.5);">${date}</td>
+                <td style="font-size: 0.8rem; color: rgba(255,255,255,0.5); display: flex; align-items: center; justify-content: space-between;">
+                    ${date}
+                    <button class="btn-outline delete-sub-btn" data-id="${sanitizeHTML(subId)}" style="padding: 2px 6px; font-size: 0.6rem; border-color: #ef4444; color: #ef4444;">DEL</button>
+                </td>
             `;
             submissionsTableBody.appendChild(tr);
             
@@ -385,6 +492,19 @@ function loadSubmissions() {
                     }
                 }).catch(err => console.error("Error fetching round in background:", err));
             }
+        });
+
+        document.querySelectorAll('.delete-sub-btn').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                const subId = e.target.getAttribute('data-id');
+                if (!confirm("Are you sure you want to DELETE this submission?")) return;
+                try {
+                    await deleteDoc(doc(db, "submissions", subId));
+                } catch (err) {
+                    console.error("Error deleting submission:", err);
+                    alert("Failed to delete submission.");
+                }
+            });
         });
     }, (error) => {
         console.error("Error loading submissions:", error);
@@ -501,6 +621,59 @@ announcementForm.addEventListener("submit", async (e) => {
         annSubmitBtn.textContent = "TRANSMIT";
     }
 });
+
+// Quick Add Team (Manual)
+const quickAddTeamForm = document.getElementById("quickAddTeamForm");
+const qaTeamName = document.getElementById("qaTeamName");
+const qaLeaderName = document.getElementById("qaLeaderName");
+const qaLeaderEmail = document.getElementById("qaLeaderEmail");
+const quickAddTeamBtn = document.getElementById("quickAddTeamBtn");
+const quickAddStatus = document.getElementById("quickAddStatus");
+
+if (quickAddTeamForm) {
+    quickAddTeamForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const teamName = qaTeamName.value.trim();
+        const leaderName = qaLeaderName ? qaLeaderName.value.trim() : "";
+        const leaderEmail = qaLeaderEmail ? qaLeaderEmail.value.trim() : "";
+        
+        if (!teamName) return;
+
+        quickAddTeamBtn.disabled = true;
+        quickAddTeamBtn.textContent = "ADDING...";
+        quickAddStatus.textContent = "";
+
+        try {
+            const newMembers = [];
+            if (leaderName) {
+                newMembers.push({
+                    name: leaderName,
+                    email: leaderEmail || "",
+                    role: "Leader"
+                });
+            }
+
+            await addDoc(collection(db, "teams"), {
+                teamName: teamName,
+                status: "Incomplete",
+                createdAt: serverTimestamp(),
+                updatedAt: serverTimestamp(),
+                members: newMembers
+            });
+            quickAddStatus.textContent = "✅ Team added manually.";
+            quickAddStatus.style.color = "#4ade80";
+            quickAddTeamForm.reset();
+        } catch (error) {
+            console.error("Error adding team:", error);
+            quickAddStatus.textContent = `❌ ${error.message}`;
+            quickAddStatus.style.color = "var(--strike-red)";
+        } finally {
+            quickAddTeamBtn.disabled = false;
+            quickAddTeamBtn.textContent = "ADD TEAM";
+            setTimeout(() => { quickAddStatus.textContent = ""; }, 4000);
+        }
+    });
+}
 
 // CSV Import
 const importCsvForm = document.getElementById("importCsvForm");

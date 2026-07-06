@@ -23,6 +23,7 @@ import {
     orderBy,
     limit,
     updateDoc,
+    deleteDoc,
     connectFirestoreEmulator
 } from "firebase/firestore";
 
@@ -65,6 +66,7 @@ export {
     orderBy,
     limit,
     updateDoc,
+    deleteDoc,
     onAuthStateChanged,
     signOut,
     API_BASE
