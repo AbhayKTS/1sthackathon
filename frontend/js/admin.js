@@ -239,6 +239,12 @@ function loadTeams() {
                 actionHtml = `<span style="font-size: 0.7rem; color: rgba(255,255,255,0.3);">NO ACTION</span>`;
             }
 
+            if (currentAdminDoc?.role === 'super_admin') {
+                actionHtml += `
+                    <button class="btn-outline edit-team-btn" data-id="${sanitizeHTML(teamId)}" data-name="${sanitizeHTML(team.teamName || '')}" data-college="${sanitizeHTML(team.college || '')}" data-status="${sanitizeHTML(statusText)}" style="padding: 4px 8px; font-size: 0.7rem; border-color: #3b82f6; color: #3b82f6; margin-left: 5px;">EDIT</button>
+                `;
+            }
+
             tr.innerHTML = `
                 <td><strong>${sanitizeHTML(team.teamName || 'Unnamed')}</strong></td>
                 <td>${membersList}</td>
@@ -249,9 +255,16 @@ function loadTeams() {
             teamsTableBody.appendChild(tr);
         });
 
-        // Attach event listeners to newly rendered review buttons
+        // Attach event listeners to newly rendered buttons
         document.querySelectorAll('.review-btn').forEach(btn => {
             btn.addEventListener('click', handleReviewAction);
+        });
+        
+        document.querySelectorAll('.edit-team-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const b = e.target;
+                openEditTeamModal(b.dataset.id, b.dataset.name, b.dataset.college, b.dataset.status);
+            });
         });
 
     }, (error) => {
@@ -545,6 +558,54 @@ if (importCsvForm) {
     });
 }
 
+// Manual Invite
+const manualInviteForm = document.getElementById("manualInviteForm");
+const manualInviteBtn = document.getElementById("manualInviteBtn");
+
+if (manualInviteForm) {
+    manualInviteForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        
+        manualInviteBtn.disabled = true;
+        manualInviteBtn.textContent = "ADDING...";
+
+        const payload = {
+            teamName: document.getElementById("mi_team").value.trim(),
+            leaderName: document.getElementById("mi_leader").value.trim(),
+            leaderEmail: document.getElementById("mi_email").value.trim(),
+            leaderPhone: document.getElementById("mi_phone").value.trim(),
+            college: document.getElementById("mi_college").value.trim()
+        };
+
+        try {
+            const idToken = await auth.currentUser.getIdToken(true);
+            const response = await fetch(`${API_BASE}/admin/invite-team`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${idToken}`
+                },
+                body: JSON.stringify(payload)
+            });
+
+            const result = await response.json();
+
+            if (!response.ok) {
+                throw new Error(result.error?.message || 'Manual invite failed');
+            }
+
+            alert("Team successfully invited!");
+            manualInviteForm.reset();
+        } catch (error) {
+            console.error("Manual Invite Error:", error);
+            alert("Error: " + error.message);
+        } finally {
+            manualInviteBtn.disabled = false;
+            manualInviteBtn.textContent = "ADD TEAM";
+        }
+    });
+}
+
 // Create Admin (super_admin only)
 const createAdminForm = document.getElementById('createAdminForm');
 const adminEmailInput = document.getElementById('adminEmailInput');
@@ -589,6 +650,76 @@ if (createAdminForm) {
         } finally {
             createAdminBtn.disabled = false;
             createAdminBtn.textContent = 'GRANT ADMIN ACCESS';
+        }
+    });
+}
+
+// Edit Team Modal Logic
+const editTeamModal = document.getElementById('editTeamModal');
+const editTeamForm = document.getElementById('editTeamForm');
+const closeEditModalBtn = document.getElementById('closeEditModalBtn');
+
+function openEditTeamModal(id, name, college, status) {
+    document.getElementById('edit_team_id').value = id;
+    document.getElementById('edit_team_name').value = name;
+    document.getElementById('edit_team_college').value = college;
+    
+    const statusSelect = document.getElementById('edit_team_status');
+    for (let i = 0; i < statusSelect.options.length; i++) {
+        if (statusSelect.options[i].value === status) {
+            statusSelect.selectedIndex = i;
+            break;
+        }
+    }
+    
+    editTeamModal.style.display = 'flex';
+}
+
+if (closeEditModalBtn) {
+    closeEditModalBtn.addEventListener('click', () => {
+        editTeamModal.style.display = 'none';
+    });
+}
+
+if (editTeamForm) {
+    editTeamForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const saveBtn = document.getElementById('saveEditModalBtn');
+        saveBtn.disabled = true;
+        saveBtn.textContent = 'SAVING...';
+        
+        const payload = {
+            teamId: document.getElementById('edit_team_id').value,
+            teamName: document.getElementById('edit_team_name').value.trim(),
+            college: document.getElementById('edit_team_college').value.trim(),
+            status: document.getElementById('edit_team_status').value
+        };
+
+        try {
+            const idToken = await auth.currentUser.getIdToken(true);
+            const response = await fetch(`${API_BASE}/admin/edit-team`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${idToken}`
+                },
+                body: JSON.stringify(payload)
+            });
+
+            const result = await response.json();
+
+            if (!response.ok) {
+                throw new Error(result.error?.message || 'Failed to edit team');
+            }
+
+            editTeamModal.style.display = 'none';
+        } catch (error) {
+            console.error('Edit Team Error:', error);
+            alert('Error: ' + error.message);
+        } finally {
+            saveBtn.disabled = false;
+            saveBtn.textContent = 'SAVE CHANGES';
         }
     });
 }

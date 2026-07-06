@@ -269,15 +269,29 @@
             <!-- Team Invitation Import -->
             <div class="card">
                 <div class="card-header">Team Import</div>
-                <h4 style="font-family: var(--font-mono); color: var(--strike-red); font-size: 0.9rem; margin-bottom: 10px;">UPLOAD SHORTLIST (CSV)</h4>
-                <p style="font-size: 0.8rem; color: rgba(255,255,255,0.6); margin-bottom: 15px;">Columns: teamName, leaderName, leaderEmail, leaderPhone, college</p>
-                <form id="importCsvForm" class="dash-form">
-                    <div class="form-group">
-                        <input type="file" id="csvFileInput" accept=".csv" required style="width: 100%; color: var(--white); background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.2); padding: 10px;">
-                    </div>
-                    <button type="submit" class="btn-primary" style="width: 100%; margin-bottom: 5px;" id="importSubmitBtn">UPLOAD TEAMS</button>
-                    <div id="importStatus" style="font-size: 0.8rem; font-family: var(--font-mono); min-height: 20px;"></div>
-                </form>
+                <!-- CSV UPLOAD -->
+                <div style="background: rgba(0,0,0,0.5); border: 1px solid #1f1f1f; border-radius: 4px; padding: 16px; margin-bottom: 24px;">
+                    <h4 style="color: #666; font-size: 0.7rem; letter-spacing: 2px; margin: 0 0 16px 0;">UPLOAD SHORTLIST (CSV)</h4>
+                    <p style="font-size: 0.7rem; color: rgba(255,255,255,0.4); margin-bottom: 12px;">Columns: teamName, leaderName, leaderEmail, leaderPhone, college</p>
+                    <form id="importCsvForm" class="dash-form">
+                        <input type="file" id="csvFileInput" accept=".csv" required style="width: 100%; font-size: 0.8rem; background: #111; border: 1px solid #333; color: #fff; padding: 8px; margin-bottom: 16px; border-radius: 2px;">
+                        <button type="submit" id="importSubmitBtn" class="btn-solid" style="width: 100%;">UPLOAD TEAMS</button>
+                    </form>
+                    <div id="importStatus" style="font-size: 0.8rem; margin-top: 12px; min-height: 20px;"></div>
+                </div>
+
+                <!-- MANUAL ENTRY -->
+                <div style="background: rgba(0,0,0,0.5); border: 1px solid #1f1f1f; border-radius: 4px; padding: 16px;">
+                    <h4 style="color: #666; font-size: 0.7rem; letter-spacing: 2px; margin: 0 0 16px 0;">MANUAL ENTRY</h4>
+                    <form id="manualInviteForm" style="display: flex; flex-direction: column; gap: 10px;">
+                        <input type="text" id="mi_team" placeholder="Team Name" required style="background: #111; border: 1px solid #333; color: #fff; padding: 8px; font-size: 0.8rem;">
+                        <input type="text" id="mi_leader" placeholder="Leader Name" required style="background: #111; border: 1px solid #333; color: #fff; padding: 8px; font-size: 0.8rem;">
+                        <input type="email" id="mi_email" placeholder="Leader Email" required style="background: #111; border: 1px solid #333; color: #fff; padding: 8px; font-size: 0.8rem;">
+                        <input type="text" id="mi_phone" placeholder="Leader Phone" required style="background: #111; border: 1px solid #333; color: #fff; padding: 8px; font-size: 0.8rem;">
+                        <input type="text" id="mi_college" placeholder="College Name" required style="background: #111; border: 1px solid #333; color: #fff; padding: 8px; font-size: 0.8rem;">
+                        <button type="submit" id="manualInviteBtn" class="btn-solid" style="width: 100%;">ADD TEAM</button>
+                    </form>
+                </div>
             </div>
 
             <!-- Round Control -->
@@ -334,6 +348,35 @@
                 </form>
             </div>
 
+        </div>
+    </div>
+
+    <!-- Edit Team Modal (Hidden by default) -->
+    <div id="editTeamModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(4px);">
+        <div style="background: #111; border: 1px solid #333; border-radius: 4px; padding: 24px; width: 400px; max-width: 90%;">
+            <h3 style="color: #fff; margin-top: 0; letter-spacing: 2px;">EDIT TEAM</h3>
+            <form id="editTeamForm" style="display: flex; flex-direction: column; gap: 12px; margin-top: 16px;">
+                <input type="hidden" id="edit_team_id">
+                
+                <label style="color: rgba(255,255,255,0.6); font-size: 0.8rem;">Team Name</label>
+                <input type="text" id="edit_team_name" required style="background: rgba(0,0,0,0.5); border: 1px solid #333; color: #fff; padding: 8px; font-size: 0.9rem;">
+                
+                <label style="color: rgba(255,255,255,0.6); font-size: 0.8rem;">College</label>
+                <input type="text" id="edit_team_college" required style="background: rgba(0,0,0,0.5); border: 1px solid #333; color: #fff; padding: 8px; font-size: 0.9rem;">
+                
+                <label style="color: rgba(255,255,255,0.6); font-size: 0.8rem;">Status</label>
+                <select id="edit_team_status" style="background: rgba(0,0,0,0.5); border: 1px solid #333; color: #fff; padding: 8px; font-size: 0.9rem;">
+                    <option value="Submitted">Submitted</option>
+                    <option value="Approved">Approved</option>
+                    <option value="Rejected">Rejected</option>
+                    <option value="Incomplete">Incomplete</option>
+                </select>
+
+                <div style="display: flex; gap: 10px; margin-top: 12px;">
+                    <button type="button" id="closeEditModalBtn" style="flex: 1; background: transparent; border: 1px solid #333; color: #fff; padding: 10px; cursor: pointer;">CANCEL</button>
+                    <button type="submit" id="saveEditModalBtn" style="flex: 1; background: #e50914; border: none; color: #fff; padding: 10px; font-weight: bold; cursor: pointer;">SAVE CHANGES</button>
+                </div>
+            </form>
         </div>
     </div>
 
