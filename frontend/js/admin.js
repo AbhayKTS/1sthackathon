@@ -176,6 +176,7 @@ onAuthStateChanged(auth, async (user) => {
                 document.querySelectorAll('.superadmin-only').forEach(el => {
                     el.style.removeProperty('display');
                 });
+                loadAdmins(user);
             }
             
             // Precache rounds and load admin data
@@ -258,7 +259,14 @@ function renderTeamsTable() {
         const tr = document.createElement("tr");
         
         const membersList = team.members && team.members.length > 0 ? team.members.map(m => sanitizeHTML(m.name)).join(", ") : "None";
+        const leaderInfo = team.leaderName ? `<strong>${sanitizeHTML(team.leaderName)}</strong> (Leader)<br/><span style="font-size: 0.8em; color: rgba(255,255,255,0.7);">${membersList}</span>` : membersList;
         
+        const contactInfo = `
+            <span style="color: rgba(255,255,255,0.9);">${team.college ? sanitizeHTML(team.college) : 'No College'}</span><br/>
+            <span style="font-size: 0.8em; color: rgba(255,255,255,0.6);">${team.leaderEmail ? sanitizeHTML(team.leaderEmail) : 'No Email'}</span><br/>
+            <span style="font-size: 0.8em; color: rgba(255,255,255,0.6);">${team.leaderPhone ? sanitizeHTML(team.leaderPhone) : 'No Phone'}</span>
+        `;
+
         let statusColor = "rgba(255,255,255,0.5)";
         let statusText = team.status || "Unknown";
         if (statusText === 'Approved') statusColor = "#4ade80";
@@ -288,10 +296,10 @@ function renderTeamsTable() {
 
         tr.innerHTML = `
             <td><strong>${sanitizeHTML(team.teamName || 'Unnamed')}</strong></td>
-            <td>${membersList}</td>
+            <td>${leaderInfo}</td>
+            <td>${contactInfo}</td>
             <td><span style="font-family: var(--font-mono); font-size: 0.8rem; font-weight: bold; color: ${statusColor};">${sanitizeHTML(statusText)}</span></td>
             <td>${actionHtml}</td>
-            <td><span style="font-family: var(--font-mono); font-size: 0.8rem; color: rgba(255,255,255,0.5);">${sanitizeHTML(teamId)}</span></td>
         `;
         teamsTableBody.appendChild(tr);
     });
@@ -627,6 +635,8 @@ const quickAddTeamForm = document.getElementById("quickAddTeamForm");
 const qaTeamName = document.getElementById("qaTeamName");
 const qaLeaderName = document.getElementById("qaLeaderName");
 const qaLeaderEmail = document.getElementById("qaLeaderEmail");
+const qaLeaderPhone = document.getElementById("qaLeaderPhone");
+const qaCollege = document.getElementById("qaCollege");
 const quickAddTeamBtn = document.getElementById("quickAddTeamBtn");
 const quickAddStatus = document.getElementById("quickAddStatus");
 
@@ -636,31 +646,41 @@ if (quickAddTeamForm) {
         const teamName = qaTeamName.value.trim();
         const leaderName = qaLeaderName ? qaLeaderName.value.trim() : "";
         const leaderEmail = qaLeaderEmail ? qaLeaderEmail.value.trim() : "";
+        const leaderPhone = qaLeaderPhone ? qaLeaderPhone.value.trim() : "";
+        const college = qaCollege ? qaCollege.value.trim() : "";
         
-        if (!teamName) return;
+        if (!teamName || !leaderEmail) return;
 
         quickAddTeamBtn.disabled = true;
         quickAddTeamBtn.textContent = "ADDING...";
         quickAddStatus.textContent = "";
 
         try {
-            const newMembers = [];
-            if (leaderName) {
-                newMembers.push({
-                    name: leaderName,
-                    email: leaderEmail || "",
-                    role: "Leader"
-                });
+            const idToken = await auth.currentUser.getIdToken(true);
+            const payload = {
+                teamName,
+                leaderName,
+                leaderEmail,
+                leaderPhone,
+                college
+            };
+
+            const response = await fetch(`${API_BASE}/admin/invite-team`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${idToken}`
+                },
+                body: JSON.stringify(payload)
+            });
+
+            const result = await response.json();
+
+            if (!response.ok) {
+                throw new Error(result.error?.message || 'Failed to add team manually');
             }
 
-            await addDoc(collection(db, "teams"), {
-                teamName: teamName,
-                status: "Incomplete",
-                createdAt: serverTimestamp(),
-                updatedAt: serverTimestamp(),
-                members: newMembers
-            });
-            quickAddStatus.textContent = "✅ Team added manually.";
+            quickAddStatus.textContent = "✅ Team invited and email sent.";
             quickAddStatus.style.color = "#4ade80";
             quickAddTeamForm.reset();
         } catch (error) {
@@ -816,6 +836,7 @@ if (createAdminForm) {
             createAdminStatus.textContent = `✅ ${result.data.message}`;
             createAdminStatus.style.color = '#4ade80';
             createAdminForm.reset();
+            loadAdmins(auth.currentUser);
         } catch (error) {
             console.error('Create admin error:', error);
             createAdminStatus.textContent = `❌ ${error.message}`;
@@ -825,6 +846,83 @@ if (createAdminForm) {
             createAdminBtn.textContent = 'GRANT ADMIN ACCESS';
         }
     });
+}
+
+async function loadAdmins(user) {
+    if (!user) return;
+    const adminsTableBody = document.getElementById('adminsTableBody');
+    if (!adminsTableBody) return;
+
+    try {
+        const idToken = await user.getIdToken(true);
+        const res = await fetch(`${API_BASE}/admin/admins`, {
+            headers: { 'Authorization': `Bearer ${idToken}` }
+        });
+        const result = await res.json();
+        
+        if (!res.ok) throw new Error(result.error?.message || 'Failed to fetch admins');
+        
+        adminsTableBody.innerHTML = '';
+        const admins = result.data.admins;
+        
+        if (admins.length === 0) {
+            adminsTableBody.innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--muted-foreground);">No admins found</td></tr>`;
+            return;
+        }
+
+        admins.forEach(admin => {
+            const tr = document.createElement('tr');
+            let actions = `<span style="font-size:0.7rem; color:rgba(255,255,255,0.3);">NONE</span>`;
+            
+            if (admin.role !== 'super_admin') {
+                actions = `<button class="btn-outline remove-admin-btn" data-uid="${sanitizeHTML(admin.uid)}" style="padding: 4px 8px; font-size: 0.7rem; border-color: #ef4444; color: #ef4444;">REVOKE</button>`;
+            }
+
+            tr.innerHTML = `
+                <td><span style="font-family: var(--font-mono); font-size: 11px;">${sanitizeHTML(admin.email)}</span></td>
+                <td><span class="role-tag">${sanitizeHTML(admin.role)}</span></td>
+                <td>${actions}</td>
+            `;
+            adminsTableBody.appendChild(tr);
+        });
+
+        // Attach event listeners for revoke buttons
+        document.querySelectorAll('.remove-admin-btn').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                const uid = e.target.getAttribute('data-uid');
+                if (!confirm('Are you sure you want to revoke admin access?')) return;
+                
+                e.target.disabled = true;
+                e.target.textContent = 'REVOKING...';
+                
+                try {
+                    const idToken = await auth.currentUser.getIdToken(true);
+                    const response = await fetch(`${API_BASE}/admin/admins`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${idToken}`
+                        },
+                        body: JSON.stringify({ uid })
+                    });
+                    const deleteResult = await response.json();
+                    
+                    if (!response.ok) throw new Error(deleteResult.error?.message || 'Failed to revoke access');
+                    
+                    loadAdmins(auth.currentUser);
+                } catch (err) {
+                    console.error('Revoke admin error:', err);
+                    alert(`Error: ${err.message}`);
+                    e.target.disabled = false;
+                    e.target.textContent = 'REVOKE';
+                }
+            });
+        });
+
+    } catch (err) {
+        console.error('Error loading admins:', err);
+        adminsTableBody.innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--strike-red);">Failed to load admins: ${err.message}</td></tr>`;
+    }
 }
 
 // Edit Team Modal Logic

@@ -367,10 +367,10 @@
                         <thead>
                             <tr>
                                 <th>TEAM NAME</th>
-                                <th>MEMBERS</th>
+                                <th>LEADER / MEMBERS</th>
+                                <th>COLLEGE & CONTACT</th>
                                 <th>STATUS</th>
                                 <th>ACTIONS</th>
-                                <th>ID</th>
                             </tr>
                         </thead>
                         <tbody id="teamsTableBody">
@@ -435,7 +435,9 @@
                     <div class="form-group" style="margin-bottom: 10px;">
                         <input type="text" id="qaTeamName" placeholder="Team Name" required style="margin-bottom: 10px;">
                         <input type="text" id="qaLeaderName" placeholder="Leader Name" required style="margin-bottom: 10px;">
-                        <input type="email" id="qaLeaderEmail" placeholder="Leader Email" style="margin-bottom: 10px;">
+                        <input type="email" id="qaLeaderEmail" placeholder="Leader Email" required style="margin-bottom: 10px;">
+                        <input type="tel" id="qaLeaderPhone" placeholder="Leader Phone" required style="margin-bottom: 10px;">
+                        <input type="text" id="qaCollege" placeholder="College" required style="margin-bottom: 10px;">
                     </div>
                     <button type="submit" class="btn-outline" style="width: 100%; border-color: var(--accent); color: var(--accent);" id="quickAddTeamBtn">ADD TEAM</button>
                     <div id="quickAddStatus" style="font-size: 11px; font-family: var(--font-mono); min-height: 20px; margin-top: 5px;"></div>
@@ -499,6 +501,24 @@
                     <button type="submit" id="createAdminBtn" class="btn-primary" style="width: 100%; background: linear-gradient(135deg, #7c3aed, #4f46e5); border: none; margin-bottom: 5px;">GRANT ADMIN ACCESS</button>
                     <div id="createAdminStatus" style="font-size: 11px; font-family: var(--font-mono); min-height: 20px; margin-top: 5px;"></div>
                 </form>
+
+                <div style="margin-top: 20px; border-top: 1px solid var(--border); padding-top: 15px;">
+                    <h4 style="font-family: var(--font-mono); color: #a78bfa; font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 10px; margin-top: 0;">EXISTING ADMINS</h4>
+                    <div style="overflow-x: auto; max-height: 200px; overflow-y: auto;">
+                        <table class="data-table" id="adminsTable" style="margin-top: 0;">
+                            <thead>
+                                <tr>
+                                    <th>EMAIL</th>
+                                    <th>ROLE</th>
+                                    <th>ACTION</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminsTableBody">
+                                <tr><td colspan="3" style="text-align: center; color: var(--muted-foreground);">Loading admins...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
 
         </div>
