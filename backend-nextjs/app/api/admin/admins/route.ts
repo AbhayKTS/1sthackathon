@@ -90,12 +90,12 @@ export async function DELETE(request: NextRequest): Promise<NextResponse> {
     await adminAuth.revokeRefreshTokens(uid);
 
     await writeAuditLog({
-      action: 'admin.removed',
+      action: 'admin.role_changed',
       actorUid: token.uid,
       actorRole: 'super_admin',
       targetId: uid,
       targetType: 'users',
-      metadata: { email: userDoc.data()?.email },
+      metadata: { email: userDoc.data()?.email, newRole: 'participant_member' },
       ip: null,
     });
 
