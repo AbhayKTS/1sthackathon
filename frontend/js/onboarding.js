@@ -26,16 +26,66 @@ document.addEventListener("DOMContentLoaded", () => {
     let memberCount = 2;
 
     // Wait for auth state
-    onAuthStateChanged(auth, (user) => {
+    onAuthStateChanged(auth, async (user) => {
         if (!user) {
             window.location.href = '/login.html';
         } else {
-            // Pre-fill leader email
-            const leaderEmailInput = document.querySelector('input[name="m_email"]');
-            if (leaderEmailInput && !leaderEmailInput.value) {
+            // Pre-fill leader email from Firebase auth
+            const leaderEmailInput = document.querySelector('#membersContainer .member-row:first-child input[name="m_email"]');
+            if (leaderEmailInput) {
                 leaderEmailInput.value = user.email;
                 leaderEmailInput.readOnly = true;
                 leaderEmailInput.style.opacity = "0.7";
+            }
+
+            // Always lock the leader role to "Leader"
+            const leaderRoleInput = document.querySelector('#membersContainer .member-row:first-child input[name="m_role"]');
+            if (leaderRoleInput) {
+                leaderRoleInput.value = "Leader";
+                leaderRoleInput.readOnly = true;
+                leaderRoleInput.style.opacity = "0.7";
+                leaderRoleInput.style.cursor = "not-allowed";
+            }
+
+            // Fetch prefill data from backend (leader name, phone, team name, college)
+            try {
+                const token = await user.getIdToken();
+                const res = await fetch(`${API_BASE}/team/prefill`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    const prefill = data?.data?.prefill;
+
+                    if (prefill) {
+                        // Auto-fill team name
+                        const teamNameInput = document.getElementById("teamName");
+                        if (teamNameInput && !teamNameInput.value && prefill.teamName) {
+                            teamNameInput.value = prefill.teamName;
+                        }
+
+                        // Auto-fill college
+                        const collegeInput = document.getElementById("college");
+                        if (collegeInput && !collegeInput.value && prefill.college) {
+                            collegeInput.value = prefill.college;
+                        }
+
+                        // Auto-fill leader name
+                        const leaderNameInput = document.querySelector('#membersContainer .member-row:first-child input[name="m_name"]');
+                        if (leaderNameInput && !leaderNameInput.value && prefill.leaderName) {
+                            leaderNameInput.value = prefill.leaderName;
+                        }
+
+                        // Auto-fill leader phone
+                        const leaderPhoneInput = document.querySelector('#membersContainer .member-row:first-child input[name="m_phone"]');
+                        if (leaderPhoneInput && !leaderPhoneInput.value && prefill.leaderPhone) {
+                            leaderPhoneInput.value = prefill.leaderPhone;
+                        }
+                    }
+                }
+            } catch (err) {
+                console.warn("Could not fetch prefill data:", err);
             }
         }
     });
