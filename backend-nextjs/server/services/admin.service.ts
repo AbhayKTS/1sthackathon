@@ -91,6 +91,17 @@ export async function reviewTeam(adminUid: string, input: ReviewTeamInput): Prom
     if (teamData['invitedTeamId']) {
         const inviteRef = db.collection('invitedTeams').doc(teamData['invitedTeamId']);
         tx.update(inviteRef, { status: newStatus, updatedAt: FieldValue.serverTimestamp() });
+    } else if (newStatus === 'Approved') {
+        const inviteRef = db.collection('invitedTeams').doc();
+        tx.set(inviteRef, {
+            teamName: teamName,
+            leaderName: teamData['leaderName'] || 'Unknown',
+            leaderEmail: teamData['leaderEmail'] ? teamData['leaderEmail'].toLowerCase().trim() : '',
+            status: 'Approved',
+            importedAt: FieldValue.serverTimestamp(),
+            updatedAt: FieldValue.serverTimestamp(),
+        });
+        updateData.invitedTeamId = inviteRef.id;
     }
   });
 
@@ -121,13 +132,13 @@ export async function reviewTeam(adminUid: string, input: ReviewTeamInput): Prom
 
               if (input.action === 'approve') {
                   await createTeamNotification(input.teamId, 'team_approved', 'Clearance Granted', 'Your team profile has been approved. The dashboard is now fully unlocked.');
-                  sendEmail({ to: leaderEmail, template: 'approved', variables: { teamName, loginUrl } }).catch(console.error);
+                  await sendEmail({ to: leaderEmail, template: 'approved', variables: { teamName, loginUrl } }).catch(console.error);
               } else if (input.action === 'reject') {
                   await createTeamNotification(input.teamId, 'team_rejected', 'Clearance Denied', 'Your team application has been rejected by central command.');
-                  sendEmail({ to: leaderEmail, template: 'rejected', variables: { teamName } }).catch(console.error);
+                  await sendEmail({ to: leaderEmail, template: 'rejected', variables: { teamName } }).catch(console.error);
               } else if (input.action === 'needChanges') {
                   await createTeamNotification(input.teamId, 'team_need_changes', 'Intel Required', 'Admin has requested changes to your team profile. Please address them and resubmit.');
-                  sendEmail({ to: leaderEmail, template: 'needChanges', variables: { teamName, notes: input.notes || '', loginUrl } }).catch(console.error);
+                  await sendEmail({ to: leaderEmail, template: 'needChanges', variables: { teamName, notes: input.notes || '', loginUrl } }).catch(console.error);
               }
           }
       }

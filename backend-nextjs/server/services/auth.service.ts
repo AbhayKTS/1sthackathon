@@ -433,7 +433,7 @@ export async function verifyOtpAndCreateSession(
     if (isNewUser) {
         const baseUrl = process.env.NODE_ENV === 'production' ? 'https://revengershack.tech' : (env.NEXT_PUBLIC_APP_URL || 'http://localhost:5173');
         const loginUrl = `${baseUrl}/dashboard`;
-        sendEmail({
+        await sendEmail({
             to: normalizedEmail,
             template: 'verified',
             variables: { loginUrl }
