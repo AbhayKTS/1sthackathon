@@ -91,20 +91,20 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     addMemberBtn.addEventListener("click", () => {
-        if (memberCount >= 5) {
-            alert("Maximum 5 members allowed.");
+        if (memberCount >= 4) {
+            alert("Maximum 4 members allowed.");
             return;
         }
 
         memberCount++;
         
         const row = document.createElement("div");
-        row.className = "member-row grid grid-cols-1 md:grid-cols-4 gap-2 bg-black/40 p-4 border border-border/50 relative mt-4";
+        row.className = "member-row grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 bg-black/40 p-6 border border-border/50 relative mt-4";
         
         // Remove button
         const removeBtn = document.createElement("button");
         removeBtn.type = "button";
-        removeBtn.className = "absolute -top-2 -right-2 bg-strike-red text-white font-mono text-[10px] px-2 py-0.5 cursor-pointer";
+        removeBtn.className = "absolute -top-3 -right-3 bg-strike-red text-white font-mono text-xs px-3 py-1 cursor-pointer font-bold";
         removeBtn.style.fontFamily = "'JetBrains Mono', monospace";
         removeBtn.style.backgroundColor = "var(--strike-red)";
         removeBtn.textContent = "X";
@@ -114,10 +114,11 @@ document.addEventListener("DOMContentLoaded", () => {
         };
         
         row.innerHTML = `
-            <input type="text" name="m_name" placeholder="FULL NAME" required class="bg-input border border-border px-3 py-2 font-mono text-xs focus:outline-none focus:border-blood w-full col-span-1 md:col-span-1" style="font-family: 'JetBrains Mono', monospace;">
-            <input type="email" name="m_email" placeholder="EMAIL" required class="bg-input border border-border px-3 py-2 font-mono text-xs focus:outline-none focus:border-blood w-full col-span-1 md:col-span-1" style="font-family: 'JetBrains Mono', monospace;">
-            <input type="text" name="m_phone" placeholder="PHONE" required class="bg-input border border-border px-3 py-2 font-mono text-xs focus:outline-none focus:border-blood w-full col-span-1 md:col-span-1" style="font-family: 'JetBrains Mono', monospace;">
-            <input type="text" name="m_role" placeholder="ROLE (e.g. Developer)" required class="bg-input border border-border px-3 py-2 font-mono text-xs focus:outline-none focus:border-blood w-full col-span-1 md:col-span-1" style="font-family: 'JetBrains Mono', monospace;">
+            <input type="text" name="m_name" placeholder="FULL NAME" required class="bg-input border border-border px-3 py-2 font-mono text-xs focus:outline-none focus:border-blood w-full">
+            <input type="email" name="m_email" placeholder="EMAIL" required class="bg-input border border-border px-3 py-2 font-mono text-xs focus:outline-none focus:border-blood w-full">
+            <input type="text" name="m_phone" placeholder="MOBILE NUMBER" required class="bg-input border border-border px-3 py-2 font-mono text-xs focus:outline-none focus:border-blood w-full">
+            <input type="text" name="m_role" placeholder="ROLE (e.g. Developer)" required class="bg-input border border-border px-3 py-2 font-mono text-xs focus:outline-none focus:border-blood w-full">
+            <input type="url" name="m_github" placeholder="GITHUB PROFILE URL" class="bg-input border border-border px-3 py-2 font-mono text-xs focus:outline-none focus:border-blood w-full md:col-span-2 lg:col-span-4">
         `;
         
         row.appendChild(removeBtn);
@@ -140,11 +141,12 @@ document.addEventListener("DOMContentLoaded", () => {
                 email: row.querySelector('input[name="m_email"]').value.trim(),
                 phone: row.querySelector('input[name="m_phone"]').value.trim(),
                 role: row.querySelector('input[name="m_role"]').value.trim(),
+                github: row.querySelector('input[name="m_github"]')?.value.trim() || "",
             });
         });
 
-        if (members.length < 2 || members.length > 5) {
-            errorEl.textContent = "You must have between 2 and 5 members.";
+        if (members.length < 2 || members.length > 4) {
+            errorEl.textContent = "You must have between 2 and 4 members.";
             return;
         }
 
