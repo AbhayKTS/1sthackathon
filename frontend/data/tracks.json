@@ -1,37 +1,37 @@
 [
   {
-    "id": "ai",
-    "title": "ARTIFICIAL INTELLIGENCE",
-    "description": "Push the boundaries of machine intelligence. Build autonomous agents, generative models, or predictive systems that solve real-world underground problems.",
-    "icon": "cpu",
+    "id": "web-dev",
+    "title": "WEB DEVELOPMENT",
+    "description": "BUILD. DESIGN. DEPLOY.",
+    "icon": "globe",
+    "color": "#06b6d4"
+  },
+  {
+    "id": "cloud-devops",
+    "title": "CLOUD & DEVOPS",
+    "description": "Scale and automate infrastructure for the future.",
+    "icon": "cloud",
     "color": "var(--blood)"
   },
   {
-    "id": "cyber",
-    "title": "CYBERSECURITY & WEB3",
-    "description": "Defend the realm or break the unbreakable. Develop zero-trust architectures, decentralized identities, or next-gen intrusion detection systems.",
-    "icon": "shield",
-    "color": "var(--gold)"
+    "id": "ai-ml",
+    "title": "AI & MACHINE LEARNING",
+    "description": "Push the boundaries of machine intelligence. Build autonomous agents, generative models, or predictive systems.",
+    "icon": "cpu",
+    "color": "#06b6d4"
   },
   {
-    "id": "health",
-    "title": "HEALTH TECH",
-    "description": "Save lives with code. Create telemedicine platforms, AI diagnostics, or mental health companions that operate seamlessly in low-bandwidth environments.",
-    "icon": "activity",
-    "color": "#10b981"
-  },
-  {
-    "id": "education",
-    "title": "ED-TECH",
-    "description": "Democratize knowledge. Build gamified learning platforms, peer-to-peer tutoring networks, or accessible skill-building tools for the masses.",
-    "icon": "book",
-    "color": "#3b82f6"
+    "id": "blockchain-web3",
+    "title": "BLOCKCHAIN & WEB3",
+    "description": "DECENTRALIZE. SECURE. OWN.",
+    "icon": "box",
+    "color": "var(--blood)"
   },
   {
     "id": "open",
     "title": "OPEN INNOVATION",
     "description": "No rules. No limits. If your idea doesn't fit into the above categories but has the potential to change the game, this is your arena.",
     "icon": "zap",
-    "color": "#a855f7"
+    "color": "#06b6d4"
   }
 ]
