@@ -37,7 +37,9 @@ export type AuditAction =
   | 'ticket.responded'
   | 'ticket.closed'
   | 'admin.created'
-  | 'admin.role_changed';
+  | 'admin.role_changed'
+  | 'admin.score_permission_changed'
+  | 'leaderboard.score_updated';
 
 export interface AuditLogEntry {
   action: AuditAction;

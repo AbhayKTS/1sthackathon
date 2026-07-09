@@ -1,14 +1,20 @@
 /**
  * POST /api/submission/submit
  *
- * Endpoint for a team to submit their payload for a specific round.
+ * Endpoint for a team leader to submit their payload for a specific round.
+ * The accepted fields depend on the round's `type` field — the service layer
+ * enforces the correct fields per round type.
  *
  * Expected payload:
  * {
  *   teamId: string,
  *   roundId: string,
- *   githubLink: string,
- *   demoLink?: string
+ *   // One of the following sets, matching the round type:
+ *   githubLink?: string,        // for 'general' rounds
+ *   demoLink?: string,          // for 'general' rounds (optional)
+ *   pptLink?: string,           // for 'ppt' rounds
+ *   prototypeLink?: string,     // for 'mentoring_prototype' rounds
+ *   hasNoPrototype?: boolean,   // for 'mentoring_prototype' rounds (no link yet)
  * }
  *
  * @route POST /api/submission/submit
@@ -24,13 +30,19 @@ export function OPTIONS(request: NextRequest): NextResponse {
   return handleOptions(request);
 }
 
+// Accept all possible fields — the service layer validates which are required
+// based on the round type fetched from Firestore. This keeps the route thin.
 const submissionSchema = z.object({
   teamId: z.string().min(1, 'Team ID is required'),
   roundId: z.string().min(1, 'Round ID is required'),
-  githubLink: z.string().url('Must be a valid URL').refine(val => val.startsWith('https://github.com/'), {
-    message: "GitHub link must start with https://github.com/",
-  }),
-  demoLink: z.string().url('Must be a valid URL').optional().or(z.literal('')),
+  // General / legacy
+  githubLink: z.string().url().optional(),
+  demoLink: z.string().url().optional().or(z.literal('')),
+  // PPT round
+  pptLink: z.string().url().optional(),
+  // Mentoring/prototype round
+  prototypeLink: z.string().url().optional(),
+  hasNoPrototype: z.boolean().optional().default(false),
 });
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
@@ -38,7 +50,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
   try {
     const token = await withAuth(request);
-    // Note: Any authenticated user can hit this; the service layer checks if they are authorized for the team.
+    // Service layer checks if caller is the team leader
 
     const body = await request.json().catch(() => {
       throw Errors.validation('Invalid JSON payload');
@@ -52,16 +64,17 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const input: SubmitPayloadInput = {
       teamId: parsed.data.teamId,
       roundId: parsed.data.roundId,
-      githubLink: parsed.data.githubLink,
+      ...(parsed.data.githubLink !== undefined && { githubLink: parsed.data.githubLink }),
+      ...(parsed.data.demoLink ? { demoLink: parsed.data.demoLink } : {}),
+      ...(parsed.data.pptLink !== undefined && { pptLink: parsed.data.pptLink }),
+      ...(parsed.data.prototypeLink !== undefined && { prototypeLink: parsed.data.prototypeLink }),
+      ...(parsed.data.hasNoPrototype !== undefined && { hasNoPrototype: parsed.data.hasNoPrototype }),
     };
-    if (parsed.data.demoLink) {
-        input.demoLink = parsed.data.demoLink;
-    }
 
     await submitPayload(token.uid, input);
 
     const response = apiSuccess(
-      { message: `Submission successful` },
+      { message: 'Submission received. Your payload has been transmitted.' },
       200
     );
 

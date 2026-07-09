@@ -127,6 +127,12 @@ onAuthStateChanged(auth, async (user) => {
         if (userSnap.exists()) {
             currentUserDoc = userSnap.data();
             currentTeamId = currentUserDoc.teamId;
+            
+            // Allow admins to preview the dashboard even without a team
+            if (!currentTeamId && (currentUserDoc.role === 'admin' || currentUserDoc.role === 'super_admin')) {
+                currentTeamId = 'admin-preview-team';
+            }
+
             if (!currentTeamId) {
                 // Not assigned to a team -> redirect to Team Completion Wizard
                 window.location.href = '/onboarding.html';
@@ -141,6 +147,7 @@ onAuthStateChanged(auth, async (user) => {
         listenToAnnouncements();
         loadLeaderboard();
         listenToNotifications();
+        listenToSessions(currentTeamId);
 
     } catch (error) {
         console.error("Error loading dashboard data:", error);
@@ -160,6 +167,22 @@ logoutBtn.addEventListener("click", () => {
 // Load Team Data
 async function loadTeamData(teamId) {
     try {
+        if (teamId === 'admin-preview-team') {
+            // Mock data for admin preview
+            teamNameDisplay.textContent = "Admin Preview Team";
+            teamIdDisplay.textContent = "admin-preview-team";
+            teamMembersList.innerHTML = `
+                <div class="group flex items-center gap-3 rounded-sm border border-border bg-surface-2 p-3 transition-colors hover:border-primary">
+                    <div class="grid h-9 w-9 place-items-center rounded-sm bg-background font-mono text-[11px] font-bold text-primary" style="color: var(--primary);">AD</div>
+                    <div class="min-w-0">
+                        <div class="truncate text-sm font-medium text-foreground">Admin User</div>
+                        <div class="truncate font-mono text-[10px] uppercase tracking-[0.14em] text-primary" style="color: var(--primary);">LEADER</div>
+                    </div>
+                </div>
+            `;
+            return;
+        }
+
         const teamRef = doc(db, "teams", teamId);
         const teamSnap = await getDoc(teamRef);
         
@@ -249,19 +272,35 @@ const heroVerticalText = document.getElementById("heroVerticalText");
 const heroExtraBox = document.getElementById("heroExtraBox");
 const heroFooterText = document.getElementById("heroFooterText");
 
-// Load Active Rounds - listen to fixed doc IDs
+// Load Active Rounds - listen to rounds collection
 function loadActiveRounds() {
-    const roundIds = ["round-1", "round-2", "round-3"];
-    
     // Clear any previous active rounds listeners
     roundsUnsubscribers.forEach(unsub => unsub());
     roundsUnsubscribers = [];
 
-    // Track state per round so we can detect "none active" when any round changes
+    // Track state per round
     const roundStates = {};
 
     function renderActiveRound() {
         const activeEntry = Object.entries(roundStates).find(([, data]) => data && data.isActive);
+
+        const closedRounds = Object.entries(roundStates).filter(([, data]) => data && data.isLocked && !data.isActive);
+        const closedMissionsContainer = document.getElementById("closedMissionsContainer");
+        const closedMissionsList = document.getElementById("closedMissionsList");
+
+        if (closedMissionsContainer && closedMissionsList) {
+            if (closedRounds.length > 0) {
+                closedMissionsContainer.style.display = "block";
+                closedMissionsList.innerHTML = closedRounds.map(([id, data]) => `
+                    <div class="rounded bg-surface-2 p-3 border border-border">
+                        <div class="font-mono text-[11px] font-bold text-muted-foreground uppercase tracking-wider">${data.title || id}</div>
+                        <div class="font-sans text-[11px] text-muted-foreground mt-1">${data.description || 'Closed round'}</div>
+                    </div>
+                `).join('');
+            } else {
+                closedMissionsContainer.style.display = "none";
+            }
+        }
 
         if (!activeEntry) {
             // No active round — show waiting state
@@ -349,27 +388,64 @@ function loadActiveRounds() {
  
         if (heroRoundTitle) heroRoundTitle.innerHTML = `${topText}<br /><span class="text-primary" style="animation: flicker 4s infinite">${bottomText}</span>`;
         
-        let roundNum = "XX";
-        if (t.includes("1") || t.includes("one")) roundNum = "01";
-        else if (t.includes("2") || t.includes("two")) roundNum = "02";
-        else if (t.includes("3") || t.includes("three")) roundNum = "03";
-
         const githubInput = document.getElementById("githubLink");
         const demoInput = document.getElementById("demoLink");
+        const pptInput = document.getElementById("pptLink");
+        const prototypeInput = document.getElementById("prototypeLink");
+        const noPrototypeLabel = document.getElementById("noPrototypeLabel");
+        const hasNoPrototypeCheckbox = document.getElementById("hasNoPrototype");
+
+        // Hide all initially
+        if (githubInput) githubInput.classList.add("hidden");
+        if (demoInput) demoInput.classList.add("hidden");
+        if (pptInput) pptInput.classList.add("hidden");
+        if (prototypeInput) prototypeInput.classList.add("hidden");
+        if (noPrototypeLabel) noPrototypeLabel.classList.add("hidden");
         
-        if (githubInput && demoInput) {
-            if (roundNum === "01") {
-                githubInput.placeholder = "PROBLEM STATEMENT (GOOGLE DOCS URL)";
-                demoInput.placeholder = "PRESENTATION DECK (PPT URL)";
-                demoInput.required = true;
-            } else if (roundNum === "02") {
-                githubInput.placeholder = "SOURCE CODE (GITHUB REPO URL)";
-                demoInput.placeholder = "LIVE DEMO URL (OPTIONAL)";
-                demoInput.required = false;
-            } else {
+        // Remove required
+        if (githubInput) githubInput.required = false;
+        if (demoInput) demoInput.required = false;
+        if (pptInput) pptInput.required = false;
+        if (prototypeInput) prototypeInput.required = false;
+
+        const roundType = roundData.type || 'general';
+
+        if (roundType === 'ppt') {
+            if (pptInput) {
+                pptInput.classList.remove("hidden");
+                pptInput.required = true;
+            }
+        } else if (roundType === 'mentoring_prototype') {
+            if (githubInput) {
+                githubInput.classList.remove("hidden");
+                githubInput.required = true;
+            }
+            if (prototypeInput) {
+                prototypeInput.classList.remove("hidden");
+                prototypeInput.required = true;
+            }
+            if (noPrototypeLabel) {
+                noPrototypeLabel.classList.remove("hidden");
+                
+                // Toggle required on prototypeLink if checkbox changes
+                hasNoPrototypeCheckbox?.addEventListener("change", (e) => {
+                    if (prototypeInput) {
+                        prototypeInput.required = !e.target.checked;
+                        if (e.target.checked) prototypeInput.value = "";
+                        prototypeInput.disabled = e.target.checked;
+                    }
+                });
+            }
+        } else {
+            // General or other rounds - fallback to just github/demo links optionally
+            if (githubInput) {
+                githubInput.classList.remove("hidden");
+                githubInput.required = true;
                 githubInput.placeholder = "SUBMISSION URL 1";
+            }
+            if (demoInput) {
+                demoInput.classList.remove("hidden");
                 demoInput.placeholder = "SUBMISSION URL 2 (OPTIONAL)";
-                demoInput.required = false;
             }
         }
         
@@ -397,21 +473,21 @@ function loadActiveRounds() {
         }
     }
 
-    // Listen to all 3 round docs simultaneously
-    roundIds.forEach(rid => {
-        const roundRef = doc(db, "rounds", rid);
-        const unsub = onSnapshot(roundRef, (roundDoc) => {
-            if (roundDoc.exists()) {
-                roundStates[rid] = roundDoc.data();
-            } else {
-                roundStates[rid] = null;
-            }
-            renderActiveRound();
-        }, (error) => {
-            console.error(`Error listening to ${rid}:`, error);
+    // Listen to rounds collection
+    const roundsRef = collection(db, "rounds");
+    const unsub = onSnapshot(roundsRef, (snap) => {
+        // Reset states
+        Object.keys(roundStates).forEach(k => delete roundStates[k]);
+        
+        snap.forEach(docSnap => {
+            roundStates[docSnap.id] = docSnap.data();
         });
-        roundsUnsubscribers.push(unsub);
+        
+        renderActiveRound();
+    }, (error) => {
+        console.error("Error listening to rounds:", error);
     });
+    roundsUnsubscribers.push(unsub);
 }
 
 // Start Countdown Timer
@@ -783,6 +859,55 @@ function listenToNotifications() {
     });
 }
 
+// Sessions Logic
+function listenToSessions(teamId) {
+    if (!teamId) return;
+
+    const sessionsContainer = document.getElementById("sessionsContainer");
+    const sessionsList = document.getElementById("sessionsList");
+    
+    if (!sessionsContainer || !sessionsList) return;
+
+    const sessionsRef = collection(db, "sessions");
+    const q = query(sessionsRef, where("teamId", "==", teamId));
+
+    onSnapshot(q, (snapshot) => {
+        if (snapshot.empty) {
+            sessionsContainer.classList.add("hidden");
+            sessionsList.innerHTML = "";
+            return;
+        }
+
+        sessionsContainer.classList.remove("hidden");
+        sessionsList.innerHTML = "";
+
+        snapshot.forEach(docSnap => {
+            const data = docSnap.data();
+            const scheduledFor = data.scheduledFor ? (data.scheduledFor.toMillis ? new Date(data.scheduledFor.toMillis()) : new Date(data.scheduledFor.seconds * 1000)) : null;
+            const meetLink = data.meetLink || null;
+            
+            const sessionEl = document.createElement("div");
+            sessionEl.className = "rounded bg-surface-2 p-3 border border-border";
+            
+            let timeStr = scheduledFor ? scheduledFor.toLocaleString() : "Time TBD";
+            
+            sessionEl.innerHTML = `
+                <div class="flex justify-between items-start">
+                    <div>
+                        <div class="font-mono text-[11px] font-bold text-accent uppercase tracking-wider">${data.type || 'Session'} • ${data.roundId}</div>
+                        <div class="font-sans text-[11px] text-muted-foreground mt-1">${timeStr}</div>
+                        ${data.hostName ? `<div class="font-mono text-[10px] text-foreground mt-1">Host: ${data.hostName}</div>` : ''}
+                    </div>
+                    ${meetLink ? `<a href="${meetLink}" target="_blank" class="inline-flex items-center gap-1 rounded bg-primary/20 px-2 py-1 text-[10px] font-mono uppercase tracking-widest text-primary hover:bg-primary/30 transition-colors">Join <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg></a>` : '<span class="text-[10px] font-mono text-muted-foreground uppercase">Link TBA</span>'}
+                </div>
+            `;
+            sessionsList.appendChild(sessionEl);
+        });
+    }, (error) => {
+        console.error("Error listening to sessions:", error);
+    });
+}
+
 // Mission Submission Logic
 function listenToTeamSubmission(teamId, roundId) {
     if (teamSubmissionUnsubscriber) teamSubmissionUnsubscriber();
@@ -795,6 +920,9 @@ function listenToTeamSubmission(teamId, roundId) {
     teamSubmissionUnsubscriber = onSnapshot(q, (snapshot) => {
         const githubInput = document.getElementById("githubLink");
         const demoInput = document.getElementById("demoLink");
+        const pptInput = document.getElementById("pptLink");
+        const prototypeInput = document.getElementById("prototypeLink");
+        const hasNoPrototypeCheckbox = document.getElementById("hasNoPrototype");
 
         if (!snapshot.empty) {
             // Team has already submitted for this round
@@ -811,6 +939,9 @@ function listenToTeamSubmission(teamId, roundId) {
             }
             if (githubInput) githubInput.disabled = true;
             if (demoInput) demoInput.disabled = true;
+            if (pptInput) pptInput.disabled = true;
+            if (prototypeInput) prototypeInput.disabled = true;
+            if (hasNoPrototypeCheckbox) hasNoPrototypeCheckbox.disabled = true;
         } else {
             // Not submitted yet
             if (submitMissionBtn) {
@@ -826,6 +957,9 @@ function listenToTeamSubmission(teamId, roundId) {
             }
             if (githubInput) githubInput.disabled = false;
             if (demoInput) demoInput.disabled = false;
+            if (pptInput) pptInput.disabled = false;
+            if (prototypeInput) prototypeInput.disabled = false;
+            if (hasNoPrototypeCheckbox) hasNoPrototypeCheckbox.disabled = false;
         }
     }, (error) => {
         console.error("Error listening to team submission:", error);
@@ -847,32 +981,54 @@ if (submissionForm) {
         const githubInput = document.getElementById("githubLink");
         const demoInput = document.getElementById("demoLink");
         
-        const githubLink = githubInput ? githubInput.value.trim() : "";
-        const demoLink = demoInput ? demoInput.value.trim() : "";
+        const pptInput = document.getElementById("pptLink");
+        const prototypeInput = document.getElementById("prototypeLink");
+        const hasNoPrototypeCheckbox = document.getElementById("hasNoPrototype");
         
-        if (!githubLink) {
-            if (submissionStatus) {
-                submissionStatus.textContent = "Error: Primary submission link is required.";
-                submissionStatus.style.color = "var(--strike-red)";
-            }
-            return;
+        const payload = {
+            teamId: currentTeamId,
+            roundId: activeRoundId
+        };
+        
+        if (githubInput && !githubInput.classList.contains("hidden") && githubInput.value) {
+            payload.githubLink = githubInput.value.trim();
         }
-        
+        if (demoInput && !demoInput.classList.contains("hidden") && demoInput.value) {
+            payload.demoLink = demoInput.value.trim();
+        }
+        if (pptInput && !pptInput.classList.contains("hidden") && pptInput.value) {
+            payload.pptLink = pptInput.value.trim();
+        }
+        if (prototypeInput && !prototypeInput.classList.contains("hidden") && prototypeInput.value) {
+            payload.prototypeLink = prototypeInput.value.trim();
+        }
+        if (hasNoPrototypeCheckbox && !hasNoPrototypeCheckbox.closest('label').classList.contains("hidden")) {
+            payload.hasNoPrototype = hasNoPrototypeCheckbox.checked;
+        }
+
         if (submitMissionBtn) {
             submitMissionBtn.disabled = true;
-            submitMissionBtn.innerHTML = `UPLOADING...`;
+            submitMissionBtn.innerHTML = `TRANSMITTING...`;
         }
         
         try {
-            await addDoc(collection(db, "submissions"), {
-                teamId: currentTeamId,
-                roundId: activeRoundId,
-                githubLink: githubLink,
-                demoLink: demoLink,
-                submittedAt: serverTimestamp()
+            const idToken = await auth.currentUser.getIdToken(true);
+            const response = await fetch(`${API_BASE}/submission/submit`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${idToken}`
+                },
+                body: JSON.stringify(payload)
             });
             
-            // The listener will automatically update the UI on success.
+            const result = await response.json();
+            
+            if (!response.ok) {
+                throw new Error(result.error?.message || 'Failed to submit payload');
+            }
+            
+            // The onSnapshot listener (listenToTeamSubmission) will automatically update the UI on success.
         } catch (error) {
             console.error("Error submitting mission:", error);
             if (submissionStatus) {

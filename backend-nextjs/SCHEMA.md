@@ -182,6 +182,11 @@ Document ID: auto-ID
   submittedAt:  Timestamp | null;
   approvedAt:   Timestamp | null;
   rejectedAt:   Timestamp | null;
+
+  // Stage 6e Flags
+  isTimeLeapSelected: boolean;
+  isTop10: boolean;
+  isTop15: boolean;
 }
 ```
 
@@ -222,25 +227,75 @@ Document ID: `{teamId}_{roundId}` — composite deterministic ID enabling upsert
 
 ---
 
-### `Rounds` — Phase 6 (existing, to be formalized)
+### `Rounds` — Phase 6 (Dynamic)
 
-Fixed doc IDs: `round-1`, `round-2`, `round-3`
-Document ID: `round-{n}`
+Replaces fixed `round-1` approach. Defines round type, timing, and submission sheet.
+Document ID: `roundId` (e.g. `round-1`, `timeleap`)
 
 ```typescript
 {
+  roundId:            string;
   title:              string;
   description:        string;
-  isActive:           boolean;
-  submissionDeadline: Timestamp | null;  // Server-authoritative deadline for submissions
+  type:               'ppt' | 'mentoring_prototype' | 'timeleap' | 'judges_final' | 'general';
+  isActive:           boolean;           // Controls visibility of submission form on dashboard
+  isLocked:           boolean;           // If true, submissions are locked (read-only mode)
   startsAt:           Timestamp | null;
   endsAt:             Timestamp | null;
+  submissionDeadline: Timestamp | null;
+  googleSheetId:      string | null;     // Defines where submissions are written
   updatedAt:          Timestamp;
-  updatedBy:          string;            // Admin UID who last activated
+  updatedBy:          string;            // Admin UID who last modified
 }
 ```
 
 **Security rule:** Any authenticated user can read. All writes via Admin SDK.
+
+---
+
+### `Sessions` — Phase 6c
+
+Schedules mentor/judge sessions for a team in a specific round.
+Document ID: `{teamId}_{roundId}`
+
+```typescript
+{
+  sessionId:    string;
+  teamId:       string;
+  roundId:      string;
+  type:         'mentoring' | 'judging';
+  hostName:     string | null;
+  meetLink:     string | null;
+  scheduledFor: Timestamp | null;
+  updatedAt:    Timestamp;
+  updatedBy:    string;
+}
+```
+
+**Security rule:** Authenticated user can read own team's sessions. Writes via Admin SDK.
+
+---
+
+### `Leaderboard` — Phase 6d
+
+Computed standings for a specific round based on judges' scores.
+Document ID: `roundId`
+
+```typescript
+{
+  roundId:      string;
+  standings:    Array<{
+    teamId:     string;
+    teamName:   string;
+    score:      number;
+    rank:       number;
+  }>;
+  updatedAt:    Timestamp;
+  updatedBy:    string;
+}
+```
+
+**Security rule:** Any authenticated user can read. Writes via Admin SDK.
 
 ---
 

@@ -44,6 +44,15 @@ const envSchema = z.object({
   OTP_MAX_PER_HOUR: z.coerce.number().int().positive().default(5),
   OTP_EXPIRY_MINUTES: z.coerce.number().int().positive().default(10),
   OTP_MAX_VERIFY_ATTEMPTS: z.coerce.number().int().positive().default(5),
+
+  // Google Sheets dual-write (Stage 6b) — server-side only, never exposed to client
+  GOOGLE_SERVICE_ACCOUNT_JSON: z.string().optional(), // Service account with Sheets API access
+  GOOGLE_SHEET_PPT_ID: z.string().optional(),         // PPT submission sheet ID
+  GOOGLE_SHEET_PROTO_ID: z.string().optional(),       // Prototype link submission sheet ID
+
+  // Announcement channels (Announcements stage)
+  DISCORD_WEBHOOK_URL: z.string().url().optional(),   // Discord webhook for broadcast
+  // WHATSAPP_API_TOKEN — add here once provider is confirmed
 });
 
 // ─── Parse & Export ─────────────────────────────────────────────────────────

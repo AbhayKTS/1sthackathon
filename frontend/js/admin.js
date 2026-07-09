@@ -603,9 +603,11 @@ function loadSubmissions() {
 }
 
 // Activate Round — SECURED via Next.js API
+let allRoundsData = []; // Cached from onSnapshot
+
 activateRoundBtn.addEventListener("click", async () => {
-    const selectedRoundTitle = roundSelect.value;
-    if (!selectedRoundTitle) {
+    const selectedRoundId = roundSelect.value;
+    if (!selectedRoundId) {
         alert("Please select a round first.");
         return;
     }
@@ -617,8 +619,14 @@ activateRoundBtn.addEventListener("click", async () => {
         return;
     }
 
+    const chosen = allRoundsData.find(r => r.roundId === selectedRoundId);
+    if (!chosen) {
+        alert("Selected round data not found.");
+        return;
+    }
+
     // Confirm action
-    const confirmed = confirm(`Are you sure you want to activate "${selectedRoundTitle}"? This will deactivate all other rounds.`);
+    const confirmed = confirm(`Are you sure you want to activate "${chosen.title}"? This will deactivate all other rounds.`);
     if (!confirmed) return;
 
     activateRoundBtn.disabled = true;
@@ -627,24 +635,15 @@ activateRoundBtn.addEventListener("click", async () => {
     const roundActionStatus = document.getElementById("roundActionStatus");
 
     try {
-        const roundMap = {
-            "Round 1": { id: "round-1", title: "Round 1", desc: "Show Us What You Got" },
-            "Round 2": { id: "round-2", title: "Round 2", desc: "We Ride At Midnight" },
-            "Round 3": { id: "round-3", title: "Round 3", desc: "Seek The Way In Or Out" }
-        };
-        
-        const chosen = roundMap[selectedRoundTitle];
-        if (!chosen) { alert("Invalid round selected."); return; }
-        
         const idToken = await auth.currentUser.getIdToken(true);
 
         const payload = {
-            roundId: chosen.id,
+            roundId: chosen.roundId,
             roundTitle: chosen.title,
-            roundDesc: chosen.desc
+            roundDesc: chosen.description
         };
 
-        const response = await fetch(`${API_BASE}/admin/activate-round`, {
+        const response = await fetch(`${API_BASE}/admin/rounds/activate`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -660,7 +659,7 @@ activateRoundBtn.addEventListener("click", async () => {
         }
 
         if (roundActionStatus) {
-            roundActionStatus.textContent = `✅ "${selectedRoundTitle}" activated successfully.`;
+            roundActionStatus.textContent = `✅ "${chosen.title}" activated successfully.`;
             roundActionStatus.style.color = '#4ade80';
             setTimeout(() => { roundActionStatus.textContent = ''; }, 4000);
         }
@@ -690,7 +689,7 @@ if (deactivateRoundBtn) {
 
         try {
             const idToken = await auth.currentUser.getIdToken(true);
-            const response = await fetch(`${API_BASE}/admin/activate-round`, {
+            const response = await fetch(`${API_BASE}/admin/rounds/activate`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -742,11 +741,27 @@ if (setDeadlineBtn) {
             const deadlineMs = new Date(dateValue).getTime();
             if (isNaN(deadlineMs)) throw new Error("Invalid date/time selected.");
 
-            const roundRef = doc(db, "rounds", roundId);
-            await updateDoc(roundRef, {
-                submissionDeadline: Timestamp.fromMillis(deadlineMs),
-                updatedAt: serverTimestamp()
+            const idToken = await auth.currentUser.getIdToken(true);
+            
+            const payload = {
+                roundId,
+                submissionDeadline: new Date(deadlineMs).toISOString()
+            };
+
+            const response = await fetch(`${API_BASE}/admin/rounds`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${idToken}`
+                },
+                body: JSON.stringify(payload)
             });
+
+            const result = await response.json();
+
+            if (!response.ok) {
+                throw new Error(result.error?.message || 'Failed to set deadline');
+            }
 
             if (deadlineStatus) {
                 deadlineStatus.textContent = `✅ Deadline set: ${new Date(deadlineMs).toLocaleString()}`;
@@ -766,41 +781,64 @@ if (setDeadlineBtn) {
     });
 }
 
-// Live Active Round Status — listens to all 3 round docs and shows current active round in admin
+// Live Active Round Status + Select population — listens to rounds collection
+
 function listenToActiveRoundStatus() {
     const statusEl = document.getElementById("activeRoundStatus");
     if (!statusEl) return;
 
-    const roundIds = ["round-1", "round-2", "round-3"];
-    const roundNames = { "round-1": "Round 1", "round-2": "Round 2", "round-3": "Round 3" };
-    const roundDeadlines = {};
-    const roundStates = {};
+    const roundsQuery = query(collection(db, "rounds"), orderBy("__name__"));
+    
+    onSnapshot(roundsQuery, (snap) => {
+        const rounds = [];
+        snap.forEach(docSnap => {
+            const data = docSnap.data();
+            rounds.push({
+                roundId: docSnap.id,
+                title: data.title || docSnap.id,
+                description: data.description || '',
+                isActive: data.isActive || false,
+                deadline: data.submissionDeadline ? (data.submissionDeadline.toMillis ? data.submissionDeadline.toMillis() : data.submissionDeadline.seconds * 1000) : null
+            });
+        });
+        
+        allRoundsData = rounds; // Cache for button handlers
 
-    function renderStatus() {
-        const active = roundIds.find(id => roundStates[id] === true);
-        if (active) {
-            const deadline = roundDeadlines[active];
-            const deadlineStr = deadline ? `— Deadline: ${new Date(deadline).toLocaleString()}` : '— No deadline set';
-            statusEl.innerHTML = `<span style="color: #4ade80;">● ACTIVE: ${roundNames[active]}</span> <span style="color: var(--muted-foreground); font-size: 10px;">${deadlineStr}</span>`;
+        // Populate dropdowns if they exist
+        if (roundSelect) {
+            const currentVal = roundSelect.value;
+            roundSelect.innerHTML = '<option value="">Select a round to activate...</option>';
+            rounds.forEach(r => {
+                const opt = document.createElement("option");
+                opt.value = r.roundId;
+                opt.textContent = `${r.roundId}: ${r.title}`;
+                roundSelect.appendChild(opt);
+            });
+            if (rounds.find(r => r.roundId === currentVal)) roundSelect.value = currentVal;
+        }
+
+        if (deadlineRoundSelect) {
+            const currentVal = deadlineRoundSelect.value;
+            deadlineRoundSelect.innerHTML = '<option value="">Select round to set deadline...</option>';
+            rounds.forEach(r => {
+                const opt = document.createElement("option");
+                opt.value = r.roundId;
+                opt.textContent = `${r.roundId}: ${r.title}`;
+                deadlineRoundSelect.appendChild(opt);
+            });
+            if (rounds.find(r => r.roundId === currentVal)) deadlineRoundSelect.value = currentVal;
+        }
+
+        // Render live status
+        const activeRound = rounds.find(r => r.isActive);
+        if (activeRound) {
+            const deadlineStr = activeRound.deadline ? `— Deadline: ${new Date(activeRound.deadline).toLocaleString()}` : '— No deadline set';
+            statusEl.innerHTML = `<span style="color: #4ade80;">● ACTIVE: ${activeRound.title}</span> <span style="color: var(--muted-foreground); font-size: 10px;">${deadlineStr}</span>`;
         } else {
             statusEl.innerHTML = `<span style="color: #ef4444;">● NO ACTIVE ROUND</span>`;
         }
-    }
-
-    roundIds.forEach(rid => {
-        const roundRef = doc(db, "rounds", rid);
-        onSnapshot(roundRef, (snap) => {
-            if (snap.exists()) {
-                const data = snap.data();
-                roundStates[rid] = data.isActive || false;
-                const dl = data.submissionDeadline;
-                roundDeadlines[rid] = dl ? (dl.toMillis ? dl.toMillis() : dl.seconds * 1000) : null;
-            } else {
-                roundStates[rid] = false;
-                roundDeadlines[rid] = null;
-            }
-            renderStatus();
-        });
+    }, (error) => {
+        console.error("Error listening to rounds:", error);
     });
 }
 

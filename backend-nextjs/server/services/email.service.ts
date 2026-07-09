@@ -28,7 +28,8 @@ export type EmailTemplate =
   | 'rejected'
   | 'needChanges'
   | 'reminder'
-  | 'admin_invite';
+  | 'admin_invite'
+  | 'memberInvited';
 
 export interface SendEmailOptions {
   to: string;
@@ -277,6 +278,26 @@ function renderReminderEmail(vars: Record<string, string | number>): RenderedEma
   );
 }
 
+function renderMemberInvitedEmail(vars: Record<string, string | number>): RenderedEmail {
+  const memberName = vars.memberName as string;
+  const teamName = vars.teamName as string;
+  const leaderName = vars.leaderName as string;
+  const loginUrl = vars.loginUrl as string;
+  return renderStandardEmail(
+    `[REVENGERSHACK] Your team is registered — log in now.`,
+    `You're in the squad.`,
+    `SQUAD REGISTRATION CONFIRMED`,
+    `<p style="color:#ccc;font-size:14px;line-height:1.6;">Hey ${memberName},</p>
+     <p style="color:#ccc;font-size:14px;line-height:1.6;">Your team leader <strong>${leaderName}</strong> has completed the registration for Team <strong>${teamName}</strong>.</p>
+     <p style="color:#ccc;font-size:14px;line-height:1.6;">You can now log in to the RevengersHack portal using your email via OTP. Access your team dashboard and stay ready for what comes next.</p>
+     <div style="margin:32px 0;">
+       <a href="${loginUrl}" style="background:#e50914;color:#fff;text-decoration:none;padding:12px 24px;font-size:14px;letter-spacing:2px;font-weight:bold;display:inline-block;">ACCESS PORTAL</a>
+     </div>
+     <p style="color:#555;font-size:12px;line-height:1.6;">If the button doesn't work, copy and paste this link:<br/><a href="${loginUrl}" style="color:#e50914;">${loginUrl}</a></p>`,
+    `Hey ${memberName},\n\nYour team leader ${leaderName} has completed the registration for Team ${teamName}.\n\nYou can now log in to the RevengersHack portal using your email via OTP.\n\nAccess the portal here: ${loginUrl}`
+  );
+}
+
 function renderAdminInviteEmail(vars: Record<string, string | number>): RenderedEmail {
   const loginUrl = vars.loginUrl as string;
   return renderStandardEmail(
@@ -314,6 +335,8 @@ function renderTemplate(
       return renderReminderEmail(variables);
     case 'admin_invite':
       return renderAdminInviteEmail(variables);
+    case 'memberInvited':
+      return renderMemberInvitedEmail(variables);
   }
 }
 
