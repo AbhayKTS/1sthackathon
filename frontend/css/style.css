@@ -4237,13 +4237,13 @@ footer .container {
 }
 
 .chain-top-left {
-    top: -18px;
-    left: -18px;
+    top: -2px;
+    left: -2px;
 }
 
 .chain-top-right {
-    top: -18px;
-    right: -18px;
+    top: -2px;
+    right: -2px;
 }
 
 .tba-text.dark-text {
