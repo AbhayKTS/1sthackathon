@@ -640,7 +640,7 @@ activateRoundBtn.addEventListener("click", async () => {
         const payload = {
             roundId: chosen.roundId,
             roundTitle: chosen.title,
-            roundDesc: chosen.description
+            roundDesc: chosen.description || 'Round active'
         };
 
         const response = await fetch(`${API_BASE}/admin/rounds/activate`, {
