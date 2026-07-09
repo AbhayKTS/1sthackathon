@@ -14,6 +14,7 @@ import {
     orderBy,
     updateDoc,
     deleteDoc,
+    Timestamp,
     onAuthStateChanged,
     signOut
 } from "./firebase-init.js";
@@ -185,6 +186,7 @@ onAuthStateChanged(auth, async (user) => {
             loadInvitedTeams();
             loadSubmissions();
             fetchAnalytics(user);
+            listenToActiveRoundStatus(); // Live round status in admin panel
             
         } else {
             // No user doc found, redirect to login
@@ -321,9 +323,90 @@ function loadTeams() {
     teamsUnsubscriber = onSnapshot(teamsRef, (snapshot) => {
         currentTeamsDocs = snapshot.docs;
         renderTeamsTable();
+        renderScoresTable();
     }, (error) => {
         console.error("Error loading teams:", error);
     });
+}
+
+function renderScoresTable() {
+    const scoresTableBody = document.getElementById("scoresTableBody");
+    if (!scoresTableBody) return;
+    
+    // Only show Approved teams in the scores table
+    const approvedDocs = currentTeamsDocs.filter(doc => doc.data().status === 'Approved');
+
+    if (approvedDocs.length === 0) {
+        scoresTableBody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: rgba(255,255,255,0.5);">No approved teams found.</td></tr>`;
+        return;
+    }
+
+    // Sort by total score descending
+    approvedDocs.sort((a, b) => (b.data().score || 0) - (a.data().score || 0));
+
+    scoresTableBody.innerHTML = "";
+    approvedDocs.forEach((docSnap, index) => {
+        const teamId = docSnap.id;
+        const team = docSnap.data();
+        const scores = team.scores || { r1: 0, r2: 0, r3: 0 };
+        const total = team.score || 0;
+        const teamName = team.teamName || 'Unnamed';
+        
+        const rank = index + 1;
+        let rankColor = "var(--muted-foreground)";
+        if (rank === 1) rankColor = "var(--gold, #FFD700)";
+        else if (rank === 2) rankColor = "var(--silver, #C0C0C0)";
+        else if (rank === 3) rankColor = "var(--bronze, #CD7F32)";
+
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+            <td>
+                <span style="color:${rankColor}; font-weight:bold; font-family:var(--font-mono); margin-right:8px;">#${rank}</span>
+                <strong>${sanitizeHTML(teamName)}</strong>
+            </td>
+            <td><input type="number" class="score-input r1-score" data-id="${sanitizeHTML(teamId)}" value="${scores.r1 || 0}" style="width:60px; background:var(--surface-2); border:1px solid var(--border); color:var(--foreground); padding:4px;"></td>
+            <td><input type="number" class="score-input r2-score" data-id="${sanitizeHTML(teamId)}" value="${scores.r2 || 0}" style="width:60px; background:var(--surface-2); border:1px solid var(--border); color:var(--foreground); padding:4px;"></td>
+            <td><input type="number" class="score-input r3-score" data-id="${sanitizeHTML(teamId)}" value="${scores.r3 || 0}" style="width:60px; background:var(--surface-2); border:1px solid var(--border); color:var(--foreground); padding:4px;"></td>
+            <td style="font-family:var(--font-mono); font-weight:bold; color:var(--accent);">${total}</td>
+            <td>
+                <button class="btn-outline save-score-btn" data-id="${sanitizeHTML(teamId)}" style="padding: 4px 8px; font-size: 0.7rem; border-color: #4ade80; color: #4ade80;">SAVE</button>
+            </td>
+        `;
+        scoresTableBody.appendChild(tr);
+    });
+
+    // Attach listeners
+    document.querySelectorAll('.save-score-btn').forEach(btn => {
+        btn.addEventListener('click', handleSaveScore);
+    });
+}
+
+async function handleSaveScore(e) {
+    const btn = e.target;
+    const teamId = btn.getAttribute('data-id');
+    const tr = btn.closest('tr');
+    
+    const r1 = parseInt(tr.querySelector('.r1-score').value) || 0;
+    const r2 = parseInt(tr.querySelector('.r2-score').value) || 0;
+    const r3 = parseInt(tr.querySelector('.r3-score').value) || 0;
+    const totalScore = r1 + r2 + r3;
+
+    btn.disabled = true;
+    btn.textContent = "SAVING...";
+
+    try {
+        await updateDoc(doc(db, "teams", teamId), {
+            scores: { r1, r2, r3 },
+            score: totalScore,
+            updatedAt: serverTimestamp()
+        });
+        // The onSnapshot listener will immediately trigger and re-render with the new score.
+    } catch (err) {
+        console.error("Error saving score:", err);
+        alert("Failed to save score.");
+        btn.disabled = false;
+        btn.textContent = "SAVE";
+    }
 }
 
 async function handleDeleteTeam(e) {
@@ -541,6 +624,8 @@ activateRoundBtn.addEventListener("click", async () => {
     activateRoundBtn.disabled = true;
     activateRoundBtn.textContent = "ACTIVATING...";
 
+    const roundActionStatus = document.getElementById("roundActionStatus");
+
     try {
         const roundMap = {
             "Round 1": { id: "round-1", title: "Round 1", desc: "Show Us What You Got" },
@@ -574,15 +659,150 @@ activateRoundBtn.addEventListener("click", async () => {
             throw new Error(result.error?.message || 'Failed to activate round');
         }
 
-        alert("Round successfully activated!");
+        if (roundActionStatus) {
+            roundActionStatus.textContent = `✅ "${selectedRoundTitle}" activated successfully.`;
+            roundActionStatus.style.color = '#4ade80';
+            setTimeout(() => { roundActionStatus.textContent = ''; }, 4000);
+        }
     } catch (error) {
         console.error("Error activating round:", error);
-        alert("Error activating round: " + error.message);
+        if (roundActionStatus) {
+            roundActionStatus.textContent = `❌ Error: ${error.message}`;
+            roundActionStatus.style.color = 'var(--strike-red)';
+        }
     } finally {
         activateRoundBtn.disabled = false;
-        activateRoundBtn.textContent = "ACTIVATE CHOSEN ROUND";
+        activateRoundBtn.textContent = "ACTIVATE ROUND";
     }
 });
+
+// Deactivate All Rounds
+const deactivateRoundBtn = document.getElementById("deactivateRoundBtn");
+if (deactivateRoundBtn) {
+    deactivateRoundBtn.addEventListener("click", async () => {
+        if (!auth.currentUser) { window.location.href = '/login'; return; }
+        if (!confirm("Are you sure you want to DEACTIVATE all rounds? Participants will see no active round.")) return;
+
+        deactivateRoundBtn.disabled = true;
+        deactivateRoundBtn.textContent = "DEACTIVATING...";
+
+        const roundActionStatus = document.getElementById("roundActionStatus");
+
+        try {
+            const idToken = await auth.currentUser.getIdToken(true);
+            const response = await fetch(`${API_BASE}/admin/activate-round`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${idToken}`
+                },
+                body: JSON.stringify({ deactivateAll: true })
+            });
+
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error?.message || 'Failed to deactivate rounds');
+
+            if (roundActionStatus) {
+                roundActionStatus.textContent = '✅ All rounds deactivated.';
+                roundActionStatus.style.color = '#4ade80';
+                setTimeout(() => { roundActionStatus.textContent = ''; }, 4000);
+            }
+        } catch (error) {
+            console.error("Error deactivating rounds:", error);
+            if (roundActionStatus) {
+                roundActionStatus.textContent = `❌ Error: ${error.message}`;
+                roundActionStatus.style.color = 'var(--strike-red)';
+            }
+        } finally {
+            deactivateRoundBtn.disabled = false;
+            deactivateRoundBtn.textContent = "DEACTIVATE ALL";
+        }
+    });
+}
+
+// Set Deadline — writes Firestore Timestamp directly without API round-trip
+const setDeadlineBtn = document.getElementById("setDeadlineBtn");
+const deadlineRoundSelect = document.getElementById("deadlineRoundSelect");
+const deadlineInput = document.getElementById("deadlineInput");
+const deadlineStatus = document.getElementById("deadlineStatus");
+
+if (setDeadlineBtn) {
+    setDeadlineBtn.addEventListener("click", async () => {
+        const roundId = deadlineRoundSelect?.value;
+        const dateValue = deadlineInput?.value;
+
+        if (!roundId) { alert("Please select a round."); return; }
+        if (!dateValue) { alert("Please set a deadline date/time."); return; }
+
+        setDeadlineBtn.disabled = true;
+        setDeadlineBtn.textContent = "SAVING...";
+        if (deadlineStatus) { deadlineStatus.textContent = ''; }
+
+        try {
+            const deadlineMs = new Date(dateValue).getTime();
+            if (isNaN(deadlineMs)) throw new Error("Invalid date/time selected.");
+
+            const roundRef = doc(db, "rounds", roundId);
+            await updateDoc(roundRef, {
+                submissionDeadline: Timestamp.fromMillis(deadlineMs),
+                updatedAt: serverTimestamp()
+            });
+
+            if (deadlineStatus) {
+                deadlineStatus.textContent = `✅ Deadline set: ${new Date(deadlineMs).toLocaleString()}`;
+                deadlineStatus.style.color = '#4ade80';
+                setTimeout(() => { deadlineStatus.textContent = ''; }, 5000);
+            }
+        } catch (error) {
+            console.error("Error setting deadline:", error);
+            if (deadlineStatus) {
+                deadlineStatus.textContent = `❌ Error: ${error.message}`;
+                deadlineStatus.style.color = 'var(--strike-red)';
+            }
+        } finally {
+            setDeadlineBtn.disabled = false;
+            setDeadlineBtn.textContent = "SET DEADLINE";
+        }
+    });
+}
+
+// Live Active Round Status — listens to all 3 round docs and shows current active round in admin
+function listenToActiveRoundStatus() {
+    const statusEl = document.getElementById("activeRoundStatus");
+    if (!statusEl) return;
+
+    const roundIds = ["round-1", "round-2", "round-3"];
+    const roundNames = { "round-1": "Round 1", "round-2": "Round 2", "round-3": "Round 3" };
+    const roundDeadlines = {};
+    const roundStates = {};
+
+    function renderStatus() {
+        const active = roundIds.find(id => roundStates[id] === true);
+        if (active) {
+            const deadline = roundDeadlines[active];
+            const deadlineStr = deadline ? `— Deadline: ${new Date(deadline).toLocaleString()}` : '— No deadline set';
+            statusEl.innerHTML = `<span style="color: #4ade80;">● ACTIVE: ${roundNames[active]}</span> <span style="color: var(--muted-foreground); font-size: 10px;">${deadlineStr}</span>`;
+        } else {
+            statusEl.innerHTML = `<span style="color: #ef4444;">● NO ACTIVE ROUND</span>`;
+        }
+    }
+
+    roundIds.forEach(rid => {
+        const roundRef = doc(db, "rounds", rid);
+        onSnapshot(roundRef, (snap) => {
+            if (snap.exists()) {
+                const data = snap.data();
+                roundStates[rid] = data.isActive || false;
+                const dl = data.submissionDeadline;
+                roundDeadlines[rid] = dl ? (dl.toMillis ? dl.toMillis() : dl.seconds * 1000) : null;
+            } else {
+                roundStates[rid] = false;
+                roundDeadlines[rid] = null;
+            }
+            renderStatus();
+        });
+    });
+}
 
 
 // Broadcast Announcement Form via API

@@ -24,6 +24,7 @@ import {
     limit,
     updateDoc,
     deleteDoc,
+    Timestamp,
     connectFirestoreEmulator
 } from "firebase/firestore";
 
@@ -67,6 +68,7 @@ export {
     limit,
     updateDoc,
     deleteDoc,
+    Timestamp,
     onAuthStateChanged,
     signOut,
     API_BASE

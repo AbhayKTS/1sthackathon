@@ -37,6 +37,8 @@
                 <li><a href="#mission">MISSION</a></li>
                 <li><a href="#tracks">TRACKS</a></li>
                 <li><a href="#schedule">TIMELINE</a></li>
+                <li><a href="#sponsors">SPONSORS</a></li>
+                <li><a href="#about">ABOUT</a></li>
             </ul>
 
             <div class="nav-actions">
@@ -47,7 +49,7 @@
 
     <header class="hero" id="hero">
         <div class="live-bg-container">
-            <video autoplay muted loop playsinline class="live-bg-video">
+            <video autoplay muted loop playsinline class="live-bg-video" fetchpriority="high">
                 <source src="assets/videos/bg.mp4" type="video/mp4">
             </video>
             <div class="live-bg-overlay"></div>
@@ -122,7 +124,7 @@
 
     <section class="mission" id="mission">
         <div class="mission-video-bg">
-            <video autoplay muted loop playsinline>
+            <video muted loop playsinline data-autoplay-on-visible>
                 <source src="assets/videos/tokyo_revengers_about_bg.mp4" type="video/mp4">
             </video>
             <div class="video-overlay"></div>
@@ -132,8 +134,6 @@
             <div class="mission-content">
                 <div class="section-label">IDENTIFICATION</div>
                 <h2 class="section-title">THE MISSION</h2>
-                <div class="title-underline"></div>
-
                 <div class="mission-text-container">
                     <p>RevengersHack isn't just a hackathon. It's a recruitment for the timeline's defenders. In the
                         dark
@@ -177,8 +177,8 @@
                 <!-- TRACK 1: WEB3/BLOCKCHAIN -->
                 <div class="track-card track-web3">
                     <div class="track-image">
-                        <img src="assets/images/○♤TAKEMICHI HANAGAKI♤○.jpg" alt="Takemichi" class="normal-img">
-                        <img src="assets/images/download (13).jpg" alt="Takemichi" class="hover-img">
+                        <img src="assets/images/○♤TAKEMICHI HANAGAKI♤○.jpg" alt="Takemichi" class="normal-img" loading="lazy">
+                        <img src="assets/images/download (13).jpg" alt="Takemichi" class="hover-img" loading="lazy">
                     </div>
                     <div class="track-content">
                         <h3>WEB3 / BLOCKCHAIN</h3>
@@ -189,8 +189,8 @@
                 <!-- TRACK 2: AI/ML -->
                 <div class="track-card track-aiml">
                     <div class="track-image">
-                        <img src="assets/images/download (9).jpg" alt="Kisaki" class="normal-img">
-                        <img src="assets/images/download (14).jpg" alt="Kisaki" class="hover-img">
+                        <img src="assets/images/download (9).jpg" alt="Kisaki" class="normal-img" loading="lazy">
+                        <img src="assets/images/download (14).jpg" alt="Kisaki" class="hover-img" loading="lazy">
                     </div>
                     <div class="track-content">
                         <h3>AI / ML</h3>
@@ -201,8 +201,8 @@
                 <!-- TRACK 3: CYBERSECURITY -->
                 <div class="track-card track-cyber">
                     <div class="track-image">
-                        <img src="assets/images/download (10).jpg" alt="Kakucho" class="normal-img">
-                        <img src="assets/images/「 asanφ 」-  kakucho.jpg" alt="Kakucho" class="hover-img">
+                        <img src="assets/images/download (10).jpg" alt="Kakucho" class="normal-img" loading="lazy">
+                        <img src="assets/images/「 asanφ 」-  kakucho.jpg" alt="Kakucho" class="hover-img" loading="lazy">
                     </div>
                     <div class="track-content">
                         <h3>CYBERSECURITY</h3>
@@ -213,8 +213,8 @@
                 <!-- TRACK 4: CLOUD/DEVOPS -->
                 <div class="track-card track-cloud">
                     <div class="track-image">
-                        <img src="assets/images/download (11).jpg" alt="Smiley" class="normal-img">
-                        <img src="assets/images/download (12).jpg" alt="Smiley" class="hover-img">
+                        <img src="assets/images/download (11).jpg" alt="Smiley" class="normal-img" loading="lazy">
+                        <img src="assets/images/download (12).jpg" alt="Smiley" class="hover-img" loading="lazy">
                     </div>
                     <div class="track-content">
                         <h3>CLOUD / DEVOPS</h3>
@@ -225,8 +225,8 @@
                 <!-- TRACK 5: OPEN INNOVATION -->
                 <div class="track-card track-openinnovation">
                     <div class="track-image">
-                        <img src="assets/images/download (16).jpg" alt="Baji" class="normal-img">
-                        <img src="assets/images/download (15).jpg" alt="Baji" class="hover-img">
+                        <img src="assets/images/download (16).jpg" alt="Baji" class="normal-img" loading="lazy">
+                        <img src="assets/images/download (15).jpg" alt="Baji" class="hover-img" loading="lazy">
                     </div>
                     <div class="track-content">
                         <h3>OPEN INNOVATION</h3>
@@ -240,7 +240,7 @@
     <!-- ===== MAP TIMELINE SECTION ===== -->
     <section class="map-timeline" id="schedule">
         <div class="map-bg">
-            <img src="assets/images/round3img.png" alt="Tokyo Revengers Map" class="map-img">
+            <img src="assets/images/round3img.png" alt="Tokyo Revengers Map" class="map-img" loading="lazy">
             <div class="map-dark-overlay"></div>
         </div>
 
@@ -298,7 +298,7 @@
 
         <!-- Pulsing background Toman Manji watermark behind header -->
         <div class="hud-watermark-container" aria-hidden="true">
-            <img src="assets/images/manji-emblem.png" alt="Watermark" class="hud-watermark-emblem">
+            <img src="assets/images/manji-emblem.png" alt="Watermark" class="hud-watermark-emblem" loading="lazy">
         </div>
 
         <!-- Distressed Center Title Overlay -->
@@ -340,7 +340,7 @@
                         class="hud-status-val text-blink">ACTIVE</span></div>
             </div>
             <div class="hud-emblem-container">
-                <img src="assets/images/manji-emblem.png" class="hud-manji-emblem" alt="Toman Emblem">
+                <img src="assets/images/manji-emblem.png" class="hud-manji-emblem" alt="Toman Emblem" loading="lazy">
             </div>
         </div>
 
@@ -348,7 +348,7 @@
         <div class="hud-status-panel hud-status-right" aria-hidden="true">
             <div class="hud-skull-container">
                 <div class="hud-octagon-border">
-                    <img src="assets/images/download__23_-removebg-preview.png" alt="Skull" class="hud-skull">
+                    <img src="assets/images/download__23_-removebg-preview.png" alt="Skull" class="hud-skull" loading="lazy">
                 </div>
             </div>
             <div class="hud-protocol-content">
@@ -552,7 +552,6 @@
             <div class="sponsors-head">
                 <span class="section-tag">ALLIES</span>
                 <h2 class="section-title">Our Sponsors</h2>
-                <div class="title-underline"></div>
             </div>
 
             <div class="sponsors-grid">
@@ -628,9 +627,9 @@
                     <div class="team-card theme-org">
                         <div class="team-image-container">
 
-                            <img src="assets/images/Passport Size Photo (1).jpeg" alt="Abhay Kumar" class="normal-img">
+                            <img src="assets/images/Passport Size Photo (1).jpeg" alt="Abhay Kumar" class="normal-img" loading="lazy">
                             <img src="assets/images/Generated Image June 26, 2026 - 2_49AM.jpg" alt="Abhay Kumar Hover"
-                                class="hover-img" style="transform: scale(1.5); transform-origin: top center;">
+                                class="hover-img" style="transform: scale(1.5); transform-origin: top center;" loading="lazy">
                         </div>
                         <div class="team-content">
                             <h3 class="team-name">Abhay Kumar</h3>
@@ -651,8 +650,8 @@
                     <div class="team-card theme-tech">
                         <div class="team-image-container">
 
-                            <img src="assets/images/ansh 2.png" alt="Ansh Yadav" class="normal-img">
-                            <img src="assets/images/ansh 2 aa.png" alt="Ansh Yadav Hover" class="hover-img">
+                            <img src="assets/images/ansh 2.png" alt="Ansh Yadav" class="normal-img" loading="lazy">
+                            <img src="assets/images/ansh 2 aa.png" alt="Ansh Yadav Hover" class="hover-img" loading="lazy">
                         </div>
                         <div class="team-content">
                             <h3 class="team-name">Ansh Yadav</h3>
@@ -673,8 +672,8 @@
                     <div class="team-card theme-opr">
                         <div class="team-image-container">
 
-                            <img src="assets/images/braju.png" alt="Brajesh Sinsinwar" class="normal-img">
-                            <img src="assets/images/braju2.png" alt="Brajesh Sinsinwar Hover" class="hover-img">
+                            <img src="assets/images/braju.png" alt="Brajesh Sinsinwar" class="normal-img" loading="lazy">
+                            <img src="assets/images/braju2.png" alt="Brajesh Sinsinwar Hover" class="hover-img" loading="lazy">
                         </div>
                         <div class="team-content">
                             <h3 class="team-name">Brajesh Sinsinwar</h3>
@@ -696,9 +695,9 @@
                         <div class="team-image-container">
 
                             <img src="assets/images/sachin1.png" alt="Sachin Chauhan" class="normal-img"
-                                style="transform: scale(1.7); transform-origin: top center;">
+                                style="transform: scale(1.7); transform-origin: top center;" loading="lazy">
                             <img src="assets/images/sachin2.png" alt="Sachin Chauhan Hover" class="hover-img"
-                                style="transform: scale(1.7); transform-origin: top center;">
+                                style="transform: scale(1.7); transform-origin: top center;" loading="lazy">
                         </div>
                         <div class="team-content">
                             <h3 class="team-name">Sachin Chauhan</h3>
@@ -719,9 +718,9 @@
                         <div class="team-image-container">
 
                             <img src="assets/images/piyush.png" alt="Piyush Tomar" class="normal-img"
-                                style="transform: scale(1.7); transform-origin: top center;">
+                                style="transform: scale(1.7); transform-origin: top center;" loading="lazy">
                             <img src="assets/images/piyushh2.png" alt="Piyush Tomar Hover" class="hover-img"
-                                style="transform: scale(1.7); transform-origin: top center;">
+                                style="transform: scale(1.7); transform-origin: top center;" loading="lazy">
                         </div>
                         <div class="team-content">
                             <h3 class="team-name">Piyush Tomar</h3>
@@ -742,8 +741,8 @@
                     <div class="team-card theme-content">
                         <div class="team-image-container">
 
-                            <img src="assets/images/ayush.png" alt="Ayush Gigras" class="normal-img">
-                            <img src="assets/images/ayush2.png" alt="Ayush Gigras Hover" class="hover-img">
+                            <img src="assets/images/ayush.png" alt="Ayush Gigras" class="normal-img" loading="lazy">
+                            <img src="assets/images/ayush2.png" alt="Ayush Gigras Hover" class="hover-img" loading="lazy">
                         </div>
                         <div class="team-content">
                             <h3 class="team-name">Ayush Gigras</h3>
@@ -763,8 +762,8 @@
                     <div class="team-card theme-content">
                         <div class="team-image-container">
 
-                            <img src="assets/images/adarsh.png" alt="Adarsh Katara" class="normal-img">
-                            <img src="assets/images/adarsh2.png" alt="Adarsh Katara Hover" class="hover-img">
+                            <img src="assets/images/adarsh.png" alt="Adarsh Katara" class="normal-img" loading="lazy">
+                            <img src="assets/images/adarsh2.png" alt="Adarsh Katara Hover" class="hover-img" loading="lazy">
                         </div>
                         <div class="team-content">
                             <h3 class="team-name">Adarsh Katara</h3>
@@ -784,9 +783,9 @@
                     <div class="team-card theme-org">
                         <div class="team-image-container">
 
-                            <img src="assets/images/Passport Size Photo (1).jpeg" alt="Abhay Kumar" class="normal-img">
+                            <img src="assets/images/Passport Size Photo (1).jpeg" alt="Abhay Kumar" class="normal-img" loading="lazy">
                             <img src="assets/images/Generated Image June 26, 2026 - 2_49AM.jpg" alt="Abhay Kumar Hover"
-                                class="hover-img" style="transform: scale(1.5); transform-origin: top center;">
+                                class="hover-img" style="transform: scale(1.5); transform-origin: top center;" loading="lazy">
                         </div>
                         <div class="team-content">
                             <h3 class="team-name">Abhay Kumar</h3>

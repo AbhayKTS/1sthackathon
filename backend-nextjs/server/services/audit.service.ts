@@ -26,6 +26,7 @@ export type AuditAction =
   | 'team.member_removed'
   | 'team.member_added'
   | 'round.activated'
+  | 'round.deactivated'
   | 'announcement.created'
   | 'announcement.updated'
   | 'announcement.deleted'

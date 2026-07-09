@@ -1,14 +1,14 @@
 /**
  * POST /api/admin/activate-round
  *
- * Endpoint for an admin to activate a round (and deactivate all others).
+ * Endpoint for an admin to activate a round (and deactivate all others),
+ * or deactivate all rounds entirely.
  *
- * Expected payload:
- * {
- *   roundId: string,
- *   roundTitle: string,
- *   roundDesc: string
- * }
+ * Expected payload (activate):
+ * { roundId: string, roundTitle: string, roundDesc: string }
+ *
+ * Expected payload (deactivate all):
+ * { deactivateAll: true }
  *
  * @route POST /api/admin/activate-round
  */
@@ -16,7 +16,7 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { apiSuccess, apiError, applyCorsHeaders, handleOptions, requireRole, withAuth } from '@/lib/api-helpers';
 import { Errors } from '@/lib/errors';
-import { activateRound } from '@/server/services/admin.service';
+import { activateRound, deactivateAllRounds } from '@/server/services/admin.service';
 import { z } from 'zod';
 
 export function OPTIONS(request: NextRequest): NextResponse {
@@ -39,6 +39,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const body = await request.json().catch(() => {
       throw Errors.validation('Invalid JSON payload');
     });
+
+    // Handle deactivateAll shorthand
+    if (body.deactivateAll === true) {
+      await deactivateAllRounds(token.uid);
+      const response = apiSuccess({ message: 'All rounds deactivated' }, 200);
+      return applyCorsHeaders(response, origin);
+    }
 
     const parsed = activateSchema.safeParse(body);
     if (!parsed.success) {

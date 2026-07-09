@@ -421,6 +421,28 @@
                 </div>
             </div>
 
+            <!-- Score Management -->
+            <div class="card">
+                <div class="card-header" style="color: var(--gold, #FFD700); border-bottom-color: var(--border);">Score Management</div>
+                <div style="overflow-x: auto;">
+                    <table class="data-table" id="scoresTable">
+                        <thead>
+                            <tr>
+                                <th>TEAM</th>
+                                <th>R1 (IDEATION)</th>
+                                <th>R2 (CODE)</th>
+                                <th>R3 (FINALE)</th>
+                                <th>TOTAL</th>
+                                <th>ACTION</th>
+                            </tr>
+                        </thead>
+                        <tbody id="scoresTableBody">
+                            <tr><td colspan="6" style="text-align: center; color: var(--muted-foreground);">Loading scores...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
         </div>
 
         <!-- Sidebar Column -->
@@ -457,17 +479,41 @@
             <!-- Round Control -->
             <div class="card">
                 <div class="card-header" style="color: var(--accent);">Round Control</div>
+
+                <!-- Live status display -->
+                <div id="activeRoundStatus" style="margin-bottom: 16px; padding: 10px 14px; border: 1px solid var(--border); border-radius: 2px; font-family: var(--font-mono); font-size: 11px; color: var(--muted-foreground);">
+                    <span style="color: var(--muted-foreground);">Checking active round...</span>
+                </div>
+
                 <h4 style="font-family: var(--font-mono); color: var(--accent); font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 12px; margin-top: 0;">SWITCH ACTIVE ROUND</h4>
                 <div class="form-group dash-form">
-                    <select id="roundSelect">
+                    <select id="roundSelect" style="margin-bottom: 10px;">
                         <option value="">Select a round to activate...</option>
                         <option value="Round 1">Round 1: SHOW US WHAT YOU GOT</option>
                         <option value="Round 2">Round 2: WE RIDE AT MIDNIGHT</option>
                         <option value="Round 3">Round 3: SEEK THE WAY IN OR OUT</option>
                     </select>
                 </div>
-                <button id="activateRoundBtn" class="btn-outline" style="width: 100%; margin-bottom: 20px; color: var(--accent); border-color: var(--accent);">ACTIVATE CHOSEN ROUND</button>
+                <div style="display: flex; gap: 8px; margin-bottom: 16px;">
+                    <button id="activateRoundBtn" class="btn-outline" style="flex: 1; color: var(--accent); border-color: var(--accent);">ACTIVATE ROUND</button>
+                    <button id="deactivateRoundBtn" class="btn-outline" style="flex: 1; color: #ef4444; border-color: #ef4444;">DEACTIVATE ALL</button>
+                </div>
+                <div id="roundActionStatus" style="font-size: 11px; font-family: var(--font-mono); min-height: 16px; margin-bottom: 16px;"></div>
+
+                <h4 style="font-family: var(--font-mono); color: var(--primary); font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 12px; margin-top: 0;">SET DEADLINE</h4>
+                <div class="form-group dash-form" style="margin-bottom: 8px;">
+                    <select id="deadlineRoundSelect" style="margin-bottom: 10px;">
+                        <option value="">Select round to set deadline...</option>
+                        <option value="round-1">Round 1</option>
+                        <option value="round-2">Round 2</option>
+                        <option value="round-3">Round 3</option>
+                    </select>
+                    <input type="datetime-local" id="deadlineInput" style="margin-bottom: 10px;">
+                </div>
+                <button id="setDeadlineBtn" class="btn-outline" style="width: 100%; color: var(--primary); border-color: var(--primary);">SET DEADLINE</button>
+                <div id="deadlineStatus" style="font-size: 11px; font-family: var(--font-mono); min-height: 16px; margin-top: 8px;"></div>
             </div>
+
 
             <!-- Announcements Panel -->
             <div class="card">

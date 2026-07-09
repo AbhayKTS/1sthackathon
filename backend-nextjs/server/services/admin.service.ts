@@ -186,6 +186,36 @@ export async function activateRound(adminUid: string, roundId: string, roundTitl
 }
 
 /**
+ * Deactivates all rounds without activating any.
+ */
+export async function deactivateAllRounds(adminUid: string): Promise<void> {
+  const db = getAdminDb();
+  const allRoundIds = ["round-1", "round-2", "round-3"];
+
+  const batch = db.batch();
+  allRoundIds.forEach(rid => {
+    const ref = db.collection('rounds').doc(rid);
+    batch.set(ref, {
+      isActive: false,
+      updatedAt: FieldValue.serverTimestamp(),
+      updatedBy: adminUid,
+    }, { merge: true });
+  });
+
+  await batch.commit();
+
+  await writeAuditLog({
+    action: 'round.deactivated',
+    actorUid: adminUid,
+    actorRole: 'admin',
+    targetId: 'all',
+    targetType: 'rounds',
+    metadata: {},
+    ip: null,
+  });
+}
+
+/**
  * Broadcasts an announcement to all teams.
  */
 export async function createAnnouncement(adminUid: string, title: string, message: string): Promise<void> {

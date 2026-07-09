@@ -66,6 +66,7 @@ let roundsUnsubscribers = [];
 let announcementsUnsubscriber = null;
 let leaderboardUnsubscriber = null;
 let notificationsUnsubscriber = null;
+let teamSubmissionUnsubscriber = null;
 let countdownInterval = null;
 
 function cleanupListeners() {
@@ -82,6 +83,10 @@ function cleanupListeners() {
     if (notificationsUnsubscriber) {
         notificationsUnsubscriber();
         notificationsUnsubscriber = null;
+    }
+    if (teamSubmissionUnsubscriber) {
+        teamSubmissionUnsubscriber();
+        teamSubmissionUnsubscriber = null;
     }
     if (countdownInterval) {
         clearInterval(countdownInterval);
@@ -252,148 +257,156 @@ function loadActiveRounds() {
     roundsUnsubscribers.forEach(unsub => unsub());
     roundsUnsubscribers = [];
 
+    // Track state per round so we can detect "none active" when any round changes
+    const roundStates = {};
+
+    function renderActiveRound() {
+        const activeEntry = Object.entries(roundStates).find(([, data]) => data && data.isActive);
+
+        if (!activeEntry) {
+            // No active round — show waiting state
+            activeRoundId = null;
+            if (noActiveRoundMsg) noActiveRoundMsg.style.display = "block";
+            if (activeRoundFormContainer) activeRoundFormContainer.style.display = "none";
+            if (heroRoundBadge) heroRoundBadge.textContent = "STANDBY // NO ACTIVE ROUND";
+            if (heroRoundTitle) heroRoundTitle.innerHTML = `AWAIT<br /><span class="text-primary">YOUR ORDERS</span>`;
+            if (heroRoundDesc) heroRoundDesc.textContent = "Central command has not activated a round yet. Stay sharp.";
+            if (heroRequirementsList) heroRequirementsList.innerHTML = "";
+            if (heroRequirementsTitle) heroRequirementsTitle.textContent = "";
+            if (heroImageBg) heroImageBg.src = "assets/images/round1img.png";
+
+            // Clear countdown
+            if (countdownInterval) { clearInterval(countdownInterval); countdownInterval = null; }
+            const displayEl = document.getElementById("countdownDisplay");
+            if (displayEl) displayEl.innerHTML = `<span style="font-size:1.5rem; color: var(--muted-foreground); letter-spacing: 0.2em;">AWAITING</span>`;
+            const progressEl = document.getElementById("countdownProgress");
+            if (progressEl) progressEl.style.width = "0%";
+            return;
+        }
+
+        const [rid, roundData] = activeEntry;
+        activeRoundId = rid;
+
+        if (noActiveRoundMsg) noActiveRoundMsg.style.display = "none";
+        if (activeRoundFormContainer) activeRoundFormContainer.style.display = "block";
+        if (teamStatusBadge) teamStatusBadge.style.display = "inline-block";
+        
+        if (activeRoundTitle) activeRoundTitle.textContent = roundData.title || "Active Round";
+        if (activeRoundDesc) activeRoundDesc.textContent = roundData.description || "Submit your payload below.";
+        
+        let topText = "AWAITING";
+        let bottomText = "NEXT ROUND";
+        
+        let t = (roundData.title || "").toLowerCase();
+        
+        if (t.includes("1") || t.includes("one")) {
+            if (heroImageBg) heroImageBg.src = "assets/images/round1img.png";
+            if (heroRoundBadge) heroRoundBadge.textContent = `LIVE // ROUND 01`;
+            if (heroRoundDesc) {
+                heroRoundDesc.innerHTML = `This is your first move.<br />Submit your problem statements and<br />presentation decks that define your vision,<br />your approach, and your edge.`;
+            }
+            if (heroRequirementsTitle) heroRequirementsTitle.textContent = "WHAT TO SUBMIT";
+            if (heroRequirementsList) {
+                heroRequirementsList.innerHTML = `
+                    <span class="inline-flex items-center gap-2 rounded-sm border border-border bg-surface-2/70 px-3 py-1.5">
+                      <span class="text-accent"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-3.5 w-3.5"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg></span>
+                      <span class="font-mono text-[11px] uppercase tracking-[0.16em] text-foreground">Problem Statement</span>
+                    </span>
+                    <span class="inline-flex items-center gap-2 rounded-sm border border-border bg-surface-2/70 px-3 py-1.5">
+                      <span class="text-accent"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-3.5 w-3.5"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></span>
+                      <span class="font-mono text-[11px] uppercase tracking-[0.16em] text-foreground">Presentation Deck (PPT)</span>
+                    </span>
+                `;
+            }
+            topText = "SHOW US"; bottomText = "WHAT YOU GOT";
+        } else if (t.includes("2") || t.includes("two")) {
+            if (heroImageBg) heroImageBg.src = "assets/images/round2img.png";
+            if (heroRoundBadge) heroRoundBadge.textContent = `LIVE // ROUND 02`;
+            if (heroRoundDesc) heroRoundDesc.innerHTML = `The underground waits for no one. Lock in your code, defend your turf, and take the throne.`;
+            if (heroRequirementsTitle) heroRequirementsTitle.textContent = "WHAT TO SUBMIT";
+            if (heroRequirementsList) {
+                heroRequirementsList.innerHTML = `
+                    <span class="inline-flex items-center gap-2 rounded-sm border border-border bg-surface-2/70 px-3 py-1.5">
+                      <span class="text-accent"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-3.5 w-3.5"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg></span>
+                      <span class="font-mono text-[11px] uppercase tracking-[0.16em] text-foreground">Source Code (GitHub)</span>
+                    </span>
+                    <span class="inline-flex items-center gap-2 rounded-sm border border-border bg-surface-2/70 px-3 py-1.5">
+                      <span class="text-accent"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-3.5 w-3.5"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></span>
+                      <span class="font-mono text-[11px] uppercase tracking-[0.16em] text-foreground">Live Demo Link</span>
+                    </span>
+                `;
+            }
+            topText = "WE RIDE"; bottomText = "AT MIDNIGHT";
+        } else if (t.includes("3") || t.includes("three")) {
+            if (heroImageBg) heroImageBg.src = "assets/images/round3img.png";
+            if (heroRoundBadge) heroRoundBadge.textContent = `LIVE // ROUND 03 - FINALE`;
+            if (heroRoundDesc) {
+                heroRoundDesc.innerHTML = `This is it. The final showdown.<br />Every idea. Every line of code. Every late night.<br />Now it decides.<br /><br /><span class="text-primary">Only one will rise.</span><br /><span class="text-primary">Only one will win.</span>`;
+            }
+            if (heroRequirementsTitle) heroRequirementsTitle.textContent = "WHAT DECIDES THE WINNER?";
+            topText = "SEEK THE"; bottomText = "WAY IN OR OUT";
+        }
+ 
+        if (heroRoundTitle) heroRoundTitle.innerHTML = `${topText}<br /><span class="text-primary" style="animation: flicker 4s infinite">${bottomText}</span>`;
+        
+        let roundNum = "XX";
+        if (t.includes("1") || t.includes("one")) roundNum = "01";
+        else if (t.includes("2") || t.includes("two")) roundNum = "02";
+        else if (t.includes("3") || t.includes("three")) roundNum = "03";
+
+        const githubInput = document.getElementById("githubLink");
+        const demoInput = document.getElementById("demoLink");
+        
+        if (githubInput && demoInput) {
+            if (roundNum === "01") {
+                githubInput.placeholder = "PROBLEM STATEMENT (GOOGLE DOCS URL)";
+                demoInput.placeholder = "PRESENTATION DECK (PPT URL)";
+                demoInput.required = true;
+            } else if (roundNum === "02") {
+                githubInput.placeholder = "SOURCE CODE (GITHUB REPO URL)";
+                demoInput.placeholder = "LIVE DEMO URL (OPTIONAL)";
+                demoInput.required = false;
+            } else {
+                githubInput.placeholder = "SUBMISSION URL 1";
+                demoInput.placeholder = "SUBMISSION URL 2 (OPTIONAL)";
+                demoInput.required = false;
+            }
+        }
+        
+        listenToTeamSubmission(currentTeamId, rid);
+        
+        // Initialize countdown target from Firestore deadline
+        let targetTime = null;
+        
+        if (roundData.submissionDeadline) {
+            const deadlineMs = roundData.submissionDeadline.toMillis ? roundData.submissionDeadline.toMillis() : roundData.submissionDeadline.seconds ? roundData.submissionDeadline.seconds * 1000 : null;
+            if (deadlineMs) targetTime = deadlineMs;
+        } else if (roundData.updatedAt) {
+            // Fallback to 24h after activation if no deadline is set
+            const updatedMs = roundData.updatedAt.toMillis ? roundData.updatedAt.toMillis() : roundData.updatedAt.seconds ? roundData.updatedAt.seconds * 1000 : Date.now();
+            targetTime = updatedMs + 24 * 60 * 60 * 1000;
+        }
+        
+        if (targetTime) {
+            startCountdown(targetTime);
+        } else {
+            const displayEl = document.getElementById("countdownDisplay");
+            if (displayEl) displayEl.innerHTML = `<span class="text-primary text-3xl">TBA</span>`;
+            const progressEl = document.getElementById("countdownProgress");
+            if (progressEl) progressEl.style.width = "0%";
+        }
+    }
+
     // Listen to all 3 round docs simultaneously
     roundIds.forEach(rid => {
         const roundRef = doc(db, "rounds", rid);
         const unsub = onSnapshot(roundRef, (roundDoc) => {
-            if (roundDoc.exists() && roundDoc.data().isActive) {
-                activeRoundId = roundDoc.id;
-                const roundData = roundDoc.data();
-                
-                if (noActiveRoundMsg) noActiveRoundMsg.style.display = "none";
-                if (activeRoundFormContainer) activeRoundFormContainer.style.display = "block";
-                if (teamStatusBadge) teamStatusBadge.style.display = "inline-block";
-                
-                activeRoundTitle.textContent = roundData.title || "Active Round";
-                activeRoundDesc.textContent = roundData.description || "Submit your payload below.";
-                
-                let roundNum = "XX";
-                let topText = "AWAITING";
-                let bottomText = "NEXT ROUND";
-                
-                let t = (roundData.title || "").toLowerCase();
-                
-                if (t.includes("1") || t.includes("one")) {
-                    roundNum = "01";
-                    topText = "SHOW US";
-                    bottomText = "WHAT YOU GOT";
-                    if (heroImageBg) heroImageBg.src = "assets/images/round1img.png";
-                    if (heroRoundBadge) heroRoundBadge.textContent = `LIVE // ROUND 01`;
-                    if (heroRoundDesc) {
-                        heroRoundDesc.innerHTML = `This is your first move.<br />Submit your problem statements and<br />presentation decks that define your vision,<br />your approach, and your edge.`;
-                    }
-                    if (heroRequirementsTitle) heroRequirementsTitle.textContent = "WHAT TO SUBMIT";
-                    if (heroRequirementsList) {
-                        heroRequirementsList.innerHTML = `
-                            <span class="inline-flex items-center gap-2 rounded-sm border border-border bg-surface-2/70 px-3 py-1.5">
-                              <span class="text-accent"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-3.5 w-3.5"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg></span>
-                              <span class="font-mono text-[11px] uppercase tracking-[0.16em] text-foreground">Problem Statement</span>
-                            </span>
-                            <span class="inline-flex items-center gap-2 rounded-sm border border-border bg-surface-2/70 px-3 py-1.5">
-                              <span class="text-accent"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-3.5 w-3.5"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></span>
-                              <span class="font-mono text-[11px] uppercase tracking-[0.16em] text-foreground">Presentation Deck (PPT)</span>
-                            </span>
-                        `;
-                    }
-                    if (heroVerticalText) heroVerticalText.textContent = "- FOCUS - PLAN - EXECUTE - DOMINATE -";
-                    if (heroFooterText) heroFooterText.textContent = "[ SUBMISSION DEADLINE WILL BE ANNOUNCED SOON ]";
-                    if (heroExtraBox) heroExtraBox.innerHTML = "";
-                } else if (t.includes("2") || t.includes("two")) {
-                    roundNum = "02";
-                    topText = "WE RIDE";
-                    bottomText = "AT MIDNIGHT";
-                    if (heroImageBg) heroImageBg.src = "assets/images/round2img.png";
-                    if (heroRoundBadge) heroRoundBadge.textContent = `LIVE // ROUND 02`;
-                    if (heroRoundDesc) heroRoundDesc.innerHTML = `The underground waits for no one. Lock in your code, defend your turf, and take the throne.`;
-                    if (heroRequirementsTitle) heroRequirementsTitle.textContent = "WHAT TO SUBMIT";
-                    if (heroRequirementsList) {
-                        heroRequirementsList.innerHTML = `
-                            <span class="inline-flex items-center gap-2 rounded-sm border border-border bg-surface-2/70 px-3 py-1.5">
-                              <span class="text-accent"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-3.5 w-3.5"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg></span>
-                              <span class="font-mono text-[11px] uppercase tracking-[0.16em] text-foreground">Source Code (GitHub)</span>
-                            </span>
-                            <span class="inline-flex items-center gap-2 rounded-sm border border-border bg-surface-2/70 px-3 py-1.5">
-                              <span class="text-accent"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-3.5 w-3.5"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></span>
-                              <span class="font-mono text-[11px] uppercase tracking-[0.16em] text-foreground">Live Demo Link</span>
-                            </span>
-                        `;
-                    }
-                    if (heroVerticalText) heroVerticalText.textContent = "- CODE - DEPLOY - DEFEND - CONQUER -";
-                    if (heroFooterText) heroFooterText.textContent = "[ TICK TOCK. TIME IS RUNNING OUT. ]";
-                    if (heroExtraBox) heroExtraBox.innerHTML = "";
-                } else if (t.includes("3") || t.includes("three")) {
-                    roundNum = "03";
-                    topText = "SEEK THE";
-                    bottomText = "WAY IN OR OUT";
-                    if (heroImageBg) heroImageBg.src = "assets/images/round3img.png";
-                    if (heroRoundBadge) heroRoundBadge.textContent = `LIVE // ROUND 03 - FINALE`;
-                    if (heroRoundDesc) {
-                        heroRoundDesc.innerHTML = `This is it. The final showdown.<br />Every idea. Every line of code. Every late night.<br />Now it decides.<br /><br /><span class="text-blood">Only one will rise.</span><br /><span class="text-blood">Only one will win.</span>`;
-                    }
-                    if (heroRequirementsTitle) heroRequirementsTitle.textContent = "WHAT DECIDES THE WINNER?";
-                    if (heroRequirementsList) {
-                        heroRequirementsList.innerHTML = `
-                            <div class="flex items-center gap-3">
-                                <div class="h-6 w-6 border border-blood flex items-center justify-center text-blood">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
-                                </div>
-                                PROBLEM SOLVING
-                            </div>
-                            <div class="flex items-center gap-3">
-                                <div class="h-6 w-6 border border-blood flex items-center justify-center text-blood">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
-                                </div>
-                                INNOVATION
-                            </div>
-                            <div class="flex items-center gap-3">
-                                <div class="h-6 w-6 border border-blood flex items-center justify-center text-blood">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-                                </div>
-                                IMPACT &amp; FEASIBILITY
-                            </div>
-                            <div class="flex items-center gap-3">
-                                <div class="h-6 w-6 border border-blood flex items-center justify-center text-blood">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
-                                </div>
-                                PRESENTATION EXCELLENCE
-                            </div>
-                        `;
-                    }
-                    if (heroVerticalText) heroVerticalText.textContent = "- FOCUS - PLAN - IMPACT - INSPIRE - WIN -";
-                    if (heroFooterText) heroFooterText.textContent = "[ ONE HACKATHON. ONE WINNER. LEGENDS REMEMBERED. ]";
-                    if (heroExtraBox) {
-                        heroExtraBox.innerHTML = `
-                            <div class="border border-blood bg-black/80 p-4 font-mono text-xs tracking-[0.2em] flex flex-col gap-3" style="font-family: 'JetBrains Mono', monospace;">
-                                <div class="text-white">THE THRONE<br/>AWAITS.</div>
-                                <div class="border border-blood text-blood px-3 py-1 text-[10px] text-center">WHO WILL CLAIM IT?</div>
-                            </div>
-                        `;
-                    }
-                }
- 
-                if(heroRoundTitle) heroRoundTitle.innerHTML = `${topText}<br /><span class="text-blood" style="animation: flicker 4s infinite">${bottomText}</span>`;
-                
-                // Initialize countdown target
-                let targetTime = null;
-                
-                if (roundData.submissionDeadline) {
-                    const deadlineMs = roundData.submissionDeadline.toMillis ? roundData.submissionDeadline.toMillis() : roundData.submissionDeadline.seconds ? roundData.submissionDeadline.seconds * 1000 : null;
-                    if (deadlineMs) targetTime = deadlineMs;
-                } else if (roundData.updatedAt) {
-                    // Fallback to 24h after activation if no deadline is set
-                    const updatedMs = roundData.updatedAt.toMillis ? roundData.updatedAt.toMillis() : roundData.updatedAt.seconds ? roundData.updatedAt.seconds * 1000 : Date.now();
-                    targetTime = updatedMs + 24 * 60 * 60 * 1000;
-                }
-                
-                if (targetTime) {
-                    startCountdown(targetTime);
-                } else {
-                    const displayEl = document.getElementById("countdownDisplay");
-                    if (displayEl) displayEl.innerHTML = `<span class="text-blood text-3xl">TBA</span>`;
-                    const progressEl = document.getElementById("countdownProgress");
-                    if (progressEl) progressEl.style.width = "0%";
-                }
+            if (roundDoc.exists()) {
+                roundStates[rid] = roundDoc.data();
+            } else {
+                roundStates[rid] = null;
             }
+            renderActiveRound();
         }, (error) => {
             console.error(`Error listening to ${rid}:`, error);
         });
@@ -770,3 +783,106 @@ function listenToNotifications() {
     });
 }
 
+// Mission Submission Logic
+function listenToTeamSubmission(teamId, roundId) {
+    if (teamSubmissionUnsubscriber) teamSubmissionUnsubscriber();
+    
+    if (!teamId || !roundId) return;
+
+    const submissionsRef = collection(db, "submissions");
+    const q = query(submissionsRef, where("teamId", "==", teamId), where("roundId", "==", roundId), limit(1));
+    
+    teamSubmissionUnsubscriber = onSnapshot(q, (snapshot) => {
+        const githubInput = document.getElementById("githubLink");
+        const demoInput = document.getElementById("demoLink");
+
+        if (!snapshot.empty) {
+            // Team has already submitted for this round
+            if (submitMissionBtn) {
+                submitMissionBtn.disabled = true;
+                submitMissionBtn.innerHTML = `LOCKED <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-3.5 w-3.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>`;
+                submitMissionBtn.classList.replace("bg-primary", "bg-surface-2");
+                submitMissionBtn.classList.replace("text-primary-foreground", "text-muted-foreground");
+                submitMissionBtn.classList.remove("hover:brightness-110", "active:scale-[0.98]", "cursor-pointer");
+                submitMissionBtn.classList.add("cursor-not-allowed");
+            }
+            if (submissionStatus) {
+                submissionStatus.innerHTML = `<span class="text-[color:var(--color-success)] font-semibold uppercase tracking-widest">MISSION SUBMITTED.</span><br/>AWAITING CLEARANCE.`;
+            }
+            if (githubInput) githubInput.disabled = true;
+            if (demoInput) demoInput.disabled = true;
+        } else {
+            // Not submitted yet
+            if (submitMissionBtn) {
+                submitMissionBtn.disabled = false;
+                submitMissionBtn.innerHTML = `Submit Build <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-3.5 w-3.5"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>`;
+                submitMissionBtn.classList.replace("bg-surface-2", "bg-primary");
+                submitMissionBtn.classList.replace("text-muted-foreground", "text-primary-foreground");
+                submitMissionBtn.classList.add("hover:brightness-110", "active:scale-[0.98]", "cursor-pointer");
+                submitMissionBtn.classList.remove("cursor-not-allowed");
+            }
+            if (submissionStatus) {
+                submissionStatus.innerHTML = ``;
+            }
+            if (githubInput) githubInput.disabled = false;
+            if (demoInput) demoInput.disabled = false;
+        }
+    }, (error) => {
+        console.error("Error listening to team submission:", error);
+    });
+}
+
+if (submissionForm) {
+    submissionForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        
+        if (!currentTeamId || !activeRoundId) {
+            if (submissionStatus) {
+                submissionStatus.textContent = "Error: Missing team or round context.";
+                submissionStatus.style.color = "var(--strike-red)";
+            }
+            return;
+        }
+        
+        const githubInput = document.getElementById("githubLink");
+        const demoInput = document.getElementById("demoLink");
+        
+        const githubLink = githubInput ? githubInput.value.trim() : "";
+        const demoLink = demoInput ? demoInput.value.trim() : "";
+        
+        if (!githubLink) {
+            if (submissionStatus) {
+                submissionStatus.textContent = "Error: Primary submission link is required.";
+                submissionStatus.style.color = "var(--strike-red)";
+            }
+            return;
+        }
+        
+        if (submitMissionBtn) {
+            submitMissionBtn.disabled = true;
+            submitMissionBtn.innerHTML = `UPLOADING...`;
+        }
+        
+        try {
+            await addDoc(collection(db, "submissions"), {
+                teamId: currentTeamId,
+                roundId: activeRoundId,
+                githubLink: githubLink,
+                demoLink: demoLink,
+                submittedAt: serverTimestamp()
+            });
+            
+            // The listener will automatically update the UI on success.
+        } catch (error) {
+            console.error("Error submitting mission:", error);
+            if (submissionStatus) {
+                submissionStatus.textContent = error.message || "Failed to submit mission.";
+                submissionStatus.style.color = "var(--strike-red)";
+            }
+            if (submitMissionBtn) {
+                submitMissionBtn.disabled = false;
+                submitMissionBtn.innerHTML = `Submit Build <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-3.5 w-3.5"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>`;
+            }
+        }
+    });
+}
