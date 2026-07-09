@@ -1,0 +1,34 @@
+[
+  {
+    "id": "rulebook",
+    "title": "OFFICIAL RULEBOOK",
+    "description": "The laws of the underground. Read carefully—ignorance is no excuse for elimination.",
+    "type": "PDF",
+    "url": "#",
+    "icon": "file-text"
+  },
+  {
+    "id": "ppt",
+    "title": "PRESENTATION TEMPLATE",
+    "description": "Standardized deck format for Round 1 submissions. Required for all teams.",
+    "type": "PPTX",
+    "url": "#",
+    "icon": "monitor"
+  },
+  {
+    "id": "github",
+    "title": "GITHUB SUBMISSION GUIDE",
+    "description": "How to structure your repo, write a proper README, and submit code for Round 2.",
+    "type": "LINK",
+    "url": "#",
+    "icon": "github"
+  },
+  {
+    "id": "assets",
+    "title": "BRAND ASSETS",
+    "description": "Logos, fonts, and color hex codes to make your UI match the RevengersHack aesthetic.",
+    "type": "ZIP",
+    "url": "#",
+    "icon": "image"
+  }
+]

@@ -1,0 +1,37 @@
+[
+  {
+    "id": "web-dev",
+    "title": "WEB DEVELOPMENT",
+    "description": "BUILD. DESIGN. DEPLOY.",
+    "icon": "globe",
+    "color": "#06b6d4"
+  },
+  {
+    "id": "cloud-devops",
+    "title": "CLOUD & DEVOPS",
+    "description": "Scale and automate infrastructure for the future.",
+    "icon": "cloud",
+    "color": "var(--blood)"
+  },
+  {
+    "id": "ai-ml",
+    "title": "AI & MACHINE LEARNING",
+    "description": "Push the boundaries of machine intelligence. Build autonomous agents, generative models, or predictive systems.",
+    "icon": "cpu",
+    "color": "#06b6d4"
+  },
+  {
+    "id": "blockchain-web3",
+    "title": "BLOCKCHAIN & WEB3",
+    "description": "DECENTRALIZE. SECURE. OWN.",
+    "icon": "box",
+    "color": "var(--blood)"
+  },
+  {
+    "id": "open",
+    "title": "OPEN INNOVATION",
+    "description": "No rules. No limits. If your idea doesn't fit into the above categories but has the potential to change the game, this is your arena.",
+    "icon": "zap",
+    "color": "#06b6d4"
+  }
+]
