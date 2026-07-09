@@ -22,8 +22,8 @@ const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)
         top: 0; left: 0;
         width: 100%; height: 100%;
         pointer-events: none;
-        z-index: 2;
-        opacity: 0.55;
+        z-index: -1;
+        opacity: 1;
     `;
     document.body.appendChild(canvas);
 
@@ -36,7 +36,7 @@ const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)
         H = canvas.height = window.innerHeight;
     }, { passive: true });
 
-    const PARTICLE_COUNT = 60;
+    const PARTICLE_COUNT = 150;
     const particles = [];
 
     function randomBetween(a, b) { return a + Math.random() * (b - a); }
@@ -46,45 +46,31 @@ const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)
         reset(initial = false) {
             this.x = randomBetween(0, W);
             this.y = initial ? randomBetween(0, H) : H + 10;
-            this.size = randomBetween(0.5, 2.5);
-            this.speedY = randomBetween(0.12, 0.55);
-            this.speedX = randomBetween(-0.18, 0.18);
-            this.opacity = randomBetween(0.08, 0.38);
-            this.opacityDelta = randomBetween(0.001, 0.003) * (Math.random() > 0.5 ? 1 : -1);
-            // type: 0=dust, 1=ember
-            this.type = Math.random() > 0.85 ? 1 : 0;
-            if (this.type === 1) {
-                this.size = randomBetween(1, 3);
-                this.speedY = randomBetween(0.3, 0.9);
-            }
+            this.size = randomBetween(1, 3);
+            this.speedY = randomBetween(0.2, 0.8);
+            this.speedX = randomBetween(-0.2, 0.2);
+            this.opacity = randomBetween(0.4, 1.0);
+            this.opacityDelta = randomBetween(0.002, 0.005) * (Math.random() > 0.5 ? 1 : -1);
         }
         update() {
             this.y -= this.speedY;
             this.x += this.speedX + Math.sin(this.y * 0.01) * 0.1;
             this.opacity += this.opacityDelta;
-            if (this.opacity > 0.4 || this.opacity < 0.04) this.opacityDelta *= -1;
+            if (this.opacity > 1 || this.opacity < 0.2) this.opacityDelta *= -1;
             if (this.y < -10) this.reset();
         }
         draw() {
             ctx.save();
             ctx.globalAlpha = this.opacity;
-            if (this.type === 1) {
-                // ember — small glowing red dot
-                const grad = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.size * 2);
-                grad.addColorStop(0, 'rgba(255,80,50,0.9)');
-                grad.addColorStop(0.5, 'rgba(180,30,10,0.4)');
-                grad.addColorStop(1, 'transparent');
-                ctx.fillStyle = grad;
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.size * 2, 0, Math.PI * 2);
-                ctx.fill();
-            } else {
-                // dust — tiny white/grey speck
-                ctx.fillStyle = `rgba(220,210,200,${this.opacity})`;
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-                ctx.fill();
-            }
+            // Red glowing ember effect for all particles
+            const grad = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.size * 2.5);
+            grad.addColorStop(0, 'rgba(255, 70, 70, 1)'); // Brighter red
+            grad.addColorStop(0.4, 'rgba(230, 57, 70, 0.8)');
+            grad.addColorStop(1, 'transparent');
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size * 2, 0, Math.PI * 2);
+            ctx.fill();
             ctx.restore();
         }
     }

@@ -195,14 +195,14 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Live time (update every 30s instead of every second — saves ~29 calls/min)
+    // Live time for navbar
     const liveTimeEl = document.getElementById('live-time');
     function updateLiveTime() {
         if (!liveTimeEl) return;
         liveTimeEl.textContent = new Date().toLocaleTimeString();
     }
     updateLiveTime();
-    setInterval(updateLiveTime, 30000);
+    setInterval(updateLiveTime, 1000);
 
     // Countdown — hardcoded target date Aug 22 2026
     const countdownEl = document.getElementById('countdown');
