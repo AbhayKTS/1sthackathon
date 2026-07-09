@@ -59,6 +59,7 @@ const announcementsFeed = document.getElementById("announcementsFeed");
 
 let currentUserDoc = null;
 let currentTeamId = null;
+let currentTeamDoc = null;
 let activeRoundId = null;
 
 // Firebase real-time listener unsubscribers to prevent memory leaks and duplicate queries
@@ -215,8 +216,10 @@ async function loadTeamData(teamId) {
                 return;
             }
 
-            teamNameDisplay.textContent = team.teamName || "Unknown Team";
-            teamIdDisplay.textContent = teamId;
+            currentTeamDoc = team;
+            
+            if (teamNameDisplay) teamNameDisplay.textContent = team.teamName || "Unknown Team";
+            if (teamIdDisplay) teamIdDisplay.textContent = teamId;
             
             if (team.members && team.members.length > 0) {
                 teamMembersList.innerHTML = "";
@@ -415,6 +418,12 @@ function loadActiveRounds() {
                 pptInput.classList.remove("hidden");
                 pptInput.required = true;
             }
+            if (hasNoPrototypeCheckbox) {
+                hasNoPrototypeCheckbox.parentElement.classList.remove("hidden");
+            }
+            if (submitMissionBtn) {
+                submitMissionBtn.textContent = "Submit Prototype";
+            }
         } else if (roundType === 'mentoring_prototype') {
             if (githubInput) {
                 githubInput.classList.remove("hidden");
@@ -506,6 +515,14 @@ function startCountdown(targetTime) {
             displayEl.innerHTML = `00<span class="text-blood">:</span>00<span class="text-blood">:</span>00`;
             if (progressEl) progressEl.style.width = "0%";
             clearInterval(countdownInterval);
+            
+            // Auto-disable form when deadline passes
+            const submitMissionBtn = document.getElementById("submitMissionBtn");
+            if (submitMissionBtn && !submitMissionBtn.disabled) {
+                submitMissionBtn.disabled = true;
+                submitMissionBtn.textContent = "DEADLINE PASSED";
+                submitMissionBtn.classList.add("opacity-50", "cursor-not-allowed");
+            }
             return;
         }
         
