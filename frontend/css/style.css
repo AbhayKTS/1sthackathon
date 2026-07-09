@@ -3820,9 +3820,9 @@ footer .container {
 
 .sponsors-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: 1fr;
     gap: 30px;
-    max-width: 1200px;
+    max-width: 800px;
     margin: 0 auto;
 }
 
