@@ -39,7 +39,8 @@ export default defineConfig({
         admin: resolve(__dirname, 'cmd-center.html'),
         onboarding: resolve(__dirname, 'onboarding.html'),
         profile: resolve(__dirname, 'profile.html'),
-        support: resolve(__dirname, 'support.html')
+        leaderboard: resolve(__dirname, 'leaderboard.html'),
+        discord: resolve(__dirname, 'discord.html')
       }
     }
   }

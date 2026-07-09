@@ -118,7 +118,9 @@ onAuthStateChanged(auth, async (user) => {
     // Auth successful, reveal body
     document.body.style.visibility = '';
     
-    userEmailDisplay.textContent = user.email;
+    if (userEmailDisplay) userEmailDisplay.textContent = user.email;
+
+    const isLeaderboardPage = window.location.pathname.includes('leaderboard');
 
     try {
         const userRef = doc(db, "users", user.uid);
@@ -139,15 +141,21 @@ onAuthStateChanged(auth, async (user) => {
                 return;
             }
             
-            await loadTeamData(currentTeamId);
+            if (!isLeaderboardPage) {
+                await loadTeamData(currentTeamId);
+            }
         }
         
-        // Load global dashboard data
-        loadActiveRounds();
-        listenToAnnouncements();
-        loadLeaderboard();
-        listenToNotifications();
-        listenToSessions(currentTeamId);
+        if (isLeaderboardPage) {
+            loadLeaderboard();
+        } else {
+            // Load global dashboard data
+            loadActiveRounds();
+            listenToAnnouncements();
+            loadLeaderboard();
+            listenToNotifications();
+            listenToSessions(currentTeamId);
+        }
 
     } catch (error) {
         console.error("Error loading dashboard data:", error);
@@ -312,7 +320,7 @@ function loadActiveRounds() {
             if (heroRoundDesc) heroRoundDesc.textContent = "Central command has not activated a round yet. Stay sharp.";
             if (heroRequirementsList) heroRequirementsList.innerHTML = "";
             if (heroRequirementsTitle) heroRequirementsTitle.textContent = "";
-            if (heroImageBg) heroImageBg.src = "assets/images/round1img.png";
+            if (heroImageBg) heroImageBg.src = new URL('../assets/images/round1img.png', import.meta.url).href;
 
             // Clear countdown
             if (countdownInterval) { clearInterval(countdownInterval); countdownInterval = null; }
@@ -339,7 +347,7 @@ function loadActiveRounds() {
         let t = (roundData.title || "").toLowerCase();
         
         if (t.includes("1") || t.includes("one")) {
-            if (heroImageBg) heroImageBg.src = "assets/images/round1img.png";
+            if (heroImageBg) heroImageBg.src = new URL('../assets/images/round1img.png', import.meta.url).href;
             if (heroRoundBadge) heroRoundBadge.textContent = `LIVE // ROUND 01`;
             if (heroRoundDesc) {
                 heroRoundDesc.innerHTML = `This is your first move.<br />Submit your problem statements and<br />presentation decks that define your vision,<br />your approach, and your edge.`;
@@ -359,7 +367,7 @@ function loadActiveRounds() {
             }
             topText = "SHOW US"; bottomText = "WHAT YOU GOT";
         } else if (t.includes("2") || t.includes("two")) {
-            if (heroImageBg) heroImageBg.src = "assets/images/round2img.png";
+            if (heroImageBg) heroImageBg.src = new URL('../assets/images/row2-bg.jpg', import.meta.url).href;
             if (heroRoundBadge) heroRoundBadge.textContent = `LIVE // ROUND 02`;
             if (heroRoundDesc) heroRoundDesc.innerHTML = `The underground waits for no one. Lock in your code, defend your turf, and take the throne.`;
             if (heroRequirementsTitle) heroRequirementsTitle.textContent = "WHAT TO SUBMIT";
@@ -377,7 +385,7 @@ function loadActiveRounds() {
             }
             topText = "WE RIDE"; bottomText = "AT MIDNIGHT";
         } else if (t.includes("3") || t.includes("three")) {
-            if (heroImageBg) heroImageBg.src = "assets/images/round3img.png";
+            if (heroImageBg) heroImageBg.src = new URL('../assets/images/round3img.png', import.meta.url).href;
             if (heroRoundBadge) heroRoundBadge.textContent = `LIVE // ROUND 03 - FINALE`;
             if (heroRoundDesc) {
                 heroRoundDesc.innerHTML = `This is it. The final showdown.<br />Every idea. Every line of code. Every late night.<br />Now it decides.<br /><br /><span class="text-primary">Only one will rise.</span><br /><span class="text-primary">Only one will win.</span>`;
