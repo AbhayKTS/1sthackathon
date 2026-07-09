@@ -1,5 +1,5 @@
 /**
- * POST /api/admin/activate-round
+ * POST /api/admin/rounds/activate
  *
  * Endpoint for an admin to activate a round (and deactivate all others),
  * or deactivate all rounds entirely.
@@ -10,7 +10,7 @@
  * Expected payload (deactivate all):
  * { deactivateAll: true }
  *
- * @route POST /api/admin/activate-round
+ * @route POST /api/admin/rounds/activate
  */
 
 import { type NextRequest, NextResponse } from 'next/server';

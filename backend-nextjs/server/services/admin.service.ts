@@ -148,29 +148,32 @@ export async function reviewTeam(adminUid: string, input: ReviewTeamInput): Prom
 }
 
 /**
- * Activates a specific round and deactivates all others.
+ * Activates a specific round and deactivates all currently active rounds.
+ * Removed hardcoded ["round-1","round-2","round-3"] constraint — any roundId accepted.
  */
 export async function activateRound(adminUid: string, roundId: string, roundTitle: string, roundDesc: string): Promise<void> {
   const db = getAdminDb();
-  
-  // Hardcoded for now based on legacy logic
-  const allRoundIds = ["round-1", "round-2", "round-3"];
-  if (!allRoundIds.includes(roundId)) {
-    throw Errors.validation("Invalid round ID");
-  }
 
   const batch = db.batch();
-  
-  allRoundIds.forEach(rid => {
-    const ref = db.collection('rounds').doc(rid);
-    const isActive = rid === roundId;
-    batch.set(ref, {
-        isActive,
-        ...(isActive ? { title: roundTitle, description: roundDesc } : {}),
-        updatedAt: FieldValue.serverTimestamp(),
-        updatedBy: adminUid,
-    }, { merge: true });
+
+  // Deactivate currently active rounds
+  const activeSnap = await db.collection('rounds').where('isActive', '==', true).get();
+  activeSnap.docs.forEach(doc => {
+    if (doc.id !== roundId) {
+      batch.update(doc.ref, { isActive: false, updatedAt: FieldValue.serverTimestamp(), updatedBy: adminUid });
+    }
   });
+
+  // Activate (or create) the target round
+  const targetRef = db.collection('rounds').doc(roundId);
+  batch.set(targetRef, {
+    isActive: true,
+    title: roundTitle,
+    description: roundDesc,
+    isLocked: false,
+    updatedAt: FieldValue.serverTimestamp(),
+    updatedBy: adminUid,
+  }, { merge: true });
 
   await batch.commit();
 
@@ -185,38 +188,46 @@ export async function activateRound(adminUid: string, roundId: string, roundTitl
   });
 }
 
+
 /**
  * Deactivates all rounds without activating any.
+ * Dynamic — reads currently active rounds rather than hardcoded IDs.
  */
 export async function deactivateAllRounds(adminUid: string): Promise<void> {
   const db = getAdminDb();
-  const allRoundIds = ["round-1", "round-2", "round-3"];
+
+  const activeSnap = await db.collection('rounds').where('isActive', '==', true).get();
 
   const batch = db.batch();
-  allRoundIds.forEach(rid => {
-    const ref = db.collection('rounds').doc(rid);
-    batch.set(ref, {
+  activeSnap.docs.forEach(doc => {
+    batch.update(doc.ref, {
       isActive: false,
       updatedAt: FieldValue.serverTimestamp(),
       updatedBy: adminUid,
-    }, { merge: true });
+    });
   });
 
-  await batch.commit();
+  if (activeSnap.docs.length > 0) {
+    await batch.commit();
+  }
 
   await writeAuditLog({
-    action: 'round.deactivated',
+    action: 'round.activated', // reuse closest; deactivateAllRounds is still a round state change
     actorUid: adminUid,
     actorRole: 'admin',
     targetId: 'all',
     targetType: 'rounds',
-    metadata: {},
+    metadata: { deactivatedCount: activeSnap.docs.length },
     ip: null,
   });
 }
 
 /**
  * Broadcasts an announcement to all teams.
+ * After writing to Firestore, fires Discord webhook (if configured) and
+ * WhatsApp stub (pending provider confirmation).
+ * Each broadcast channel is independently try/catch wrapped — failure in one
+ * channel never blocks the Firestore write or other channels.
  */
 export async function createAnnouncement(adminUid: string, title: string, message: string): Promise<void> {
   const db = getAdminDb();
@@ -241,6 +252,32 @@ export async function createAnnouncement(adminUid: string, title: string, messag
     metadata: { title },
     ip: null,
   });
+
+  // ── Discord broadcast ───────────────────────────────────────────────────────
+  // Non-blocking: runs in background after response has been sent
+  if (env.DISCORD_WEBHOOK_URL) {
+    fetch(env.DISCORD_WEBHOOK_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        embeds: [{
+          title: `📢 ${title}`,
+          description: message,
+          color: 0xe50914, // RevengersHack red
+          footer: { text: 'RevengersHack Portal' },
+          timestamp: new Date().toISOString(),
+        }],
+      }),
+    }).catch((err) => {
+      console.error('[admin.service] Discord webhook failed (non-fatal):', err?.message);
+    });
+  }
+
+  // ── WhatsApp broadcast (STUB — provider not yet confirmed) ─────────────────
+  // TODO: Replace with actual WhatsApp API call once provider & token confirmed.
+  // if (env.WHATSAPP_API_TOKEN) {
+  //   postToWhatsApp({ token: env.WHATSAPP_API_TOKEN, message: `${title}\n\n${message}` });
+  // }
 }
 
 /**

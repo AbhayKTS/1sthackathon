@@ -37,4 +37,5 @@ export interface UserDoc {
   updatedAt: FirebaseFirestore.Timestamp;
   lastLoginAt: FirebaseFirestore.Timestamp | null;
   isActive: boolean;
+  canEditScores?: boolean; // Granted to specific judges/admins for modifying leaderboard scores
 }

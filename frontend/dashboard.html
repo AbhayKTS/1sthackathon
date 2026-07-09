@@ -197,6 +197,27 @@
       </div>
 
       <div class="mt-4 grid gap-4 lg:grid-cols-2">
+        <!-- Sessions (Upcoming) -->
+        <div id="sessionsContainer" class="rounded-sm border border-border bg-surface text-foreground p-6 hidden">
+            <div class="mb-5 flex items-center justify-between">
+                <h3 class="font-mono text-[11px] font-semibold uppercase tracking-[0.2em] text-foreground">
+                    Scheduled Sessions
+                </h3>
+                <span class="flex items-center gap-2">
+                    <span class="relative flex h-1.5 w-1.5">
+                        <span class="absolute inset-0 animate-ping rounded-full bg-accent opacity-75"></span>
+                        <span class="relative h-1.5 w-1.5 rounded-full bg-accent"></span>
+                    </span>
+                    <span class="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">
+                        Live
+                    </span>
+                </span>
+            </div>
+            <div id="sessionsList" class="flex flex-col gap-3">
+                <!-- Rendered by JS -->
+            </div>
+        </div>
+
         <!-- Information -->
         <div class="rounded-sm border border-border bg-surface text-foreground p-6">
             <div class="mb-5 flex items-center justify-between">
@@ -246,8 +267,15 @@
 
                 <div class="space-y-4">
                     <form id="submissionForm" class="flex flex-col gap-3">
-                        <input type="url" id="githubLink" placeholder="GITHUB REPO URL" required class="w-full rounded-sm border border-border bg-surface-2 px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary font-mono">
-                        <input type="url" id="demoLink" placeholder="LIVE DEMO URL (OPTIONAL)" class="w-full rounded-sm border border-border bg-surface-2 px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary font-mono">
+                        <input type="url" id="githubLink" placeholder="GITHUB REPO URL" class="w-full rounded-sm border border-border bg-surface-2 px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary font-mono hidden">
+                        <input type="url" id="demoLink" placeholder="LIVE DEMO URL (OPTIONAL)" class="w-full rounded-sm border border-border bg-surface-2 px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary font-mono hidden">
+                        <input type="url" id="pptLink" placeholder="PRESENTATION DECK (PPT/PDF URL)" class="w-full rounded-sm border border-border bg-surface-2 px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary font-mono hidden">
+                        <input type="url" id="prototypeLink" placeholder="PROTOTYPE URL (E.G. FIGMA, CODEPEN)" class="w-full rounded-sm border border-border bg-surface-2 px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary font-mono hidden">
+                        
+                        <label id="noPrototypeLabel" class="flex items-center gap-2 cursor-pointer font-mono text-xs text-muted-foreground hidden mt-1">
+                            <input type="checkbox" id="hasNoPrototype" class="accent-primary w-4 h-4 rounded border-border bg-surface-2">
+                            <span>NO PROTOTYPE TO SUBMIT (TEXT OR CONCEPT ONLY)</span>
+                        </label>
                         <button type="submit" id="submitMissionBtn" class="mt-2 w-max inline-flex items-center gap-2 rounded-sm bg-primary px-5 py-2.5 font-mono text-xs font-semibold uppercase tracking-[0.18em] text-primary-foreground transition-transform hover:brightness-110 active:scale-[0.98] cursor-pointer">
                             Submit Build <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-3.5 w-3.5"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
                         </button>
@@ -259,6 +287,14 @@
             <!-- Shown when no active round -->
             <div id="noActiveRoundMsg" class="mt-8 font-mono text-xs uppercase tracking-[0.2em] text-muted-foreground">
                 [NO ACTIVE MISSIONS AWAITING SUBMISSION]
+            </div>
+
+            <!-- Closed Missions -->
+            <div id="closedMissionsContainer" class="mt-8 pt-6 border-t border-border" style="display: none;">
+                <h4 class="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground mb-4">Closed Missions</h4>
+                <div id="closedMissionsList" class="flex flex-col gap-3">
+                    <!-- Rendered by JS -->
+                </div>
             </div>
 
         </div>

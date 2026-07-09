@@ -55,7 +55,7 @@ export async function withAuth(request: NextRequest): Promise<AuthenticatedToken
 
     const userData = userSnap.data()!;
 
-    if (!userData.isActive) {
+    if (userData.isActive === false) {
       throw Errors.forbidden('Your account has been deactivated. Please contact support.');
     }
 

@@ -127,6 +127,25 @@ service cloud.firestore {
       allow create, update, delete: if false;
     }
 
+    // ─── Sessions (Stage 6d) ─────────────────────────────────────────────
+    // Participants can read their own team's sessions (meeting links / slots).
+    // All writes are via Admin SDK (admin assigns sessions).
+    // Session doc IDs are composite: teamId_roundId.
+    match /sessions/{sessionId} {
+      allow read: if request.auth != null && (
+        isAdminOrSuperAdmin() ||
+        resource.data.teamId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.teamId
+      );
+      allow write: if false;
+    }
+
+    // ─── Leaderboard ─────────────────────────────────────────────────────
+    // Admin read only from client. All writes via Admin SDK only.
+    match /leaderboard/{teamId} {
+      allow read: if isAdminOrSuperAdmin();
+      allow write: if false;
+    }
+
     // ─── Default: Deny Everything Else ───────────────────────────────────
     match /{document=**} {
       allow read, write: if false;

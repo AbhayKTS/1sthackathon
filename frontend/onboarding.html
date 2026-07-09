@@ -8,6 +8,66 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=JetBrains+Mono:wght@400;700&family=Noto+Sans+JP:wght@400;700&family=Zen+Dots&display=swap" rel="stylesheet">
+    <style>
+        .field-note {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: var(--muted-foreground, #888);
+            margin-top: 4px;
+        }
+        .phone-wrapper {
+            position: relative;
+            display: flex;
+            align-items: stretch;
+        }
+        .phone-prefix {
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
+            background: #1a1a1a;
+            border: 1px solid var(--border);
+            border-right: none;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            color: #e50914;
+            white-space: nowrap;
+            user-select: none;
+        }
+        .phone-wrapper input {
+            border-left: none !important;
+            flex: 1;
+        }
+        .mandatory-note {
+            background: rgba(229, 9, 20, 0.08);
+            border: 1px solid rgba(229, 9, 20, 0.4);
+            padding: 12px 16px;
+            margin-bottom: 16px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            color: #f5f5f5;
+            line-height: 1.6;
+        }
+        .ps-note {
+            background: rgba(255, 255, 255, 0.04);
+            border-left: 3px solid #f59e0b;
+            padding: 10px 14px;
+            margin-bottom: 10px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: #ccc;
+            line-height: 1.6;
+        }
+        .member-row-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        @media (min-width: 768px) {
+            .member-row-grid {
+                grid-template-columns: 1fr 1fr 1fr;
+            }
+        }
+    </style>
 </head>
 <body class="min-h-screen bg-background text-foreground relative grain dark flex items-center justify-center p-6">
     <div class="pointer-events-none fixed inset-0 -z-10">
@@ -20,7 +80,7 @@
         
         <div class="text-center mb-8 relative z-10">
             <h1 class="font-display text-4xl tracking-widest mb-2" style="font-family: 'Zen Dots', sans-serif;">ASSEMBLE YOUR <span class="text-blood">SQUAD</span></h1>
-            <p class="font-mono text-sm text-muted-foreground" style="font-family: 'JetBrains Mono', monospace;">Provide your team details before accessing the dashboard. (2-4 members)</p>
+            <p class="font-mono text-sm text-muted-foreground" style="font-family: 'JetBrains Mono', monospace;">Provide your team details before accessing the dashboard. (2–4 members)</p>
         </div>
 
         <div id="rejectionNotesContainer" class="hidden relative z-10 mb-8 border border-strike-red bg-strike-red/10 p-4">
@@ -29,45 +89,111 @@
         </div>
 
         <form id="onboardingForm" class="relative z-10 space-y-8">
-            <!-- Team Info -->
+
+            <!-- ── TRACK SELECTION ────────────────────────────────── -->
             <div class="space-y-4 border-l-2 border-blood pl-4">
-                <h2 class="font-impact text-2xl tracking-widest text-blood" style="font-family: 'Bebas Neue', sans-serif;">TEAM DETAILS</h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <input type="text" id="teamName" placeholder="TEAM NAME" required class="bg-input border border-border px-4 py-3 font-mono text-sm focus:outline-none focus:border-blood w-full" style="font-family: 'JetBrains Mono', monospace;">
-                    <input type="text" id="college" placeholder="COLLEGE / UNIVERSITY" required class="bg-input border border-border px-4 py-3 font-mono text-sm focus:outline-none focus:border-blood w-full" style="font-family: 'JetBrains Mono', monospace;">
+                <h2 class="font-impact text-2xl tracking-widest text-blood" style="font-family: 'Bebas Neue', sans-serif;">TRACK & MISSION</h2>
+                <div class="space-y-2">
+                    <label class="font-mono text-xs text-muted-foreground" style="font-family: 'JetBrains Mono', monospace;">SELECT YOUR TRACK *</label>
+                    <select id="trackSelect" required class="bg-input border border-border px-4 py-3 font-mono text-sm focus:outline-none focus:border-blood w-full" style="font-family: 'JetBrains Mono', monospace;">
+                        <option value="">-- CHOOSE TRACK --</option>
+                        <!-- Populated dynamically from data/tracks.json -->
+                    </select>
+                </div>
+                <div class="space-y-2">
+                    <div class="ps-note">
+                        💡 You may pick one of our listed problem statements from the dashboard, OR write your own custom problem statement here.
+                    </div>
+                    <label class="font-mono text-xs text-muted-foreground" style="font-family: 'JetBrains Mono', monospace;">PROBLEM STATEMENT *</label>
+                    <textarea
+                        id="problemStatement"
+                        required
+                        rows="4"
+                        placeholder="Describe your problem statement or the challenge you intend to solve..."
+                        class="bg-input border border-border px-4 py-3 font-mono text-sm focus:outline-none focus:border-blood w-full resize-none"
+                        style="font-family: 'JetBrains Mono', monospace;"
+                    ></textarea>
+                    <label class="field-note">
+                        <input type="checkbox" id="isCustomPS" class="mr-1"> This is my own custom problem statement (not from the listed ones)
+                    </label>
                 </div>
             </div>
 
-            <!-- Members -->
+            <!-- ── TEAM INFO ──────────────────────────────────────── -->
+            <div class="space-y-4 border-l-2 border-blood pl-4">
+                <h2 class="font-impact text-2xl tracking-widest text-blood" style="font-family: 'Bebas Neue', sans-serif;">TEAM DETAILS</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <input type="text" id="teamName" placeholder="TEAM NAME *" required class="bg-input border border-border px-4 py-3 font-mono text-sm focus:outline-none focus:border-blood w-full" style="font-family: 'JetBrains Mono', monospace;">
+                    <input type="text" id="college" placeholder="COLLEGE / UNIVERSITY *" required class="bg-input border border-border px-4 py-3 font-mono text-sm focus:outline-none focus:border-blood w-full" style="font-family: 'JetBrains Mono', monospace;">
+                    <input type="text" id="department" placeholder="DEPARTMENT" class="bg-input border border-border px-4 py-3 font-mono text-sm focus:outline-none focus:border-blood w-full" style="font-family: 'JetBrains Mono', monospace;">
+                    <input type="text" id="year" placeholder="YEAR (e.g. 3rd Year)" class="bg-input border border-border px-4 py-3 font-mono text-sm focus:outline-none focus:border-blood w-full" style="font-family: 'JetBrains Mono', monospace;">
+                    <input type="text" id="state" placeholder="STATE" class="bg-input border border-border px-4 py-3 font-mono text-sm focus:outline-none focus:border-blood w-full" style="font-family: 'JetBrains Mono', monospace;">
+                    <input type="text" id="city" placeholder="CITY" class="bg-input border border-border px-4 py-3 font-mono text-sm focus:outline-none focus:border-blood w-full" style="font-family: 'JetBrains Mono', monospace;">
+                </div>
+            </div>
+
+            <!-- ── LEADER EXTRAS ─────────────────────────────────── -->
+            <div class="space-y-4 border-l-2 border-blood pl-4">
+                <h2 class="font-impact text-2xl tracking-widest text-blood" style="font-family: 'Bebas Neue', sans-serif;">LEADER PROFILE</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <input type="text" id="leaderName" placeholder="LEADER FULL NAME *" required class="bg-input border border-border px-4 py-3 font-mono text-sm focus:outline-none focus:border-blood w-full" style="font-family: 'JetBrains Mono', monospace;">
+                    <div class="phone-wrapper">
+                        <span class="phone-prefix">+91</span>
+                        <input type="text" id="leaderPhone" placeholder="10-DIGIT PHONE *" required maxlength="10" pattern="\d{10}" class="bg-input border border-border px-3 py-3 font-mono text-sm focus:outline-none focus:border-blood w-full" style="font-family: 'JetBrains Mono', monospace;">
+                    </div>
+                    <input type="text" id="leaderGithub" placeholder="GITHUB USERNAME (optional)" class="bg-input border border-border px-4 py-3 font-mono text-sm focus:outline-none focus:border-blood w-full" style="font-family: 'JetBrains Mono', monospace;">
+                    <input type="text" id="leaderLinkedin" placeholder="LINKEDIN URL (optional)" class="bg-input border border-border px-4 py-3 font-mono text-sm focus:outline-none focus:border-blood w-full" style="font-family: 'JetBrains Mono', monospace;">
+                </div>
+            </div>
+
+            <!-- ── ROSTER ─────────────────────────────────────────── -->
             <div class="space-y-4 border-l-2 border-blood pl-4">
                 <div class="flex items-center justify-between">
-                    <h2 class="font-impact text-2xl tracking-widest text-blood" style="font-family: 'Bebas Neue', sans-serif;">ROSTER</h2>
+                    <h2 class="font-impact text-2xl tracking-widest text-blood" style="font-family: 'Bebas Neue', sans-serif;">ROSTER <span class="text-sm font-mono text-muted-foreground">(incl. you)</span></h2>
                     <button type="button" id="addMemberBtn" class="font-mono text-xs text-muted-foreground hover:text-white transition-colors" style="font-family: 'JetBrains Mono', monospace;">+ ADD MEMBER</button>
                 </div>
                 
                 <div id="membersContainer" class="space-y-4">
-                    <!-- Member 1 (Leader) -->
-                    <div class="member-row grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 bg-black/40 p-6 border border-border/50 relative mt-4">
-                        <div class="absolute -top-3 -left-3 bg-blood text-white font-mono text-xs px-3 py-1 font-bold" style="font-family: 'JetBrains Mono', monospace;">LEADER</div>
-                        <input type="text" name="m_name" placeholder="FULL NAME" required class="bg-input border border-border px-3 py-2 font-mono text-xs focus:outline-none focus:border-blood w-full">
-                        <input type="email" name="m_email" placeholder="EMAIL (LOCKED)" required class="bg-input border border-border px-3 py-2 font-mono text-xs focus:outline-none focus:border-blood w-full">
-                        <input type="text" name="m_phone" placeholder="MOBILE NUMBER" required class="bg-input border border-border px-3 py-2 font-mono text-xs focus:outline-none focus:border-blood w-full">
-                        <input type="text" name="m_role" placeholder="ROLE" required class="bg-input border border-border px-3 py-2 font-mono text-xs focus:outline-none focus:border-blood w-full">
-                        <input type="url" name="m_github" placeholder="GITHUB PROFILE URL" class="bg-input border border-border px-3 py-2 font-mono text-xs focus:outline-none focus:border-blood w-full md:col-span-2 lg:col-span-4">
+                    <!-- Leader row (auto-filled from auth) -->
+                    <div class="member-row bg-black/40 p-4 border border-border/50 relative">
+                        <div class="absolute -top-2 -left-2 bg-blood text-white font-mono text-[10px] px-2 py-0.5" style="font-family: 'JetBrains Mono', monospace;">LEADER</div>
+                        <div class="member-row-grid">
+                            <input type="text" name="m_name" placeholder="FULL NAME *" required class="bg-input border border-border px-3 py-2 font-mono text-xs focus:outline-none focus:border-blood w-full" style="font-family: 'JetBrains Mono', monospace;">
+                            <input type="email" name="m_email" placeholder="EMAIL *" required class="bg-input border border-border px-3 py-2 font-mono text-xs focus:outline-none focus:border-blood w-full" style="font-family: 'JetBrains Mono', monospace;">
+                            <div class="phone-wrapper">
+                                <span class="phone-prefix" style="font-size:10px;">+91</span>
+                                <input type="text" name="m_phone" placeholder="10-DIGIT PHONE *" required maxlength="10" pattern="\d{10}" class="bg-input border border-border px-2 py-2 font-mono text-xs focus:outline-none focus:border-blood w-full" style="font-family: 'JetBrains Mono', monospace;">
+                            </div>
+                            <input type="text" name="m_role" placeholder="Leader" readonly class="bg-input border border-border px-3 py-2 font-mono text-xs focus:outline-none w-full opacity-70 cursor-not-allowed" style="font-family: 'JetBrains Mono', monospace;" value="Leader">
+                            <input type="text" name="m_college" placeholder="COLLEGE *" required class="bg-input border border-border px-3 py-2 font-mono text-xs focus:outline-none focus:border-blood w-full" style="font-family: 'JetBrains Mono', monospace;">
+                            <input type="text" name="m_github" placeholder="GITHUB (optional)" class="bg-input border border-border px-3 py-2 font-mono text-xs focus:outline-none focus:border-blood w-full" style="font-family: 'JetBrains Mono', monospace;">
+                        </div>
                     </div>
 
-                    <!-- Member 2 -->
-                    <div class="member-row grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 bg-black/40 p-6 border border-border/50 relative mt-4">
-                        <input type="text" name="m_name" placeholder="FULL NAME" required class="bg-input border border-border px-3 py-2 font-mono text-xs focus:outline-none focus:border-blood w-full">
-                        <input type="email" name="m_email" placeholder="EMAIL" required class="bg-input border border-border px-3 py-2 font-mono text-xs focus:outline-none focus:border-blood w-full">
-                        <input type="text" name="m_phone" placeholder="MOBILE NUMBER" required class="bg-input border border-border px-3 py-2 font-mono text-xs focus:outline-none focus:border-blood w-full">
-                        <input type="text" name="m_role" placeholder="ROLE (e.g. Developer)" required class="bg-input border border-border px-3 py-2 font-mono text-xs focus:outline-none focus:border-blood w-full">
-                        <input type="url" name="m_github" placeholder="GITHUB PROFILE URL" class="bg-input border border-border px-3 py-2 font-mono text-xs focus:outline-none focus:border-blood w-full md:col-span-2 lg:col-span-4">
+                    <!-- Member 2 (required) -->
+                    <div class="member-row bg-black/40 p-4 border border-border/50 relative">
+                        <div class="absolute -top-2 -left-2 bg-card text-muted-foreground font-mono text-[10px] px-2 py-0.5 border border-border" style="font-family: 'JetBrains Mono', monospace;">MEMBER 2</div>
+                        <div class="member-row-grid">
+                            <input type="text" name="m_name" placeholder="FULL NAME *" required class="bg-input border border-border px-3 py-2 font-mono text-xs focus:outline-none focus:border-blood w-full" style="font-family: 'JetBrains Mono', monospace;">
+                            <input type="email" name="m_email" placeholder="EMAIL *" required class="bg-input border border-border px-3 py-2 font-mono text-xs focus:outline-none focus:border-blood w-full" style="font-family: 'JetBrains Mono', monospace;">
+                            <div class="phone-wrapper">
+                                <span class="phone-prefix" style="font-size:10px;">+91</span>
+                                <input type="text" name="m_phone" placeholder="10-DIGIT PHONE *" required maxlength="10" pattern="\d{10}" class="bg-input border border-border px-2 py-2 font-mono text-xs focus:outline-none focus:border-blood w-full" style="font-family: 'JetBrains Mono', monospace;">
+                            </div>
+                            <input type="text" name="m_role" placeholder="ROLE (e.g. Developer) *" required class="bg-input border border-border px-3 py-2 font-mono text-xs focus:outline-none focus:border-blood w-full" style="font-family: 'JetBrains Mono', monospace;">
+                            <input type="text" name="m_college" placeholder="COLLEGE *" required class="bg-input border border-border px-3 py-2 font-mono text-xs focus:outline-none focus:border-blood w-full" style="font-family: 'JetBrains Mono', monospace;">
+                            <input type="text" name="m_github" placeholder="GITHUB (optional)" class="bg-input border border-border px-3 py-2 font-mono text-xs focus:outline-none focus:border-blood w-full" style="font-family: 'JetBrains Mono', monospace;">
+                        </div>
                     </div>
                 </div>
             </div>
 
             <div id="formError" class="font-mono text-xs text-blood text-center" style="font-family: 'JetBrains Mono', monospace;"></div>
+
+            <!-- Non-dismissible mandatory note -->
+            <div class="mandatory-note">
+                ⚠️ <strong>IMPORTANT:</strong> Filling all fields correctly and completely is compulsory — perks and eligibility are decided based on this data. Double-check before submitting.
+            </div>
 
             <button type="submit" id="submitBtn" class="w-full font-impact tracking-widest text-lg px-6 py-4 bg-blood text-primary-foreground shadow-brutal hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all cursor-pointer" style="font-family: 'Bebas Neue', sans-serif;">
                 INITIATE TEAM PROFILE
