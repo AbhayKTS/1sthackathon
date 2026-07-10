@@ -783,6 +783,18 @@ section {
     background-color: var(--strike-red);
 }
 
+.treasury .section-title,
+.sponsors-section .section-title,
+.squad-section .section-title {
+    display: inline-block;
+}
+
+.treasury .section-title::after,
+.sponsors-section .section-title::after,
+.squad-section .section-title::after {
+    width: 100%;
+}
+
 /* Animated Event Banner */
 .event-banner {
     position: relative;
