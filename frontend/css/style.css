@@ -4133,6 +4133,11 @@ footer .container {
     text-shadow: 0 0 10px rgba(205, 127, 50, 0.5);
 }
 
+.community-tier .tier-name {
+    color: #00d4ff;
+    text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+}
+
 
 .sponsor-box {
     width: 350px;
@@ -4889,6 +4894,8 @@ footer a:hover {
 .silver-tier .tier-name::after   { background: linear-gradient(to right, transparent, #c0c0c0); }
 .bronze-tier .tier-name::before,
 .bronze-tier .tier-name::after   { background: linear-gradient(to right, transparent, #cd7f32); }
+.community-tier .tier-name::before,
+.community-tier .tier-name::after { background: linear-gradient(to right, transparent, #00d4ff); }
 
 /* Sponsor box glassmorphism upgrade */
 .sponsor-box {
@@ -4980,6 +4987,14 @@ footer a:hover {
         0 20px 60px rgba(0,0,0,0.7),
         0 0 30px rgba(205,127,50,0.2) !important;
     border-color: rgba(205,127,50,0.55) !important;
+}
+
+.community-tier:hover .sponsor-box {
+    box-shadow:
+        0 0 0 1px rgba(0,212,255,0.1) inset,
+        0 20px 60px rgba(0,0,0,0.7),
+        0 0 30px rgba(0,212,255,0.2) !important;
+    border-color: rgba(0,212,255,0.55) !important;
 }
 
 /* Animated border trace on hover via gradient border trick */
