@@ -1399,7 +1399,6 @@ footer .container {
     min-height: 100vh;
     padding: 120px 20px 60px;
     overflow: hidden;
-    background: linear-gradient(180deg, rgba(27, 5, 24, 0.6) 0%, rgba(15, 7, 16, 0.6) 100%);
 }
 
 .tracks-background {
@@ -4351,7 +4350,6 @@ footer a:hover {
 /* --- SQUAD SECTION --- */
 .squad-section {
     padding: var(--section-gap) 0;
-    background: linear-gradient(180deg, rgba(12, 4, 16, 0.6) 0%, rgba(23, 4, 20, 0.6) 100%);
     position: relative;
     border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
@@ -4823,7 +4821,7 @@ footer a:hover {
    ────────────────────────────────────────────── */
 
 /* Enhanced section background */
-.sponsors-section {
+.sponsors-section, .treasury, .tracks-section, .squad-section {
     background:
         radial-gradient(ellipse at 20% 50%, rgba(80,0,0,0.15) 0%, transparent 55%),
         radial-gradient(ellipse at 80% 50%, rgba(50,0,30,0.1) 0%, transparent 55%),
@@ -4833,7 +4831,7 @@ footer a:hover {
 }
 
 /* Subtle scanline overlay on sponsors */
-.sponsors-section::before {
+.sponsors-section::before, .treasury::before, .tracks-section::before, .squad-section::before {
     content: '';
     position: absolute;
     inset: 0;
@@ -5028,7 +5026,7 @@ footer a:hover {
     align-items: center;
     justify-content: center;
     text-align: center;
-    padding-top: 10px;
+    padding-top: 40px;
     gap: 12px;
 }
 
@@ -5098,10 +5096,10 @@ footer a:hover {
 
 .rh-footer-nav-shorts {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     justify-content: center;
     align-items: center;
-    gap: 20px;
+    gap: 15px;
     margin-top: 20px;
 }
 
@@ -5160,6 +5158,15 @@ footer a:hover {
     height: 1px;
     background: var(--strike-red);
     opacity: 0.6;
+}
+
+@media (min-width: 901px) {
+    .rh-footer-inner .rh-footer-col:first-child {
+        transform: translateX(-50px);
+    }
+    .rh-footer-inner .rh-quick-access {
+        transform: translateX(50px);
+    }
 }
 
 .rh-contact-link {

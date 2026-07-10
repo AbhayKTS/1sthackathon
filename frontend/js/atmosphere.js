@@ -36,7 +36,7 @@ const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)
         H = canvas.height = window.innerHeight;
     }, { passive: true });
 
-    const PARTICLE_COUNT = 150;
+    const PARTICLE_COUNT = 200;
     const particles = [];
 
     function randomBetween(a, b) { return a + Math.random() * (b - a); }
@@ -45,32 +45,47 @@ const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)
         constructor() { this.reset(true); }
         reset(initial = false) {
             this.x = randomBetween(0, W);
-            this.y = initial ? randomBetween(0, H) : H + 10;
-            this.size = randomBetween(1, 3);
-            this.speedY = randomBetween(0.2, 0.8);
-            this.speedX = randomBetween(-0.2, 0.2);
-            this.opacity = randomBetween(0.4, 1.0);
+            this.y = initial ? randomBetween(0, H) : -15; // start from top
+            this.size = randomBetween(2, 5); // slightly larger for petals
+            this.speedY = randomBetween(0.4, 1.2); // falling down speed reduced
+            this.speedX = randomBetween(-0.5, 0.5); // horizontal drift reduced
+            this.opacity = randomBetween(0.5, 1.0);
             this.opacityDelta = randomBetween(0.002, 0.005) * (Math.random() > 0.5 ? 1 : -1);
+            this.angle = randomBetween(0, Math.PI * 2);
+            this.spin = randomBetween(-0.03, 0.03); // rotating while falling
         }
         update() {
-            this.y -= this.speedY;
-            this.x += this.speedX + Math.sin(this.y * 0.01) * 0.1;
+            this.y += this.speedY; // fall downwards
+            this.x += this.speedX + Math.sin(this.y * 0.01) * 0.3; // drift
             this.opacity += this.opacityDelta;
+            this.angle += this.spin; // apply rotation
             if (this.opacity > 1 || this.opacity < 0.2) this.opacityDelta *= -1;
-            if (this.y < -10) this.reset();
+            if (this.y > H + 15) this.reset(); // reset at bottom
         }
         draw() {
             ctx.save();
+            ctx.translate(this.x, this.y);
+            ctx.rotate(this.angle);
             ctx.globalAlpha = this.opacity;
-            // Red glowing ember effect for all particles
-            const grad = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.size * 2.5);
-            grad.addColorStop(0, 'rgba(255, 70, 70, 1)'); // Brighter red
-            grad.addColorStop(0.4, 'rgba(230, 57, 70, 0.8)');
-            grad.addColorStop(1, 'transparent');
+            
+            // Petal gradient (bright red/pinkish for sakura/blood petal)
+            const grad = ctx.createLinearGradient(0, -this.size, 0, this.size * 2);
+            grad.addColorStop(0, 'rgba(255, 70, 90, 1)');
+            grad.addColorStop(1, 'rgba(220, 20, 60, 0.8)');
+            
             ctx.fillStyle = grad;
             ctx.beginPath();
-            ctx.arc(this.x, this.y, this.size * 2, 0, Math.PI * 2);
+            // Draw a petal shape (teardrop / almond)
+            ctx.moveTo(0, -this.size);
+            ctx.quadraticCurveTo(this.size, 0, 0, this.size * 2);
+            ctx.quadraticCurveTo(-this.size, 0, 0, -this.size);
             ctx.fill();
+            
+            // Optional: add a tiny glowing center/blur
+            ctx.shadowColor = 'rgba(255, 70, 70, 0.8)';
+            ctx.shadowBlur = 8;
+            ctx.fill();
+            
             ctx.restore();
         }
     }
@@ -377,12 +392,15 @@ const AudioEngine = (() => {
     document.querySelectorAll('[data-copy-email]').forEach(btn => {
         btn.addEventListener('click', () => {
             const email = btn.getAttribute('data-copy-email');
+            const valueSpan = btn.querySelector('.link-value');
+            const targetEl = valueSpan || btn;
+            
             navigator.clipboard.writeText(email).then(() => {
-                const orig = btn.textContent;
-                btn.textContent = 'COPIED!';
+                const orig = targetEl.textContent;
+                targetEl.textContent = 'COPIED!';
                 btn.classList.add('copied');
                 setTimeout(() => {
-                    btn.textContent = orig;
+                    targetEl.textContent = orig;
                     btn.classList.remove('copied');
                 }, 2000);
             }).catch(() => {
