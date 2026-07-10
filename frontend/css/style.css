@@ -4167,6 +4167,13 @@ footer .container {
     object-fit: contain;
 }
 
+.community-tier .sponsor-box img:not(.box-chain) {
+    max-width: 100%;
+    max-height: 100%;
+    transform: scale(1.2);
+}
+
+
 .box-chain {
     position: absolute;
     height: 60px;
