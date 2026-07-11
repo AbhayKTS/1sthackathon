@@ -46,17 +46,12 @@
       {
         "source": "/admin",
         "destination": "/cmd-center.html",
-        "type": 302
+        "type": 301
       },
       {
         "source": "/admin.html",
         "destination": "/cmd-center.html",
-        "type": 302
-      },
-      {
-        "source": "/cmd-center",
-        "destination": "https://revengershack.vercel.app/cmd-center",
-        "type": 302
+        "type": 301
       }
     ]
   },
