@@ -19,30 +19,26 @@ import {
     signOut
 } from "./firebase-init.js";
 
-// ─── SECURITY: Session Inactivity Timeout ───────────────────────
-const SESSION_TIMEOUT_MS = 24 * 60 * 60 * 1000; // 24 hours
-let inactivityTimer = null;
-
-function resetInactivityTimer() {
-    if (inactivityTimer) clearTimeout(inactivityTimer);
-    inactivityTimer = setTimeout(() => {
-        // Auto-logout on inactivity
-        signOut(auth).then(() => {
-            sessionStorage.clear();
-            localStorage.removeItem('rh_login_attempts');
-            alert('Session expired due to inactivity. Please log in again.');
-            window.location.href = '/login';
-        });
-    }, SESSION_TIMEOUT_MS);
+// Toast Notification Helper
+function showToast(message, type = "success") {
+    const toast = document.getElementById("toastNotification");
+    if (!toast) return;
+    toast.textContent = message.toUpperCase();
+    toast.style.display = "block";
+    if (type === "success") {
+        toast.style.background = "rgba(16, 185, 129, 0.15)";
+        toast.style.borderColor = "var(--success)";
+        toast.style.color = "var(--success)";
+    } else {
+        toast.style.background = "rgba(229, 9, 20, 0.15)";
+        toast.style.borderColor = "var(--primary)";
+        toast.style.color = "var(--primary)";
+    }
+    setTimeout(() => {
+        toast.style.display = "none";
+    }, 4000);
 }
 
-// Track user activity
-['mousemove', 'keydown', 'scroll', 'click', 'touchstart'].forEach(event => {
-    document.addEventListener(event, resetInactivityTimer, { passive: true });
-});
-resetInactivityTimer(); // Start timer on load
-
-// ─── SECURITY: Input Sanitization Helper ────────────────────────
 function sanitizeHTML(str) {
     if (typeof str !== 'string') return '';
     return str.trim()
@@ -53,1234 +49,821 @@ function sanitizeHTML(str) {
         .replace(/'/g, '&#x27;');
 }
 
-// DOM Elements
-const userEmailDisplay = document.getElementById("userEmailDisplay");
-const logoutBtn = document.getElementById("logoutBtn");
-
-const statInvited = document.getElementById("statInvited");
-const statUsers = document.getElementById("statUsers");
-const statSubmitted = document.getElementById("statSubmitted");
-const statApproved = document.getElementById("statApproved");
-
-const statBoxInvited = document.getElementById("statBoxInvited");
-const statBoxUsers = document.getElementById("statBoxUsers");
-const statBoxSubmitted = document.getElementById("statBoxSubmitted");
-const statBoxApproved = document.getElementById("statBoxApproved");
-
-const teamsTableBody = document.getElementById("teamsTableBody");
-const invitedTeamsTableBody = document.getElementById("invitedTeamsTableBody");
-const submissionsTableBody = document.getElementById("submissionsTableBody");
-
-const teamManagementCard = document.getElementById("teamManagementCard");
-const invitedTeamsCard = document.getElementById("invitedTeamsCard");
-const teamManagementHeader = teamManagementCard ? teamManagementCard.querySelector('.card-header') : null;
-
-// Tab toggling and filter logic
-let currentTeamFilter = 'All';
-
-if (statBoxInvited) {
-    statBoxInvited.addEventListener("click", () => {
-        if (teamManagementCard) teamManagementCard.style.display = "none";
-        if (invitedTeamsCard) invitedTeamsCard.style.display = "block";
-    });
-}
-
-const showTeamManagement = (filter = 'All') => {
-    currentTeamFilter = filter;
-    if (teamManagementCard) teamManagementCard.style.display = "block";
-    if (invitedTeamsCard) invitedTeamsCard.style.display = "none";
-    if (teamManagementHeader) {
-        teamManagementHeader.textContent = filter === 'Approved' ? 'Team Management (Approved)' : 'Team Management (All)';
-    }
-    if (typeof renderTeamsTable === 'function') renderTeamsTable();
-};
-
-if (statBoxUsers) statBoxUsers.addEventListener("click", () => showTeamManagement('All'));
-if (statBoxSubmitted) statBoxSubmitted.addEventListener("click", () => showTeamManagement('All'));
-if (statBoxApproved) statBoxApproved.addEventListener("click", () => showTeamManagement('Approved'));
-
-
-const roundSelect = document.getElementById("roundSelect");
-const activateRoundBtn = document.getElementById("activateRoundBtn");
-
-const announcementForm = document.getElementById("announcementForm");
-const annTitle = document.getElementById("annTitle");
-const annMessage = document.getElementById("annMessage");
-const annStatus = document.getElementById("annStatus");
-const annSubmitBtn = document.getElementById("annSubmitBtn");
-
-let currentAdminDoc = null;
-
-// Firebase listener unsubscribers and memory cache
-let teamsUnsubscriber = null;
-let invitedTeamsUnsubscriber = null;
-let submissionsUnsubscriber = null;
-
-const teamCache = new Map();
+// Global state variables
+let idToken = null;
+let currentAdminRole = null;
 const roundCache = new Map();
 
-function cleanupListeners() {
-    if (teamsUnsubscriber) {
-        teamsUnsubscriber();
-        teamsUnsubscriber = null;
+// Elements
+const userEmailDisplay = document.getElementById("userEmailDisplay");
+const roleBadgeDisplay = document.getElementById("roleBadgeDisplay");
+const logoutBtn = document.getElementById("logoutBtn");
+
+// ─── AUTH & INITIALIZATION ───────────────────────────────────────────────────
+onAuthStateChanged(auth, async (user) => {
+    if (!user) {
+        window.location.href = "/login.html";
+        return;
     }
-    if (invitedTeamsUnsubscriber) {
-        invitedTeamsUnsubscriber();
-        invitedTeamsUnsubscriber = null;
+
+    try {
+        const userDocRef = doc(db, "users", user.uid);
+        const userDocSnap = await getDoc(userDocRef);
+
+        if (!userDocSnap.exists()) {
+            signOut(auth);
+            window.location.href = "/login.html";
+            return;
+        }
+
+        const data = userDocSnap.data();
+        if (data.role !== "admin" && data.role !== "super_admin") {
+            window.location.href = "/dashboard.html";
+            return;
+        }
+
+        currentAdminRole = data.role;
+        idToken = await user.getIdToken();
+        
+        userEmailDisplay.textContent = user.email;
+        roleBadgeDisplay.textContent = currentAdminRole === "super_admin" ? "SUPER ADMIN" : "ADMINISTRATOR";
+        if (currentAdminRole === "super_admin") {
+            document.body.classList.add("is-superadmin");
+        }
+
+        // Initialize lists & streams
+        precacheRounds().then(() => {
+            initDashboardRealtime();
+            initTeamsRealtime();
+            initSubmissionsRealtime();
+            initUserAccounts();
+            initMentorSessions();
+            initEvaluations();
+            initMailQueue();
+            initSheetsSyncQueue();
+            initActivityLogs();
+            initSystemSettings();
+        });
+
+    } catch (err) {
+        console.error("Auth validation failed:", err);
+        signOut(auth);
     }
-    if (submissionsUnsubscriber) {
-        submissionsUnsubscriber();
-        submissionsUnsubscriber = null;
-    }
-}
+});
+
+logoutBtn.addEventListener("click", () => {
+    signOut(auth).then(() => {
+        window.location.href = "/login.html";
+    });
+});
 
 async function precacheRounds() {
     try {
-        const roundsRef = collection(db, "rounds");
-        const snapshot = await getDocs(roundsRef);
+        const snapshot = await getDocs(collection(db, "rounds"));
         snapshot.forEach(d => {
             roundCache.set(d.id, d.data().title || d.id);
         });
     } catch (e) {
-        console.error("Error pre-caching rounds:", e);
+        console.error("Error caching rounds:", e);
     }
 }
 
-// Enforce Auth and Admin Role
-onAuthStateChanged(auth, async (user) => {
-    cleanupListeners();
+// ─── TAB 1: DASHBOARD OVERVIEW ────────────────────────────────────────────────
+function initDashboardRealtime() {
+    // Stat counters
+    onSnapshot(collection(db, "invitedTeams"), (snap) => {
+        document.getElementById("statInvited").textContent = snap.size;
+    });
+    onSnapshot(collection(db, "users"), (snap) => {
+        document.getElementById("statUsers").textContent = snap.size;
+    });
+    onSnapshot(collection(db, "submissions"), (snap) => {
+        document.getElementById("statSubmitted").textContent = snap.size;
+    });
+    onSnapshot(query(collection(db, "teams")), (snap) => {
+        const approvedCount = snap.docs.filter(d => d.data().status === "Approved").length;
+        document.getElementById("statApproved").textContent = approvedCount;
+    });
 
-    if (!user) {
-        window.location.href = '/login';
-        return;
-    }
-    
-    try {
-        const userRef = doc(db, "users", user.uid);
-        const userSnap = await getDoc(userRef);
+    // Active Round Widget
+    onSnapshot(collection(db, "rounds"), (snap) => {
+        const activeRound = snap.docs.find(d => d.data().status === "Active");
+        const statusBox = document.getElementById("activeRoundStatus");
         
-        if (userSnap.exists()) {
-            const data = userSnap.data();
-            if (data.role !== "admin" && data.role !== "super_admin") {
-                // Not an admin, kick to dashboard
-                window.location.href = '/dashboard.html';
-                return;
-            }
-            currentAdminDoc = data;
-            const isSuperAdmin = data.role === 'super_admin';
-            userEmailDisplay.textContent = isSuperAdmin ? `SUPER ADMIN: ${user.email}` : `ADMIN: ${user.email}`;
+        // Also populate select dropdowns
+        const roundSelect = document.getElementById("roundSelect");
+        const deadlineRoundSelect = document.getElementById("deadlineRoundSelect");
+        
+        roundSelect.innerHTML = '<option value="">Select a round to activate...</option>';
+        deadlineRoundSelect.innerHTML = '<option value="">Select round to set deadline...</option>';
+        
+        snap.docs.forEach(d => {
+            const data = d.data();
+            const optionText = `${data.title} (${data.status})`;
             
-            // Unlock super_admin-only UI
-            if (isSuperAdmin) {
-                document.body.classList.add('is-superadmin');
-                // Also show superadmin-only inline elements (overrides display:none)
-                document.querySelectorAll('.superadmin-only').forEach(el => {
-                    el.style.removeProperty('display');
-                });
-                loadAdmins(user);
-            }
-            
-            // Precache rounds and load admin data
-            await precacheRounds();
-            loadTeams();
-            loadInvitedTeams();
-            loadSubmissions();
-            fetchAnalytics(user);
-            listenToActiveRoundStatus(); // Live round status in admin panel
-            
-        } else {
-            // No user doc found, redirect to login
-            window.location.href = '/login';
-        }
-    } catch (error) {
-        console.error("Error verifying admin:", error);
-    }
-});
+            const opt1 = document.createElement("option");
+            opt1.value = d.id;
+            opt1.textContent = optionText;
+            roundSelect.appendChild(opt1);
 
-async function fetchAnalytics(user) {
-    try {
-        const token = await user.getIdToken();
-        const res = await fetch(`${API_BASE}/admin/analytics`, {
-            headers: {
-                "Authorization": `Bearer ${token}`
-            }
+            const opt2 = document.createElement("option");
+            opt2.value = d.id;
+            opt2.textContent = optionText;
+            deadlineRoundSelect.appendChild(opt2);
         });
 
-        if (res.ok) {
-            const data = await res.json();
-            if (data.success && data.data) {
-                const metrics = data.data;
-                if (statInvited) statInvited.textContent = metrics.totalInvited;
-                if (statUsers) statUsers.textContent = metrics.totalUsers;
-                if (statSubmitted) statSubmitted.textContent = metrics.totalTeamsSubmitted;
-                if (statApproved) statApproved.textContent = metrics.totalTeamsApproved;
-                const statLeads = document.getElementById('statLeads');
-                if (statLeads && metrics.totalLeads != null) statLeads.textContent = metrics.totalLeads;
-            }
-        } else {
-            console.error("Failed to fetch analytics", await res.text());
-        }
-    } catch (e) {
-        console.error("Error fetching analytics", e);
-    }
-}
-
-// Logout — clear all session data
-logoutBtn.addEventListener("click", () => {
-    if (inactivityTimer) clearTimeout(inactivityTimer);
-    cleanupListeners();
-    signOut(auth).then(() => {
-        sessionStorage.clear();
-        localStorage.removeItem('rh_login_attempts');
-        window.location.href = '/login';
-    });
-});
-
-let currentTeamsDocs = [];
-
-function renderTeamsTable() {
-    teamsTableBody.innerHTML = "";
-    
-    let docsToRender = currentTeamsDocs;
-    if (currentTeamFilter === 'Approved') {
-        docsToRender = currentTeamsDocs.filter(doc => doc.data().status === 'Approved');
-    }
-
-    if (docsToRender.length === 0) {
-        teamsTableBody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: rgba(255,255,255,0.5);">No teams found for this view.</td></tr>`;
-        return;
-    }
-
-    docsToRender.forEach((doc) => {
-        const team = doc.data();
-        const teamId = doc.id;
-        
-        // Populate persistent teamCache
-        teamCache.set(teamId, team.teamName || 'Unnamed');
-
-        const tr = document.createElement("tr");
-        
-        const membersList = team.members && team.members.length > 0 ? team.members.map(m => sanitizeHTML(m.name)).join(", ") : "None";
-        const leaderInfo = team.leaderName ? `<strong>${sanitizeHTML(team.leaderName)}</strong> (Leader)<br/><span style="font-size: 0.8em; color: rgba(255,255,255,0.7);">${membersList}</span>` : membersList;
-        
-        const contactInfo = `
-            <span style="color: rgba(255,255,255,0.9);">${team.college ? sanitizeHTML(team.college) : 'No College'}</span><br/>
-            <span style="font-size: 0.8em; color: rgba(255,255,255,0.6);">${team.leaderEmail ? sanitizeHTML(team.leaderEmail) : 'No Email'}</span><br/>
-            <span style="font-size: 0.8em; color: rgba(255,255,255,0.6);">${team.leaderPhone ? sanitizeHTML(team.leaderPhone) : 'No Phone'}</span>
-        `;
-
-        let statusColor = "rgba(255,255,255,0.5)";
-        let statusText = team.status || "Unknown";
-        if (statusText === 'Approved') statusColor = "#4ade80";
-        if (statusText === 'Rejected') statusColor = "var(--strike-red)";
-        if (statusText === 'Submitted') statusColor = "#fbbf24";
-        if (statusText === 'Incomplete') statusColor = "#f97316";
-
-        let actionHtml = `<div style="display: flex; gap: 5px; align-items: center; flex-wrap: wrap;">`;
-        const updatedMs = team.updatedAt?.toMillis ? team.updatedAt.toMillis() : Date.now();
-        
-        if (statusText !== 'Approved' && statusText !== 'Rejected') {
-            actionHtml += `
-                <button class="btn-outline review-btn" data-action="approve" data-id="${sanitizeHTML(teamId)}" data-updated="${updatedMs}" style="padding: 4px 8px; font-size: 0.7rem; border-color: #4ade80; color: #4ade80;">APPROVE</button>
-                <button class="btn-outline review-btn" data-action="reject" data-id="${sanitizeHTML(teamId)}" data-updated="${updatedMs}" style="padding: 4px 8px; font-size: 0.7rem; border-color: var(--strike-red); color: var(--strike-red);">REJECT</button>
-                <button class="btn-outline review-btn" data-action="needChanges" data-id="${sanitizeHTML(teamId)}" data-updated="${updatedMs}" style="padding: 4px 8px; font-size: 0.7rem; border-color: #f97316; color: #f97316;">CHANGES</button>
+        if (activeRound) {
+            const data = activeRound.data();
+            const dl = data.deadline ? new Date(data.deadline.seconds * 1000).toLocaleString() : "No deadline set";
+            statusBox.innerHTML = `
+                <div style="font-weight: 600; color: #fff; margin-bottom: 4px;">ACTIVE ROUND: ${sanitizeHTML(data.title)}</div>
+                <div>Status: ${sanitizeHTML(data.status)}</div>
+                <div>Deadline: ${sanitizeHTML(dl)}</div>
             `;
-            if (statusText === 'Incomplete' && team.needChangesHistory && team.needChangesHistory.length > 0) {
-                const latestNote = team.needChangesHistory[team.needChangesHistory.length - 1].notes;
-                actionHtml += `<span style="font-size: 0.6rem; color: rgba(255,255,255,0.5); font-style: italic; width: 100%;">Note: ${sanitizeHTML(latestNote.substring(0, 20))}...</span>`;
-            }
         } else {
-            actionHtml += `<span style="font-size: 0.7rem; color: rgba(255,255,255,0.3);">NO ACTION</span>`;
+            statusBox.innerHTML = "No active rounds currently.";
         }
+    });
+
+    // Recent Submissions Feed
+    onSnapshot(query(collection(db, "submissions"), orderBy("submittedAt", "desc")), (snap) => {
+        const recentSubmissionsBody = document.getElementById("recentSubmissionsBody");
+        recentSubmissionsBody.innerHTML = "";
         
-        actionHtml += `<button class="btn-outline delete-team-btn" data-id="${sanitizeHTML(teamId)}" style="padding: 4px 8px; font-size: 0.7rem; border-color: #ef4444; color: #ef4444; margin-left: auto;">DEL</button>`;
-        actionHtml += `</div>`;
-
-        tr.innerHTML = `
-            <td><strong>${sanitizeHTML(team.teamName || 'Unnamed')}</strong></td>
-            <td>${leaderInfo}</td>
-            <td>${contactInfo}</td>
-            <td><span style="font-family: var(--font-mono); font-size: 0.8rem; font-weight: bold; color: ${statusColor};">${sanitizeHTML(statusText)}</span></td>
-            <td>${actionHtml}</td>
-        `;
-        teamsTableBody.appendChild(tr);
-    });
-
-    // Attach event listeners
-    document.querySelectorAll('.review-btn').forEach(btn => {
-        btn.addEventListener('click', handleReviewAction);
-    });
-    document.querySelectorAll('.delete-team-btn').forEach(btn => {
-        btn.addEventListener('click', handleDeleteTeam);
-    });
-}
-
-// Load Teams
-function loadTeams() {
-    if (teamsUnsubscriber) teamsUnsubscriber();
-
-    const teamsRef = collection(db, "teams");
-    teamsUnsubscriber = onSnapshot(teamsRef, (snapshot) => {
-        currentTeamsDocs = snapshot.docs;
-        renderTeamsTable();
-        renderScoresTable();
-    }, (error) => {
-        console.error("Error loading teams:", error);
-    });
-}
-
-function renderScoresTable() {
-    const scoresTableBody = document.getElementById("scoresTableBody");
-    if (!scoresTableBody) return;
-    
-    // Only show Approved teams in the scores table
-    const approvedDocs = currentTeamsDocs.filter(doc => doc.data().status === 'Approved');
-
-    if (approvedDocs.length === 0) {
-        scoresTableBody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: rgba(255,255,255,0.5);">No approved teams found.</td></tr>`;
-        return;
-    }
-
-    // Sort by total score descending
-    approvedDocs.sort((a, b) => (b.data().score || 0) - (a.data().score || 0));
-
-    scoresTableBody.innerHTML = "";
-    approvedDocs.forEach((docSnap, index) => {
-        const teamId = docSnap.id;
-        const team = docSnap.data();
-        const scores = team.scores || { r1: 0, r2: 0, r3: 0 };
-        const total = team.score || 0;
-        const teamName = team.teamName || 'Unnamed';
-        
-        const rank = index + 1;
-        let rankColor = "var(--muted-foreground)";
-        if (rank === 1) rankColor = "var(--gold, #FFD700)";
-        else if (rank === 2) rankColor = "var(--silver, #C0C0C0)";
-        else if (rank === 3) rankColor = "var(--bronze, #CD7F32)";
-
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-            <td>
-                <span style="color:${rankColor}; font-weight:bold; font-family:var(--font-mono); margin-right:8px;">#${rank}</span>
-                <strong>${sanitizeHTML(teamName)}</strong>
-            </td>
-            <td><input type="number" class="score-input r1-score" data-id="${sanitizeHTML(teamId)}" value="${scores.r1 || 0}" style="width:60px; background:var(--surface-2); border:1px solid var(--border); color:var(--foreground); padding:4px;"></td>
-            <td><input type="number" class="score-input r2-score" data-id="${sanitizeHTML(teamId)}" value="${scores.r2 || 0}" style="width:60px; background:var(--surface-2); border:1px solid var(--border); color:var(--foreground); padding:4px;"></td>
-            <td><input type="number" class="score-input r3-score" data-id="${sanitizeHTML(teamId)}" value="${scores.r3 || 0}" style="width:60px; background:var(--surface-2); border:1px solid var(--border); color:var(--foreground); padding:4px;"></td>
-            <td style="font-family:var(--font-mono); font-weight:bold; color:var(--accent);">${total}</td>
-            <td>
-                <button class="btn-outline save-score-btn" data-id="${sanitizeHTML(teamId)}" style="padding: 4px 8px; font-size: 0.7rem; border-color: #4ade80; color: #4ade80;">SAVE</button>
-            </td>
-        `;
-        scoresTableBody.appendChild(tr);
-    });
-
-    // Attach listeners
-    document.querySelectorAll('.save-score-btn').forEach(btn => {
-        btn.addEventListener('click', handleSaveScore);
-    });
-}
-
-async function handleSaveScore(e) {
-    const btn = e.target;
-    const teamId = btn.getAttribute('data-id');
-    const tr = btn.closest('tr');
-    
-    const r1 = parseInt(tr.querySelector('.r1-score').value) || 0;
-    const r2 = parseInt(tr.querySelector('.r2-score').value) || 0;
-    const r3 = parseInt(tr.querySelector('.r3-score').value) || 0;
-    const totalScore = r1 + r2 + r3;
-
-    btn.disabled = true;
-    btn.textContent = "SAVING...";
-
-    try {
-        await updateDoc(doc(db, "teams", teamId), {
-            scores: { r1, r2, r3 },
-            score: totalScore,
-            updatedAt: serverTimestamp()
-        });
-        // The onSnapshot listener will immediately trigger and re-render with the new score.
-    } catch (err) {
-        console.error("Error saving score:", err);
-        alert("Failed to save score.");
-        btn.disabled = false;
-        btn.textContent = "SAVE";
-    }
-}
-
-async function handleDeleteTeam(e) {
-    const teamId = e.target.getAttribute('data-id');
-    if (!confirm("Are you sure you want to permanently DELETE this team and all its data?")) return;
-    try {
-        await deleteDoc(doc(db, "teams", teamId));
-    } catch (err) {
-        console.error("Error deleting team:", err);
-        alert("Failed to delete team.");
-    }
-}
-
-// Load Invited Teams
-function loadInvitedTeams() {
-    if (invitedTeamsUnsubscriber) invitedTeamsUnsubscriber();
-
-    const invitedTeamsRef = collection(db, "invitedTeams");
-    invitedTeamsUnsubscriber = onSnapshot(invitedTeamsRef, (snapshot) => {
-        if (snapshot.empty) {
-            invitedTeamsTableBody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: rgba(255,255,255,0.5);">No invited teams found.</td></tr>`;
+        if (snap.empty) {
+            recentSubmissionsBody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: var(--muted-foreground);">No submissions yet.</td></tr>';
             return;
         }
 
-        invitedTeamsTableBody.innerHTML = "";
-         snapshot.forEach((docSnap) => {
-            const data = docSnap.data();
-            const inviteId = docSnap.id;
-
+        snap.docs.slice(0, 5).forEach(d => {
+            const data = d.data();
             const tr = document.createElement("tr");
-            const showInvite = data.status === 'Draft' || !data.status;
+            const time = data.submittedAt ? new Date(data.submittedAt.seconds * 1000).toLocaleTimeString() : "Just now";
             tr.innerHTML = `
-                <td><strong>${sanitizeHTML(data.teamName || 'Unnamed')}</strong></td>
-                <td>${sanitizeHTML(data.leaderName || 'N/A')}</td>
-                <td><span style="font-family: var(--font-mono); font-size: 0.8rem; color: rgba(255,255,255,0.8);">${sanitizeHTML(data.college || 'N/A')}</span></td>
-                <td><span class="role-tag" style="background: rgba(0, 180, 216, 0.1); border-color: var(--accent); color: var(--accent); font-weight: 500; font-size: 0.75rem;">${sanitizeHTML(data.status || 'Draft')}</span></td>
+                <td><strong>${sanitizeHTML(data.teamId.slice(0, 10))}...</strong></td>
+                <td>${sanitizeHTML(data.roundId)}</td>
+                <td style="color: var(--muted-foreground);">${time}</td>
+            `;
+            recentSubmissionsBody.appendChild(tr);
+        });
+    });
+
+    // Announcements Feed
+    onSnapshot(query(collection(db, "announcements"), orderBy("timestamp", "desc")), (snap) => {
+        const announcementFeedBody = document.getElementById("announcementFeedBody");
+        announcementFeedBody.innerHTML = "";
+        
+        if (snap.empty) {
+            announcementFeedBody.innerHTML = '<div style="font-size: 11px; color: var(--muted-foreground); text-align: center;">No announcements.</div>';
+            return;
+        }
+
+        snap.docs.slice(0, 4).forEach(d => {
+            const data = d.data();
+            const time = data.timestamp ? new Date(data.timestamp.seconds * 1000).toLocaleDateString() : "";
+            const div = document.createElement("div");
+            div.style.cssText = "padding: 12px; border: 1px solid var(--border); border-radius: 4px; background: rgba(0,0,0,0.15);";
+            div.innerHTML = `
+                <div style="display: flex; justify-content: space-between; font-weight: 600; font-size: 11px; color: #fff; margin-bottom: 4px;">
+                    <span>${sanitizeHTML(data.title)}</span>
+                    <span style="color: var(--muted-foreground); font-weight: normal; font-size: 9px;">${time}</span>
+                </div>
+                <p style="font-size: 11px; color: var(--muted-foreground); margin: 0; line-height: 1.4;">${sanitizeHTML(data.message)}</p>
+            `;
+            announcementFeedBody.appendChild(div);
+        });
+    });
+}
+
+// ─── TAB 2: REGISTRATION IMPORT ──────────────────────────────────────────────
+const quickAddTeamForm = document.getElementById("quickAddTeamForm");
+if (quickAddTeamForm) {
+    quickAddTeamForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const btn = document.getElementById("quickAddTeamBtn");
+        btn.disabled = true;
+        btn.textContent = "CREATING...";
+        
+        try {
+            const response = await fetch(`${API_BASE}/admin/invite-team`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${idToken}`
+                },
+                body: JSON.stringify({
+                    teamName: document.getElementById("qaTeamName").value,
+                    leaderName: document.getElementById("qaLeaderName").value,
+                    leaderEmail: document.getElementById("qaLeaderEmail").value,
+                    leaderPhone: document.getElementById("qaLeaderPhone").value,
+                    college: document.getElementById("qaCollege").value
+                })
+            });
+
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error?.message || "Creation failed.");
+
+            showToast("Draft team created successfully!");
+            quickAddTeamForm.reset();
+        } catch (err) {
+            showToast(err.message, "error");
+        } finally {
+            btn.disabled = false;
+            btn.textContent = "Create Draft";
+        }
+    });
+}
+
+const importCsvForm = document.getElementById("importCsvForm");
+if (importCsvForm) {
+    importCsvForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const btn = document.getElementById("importSubmitBtn");
+        const fileInput = document.getElementById("csvFileInput");
+        const file = fileInput.files[0];
+        if (!file) return;
+
+        btn.disabled = true;
+        btn.textContent = "IMPORTING...";
+
+        const formData = new FormData();
+        formData.append("file", file);
+
+        try {
+            const response = await fetch(`${API_BASE}/admin/import-teams`, {
+                method: "POST",
+                headers: { Authorization: `Bearer ${idToken}` },
+                body: formData
+            });
+
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error?.message || "Import failed.");
+
+            showToast(`Shortlist uploaded! Imported: ${result.data.stats.imported}, Skipped: ${result.data.stats.skipped}`);
+            importCsvForm.reset();
+        } catch (err) {
+            showToast(err.message, "error");
+        } finally {
+            btn.disabled = false;
+            btn.textContent = "Import Shortlist";
+        }
+    });
+}
+
+// ─── TAB 3: TEAMS MANAGEMENT ─────────────────────────────────────────────────
+function initTeamsRealtime() {
+    // Teams List
+    onSnapshot(collection(db, "teams"), (snap) => {
+        const tbody = document.getElementById("teamsTableBody");
+        tbody.innerHTML = "";
+
+        if (snap.empty) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--muted-foreground);">No registered teams found.</td></tr>';
+            return;
+        }
+
+        snap.docs.forEach(docSnap => {
+            const data = docSnap.data();
+            const id = docSnap.id;
+            const members = data.members ? data.members.map(m => m.name).join(", ") : "None";
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
                 <td>
-                    ${showInvite ? `<button class="btn-outline invite-btn" data-id="${sanitizeHTML(inviteId)}" style="padding: 4px 8px; font-size: 0.7rem; border-color: var(--accent); color: var(--accent); margin-right: 4px;">INVITE</button>` : ''}
-                    <button class="btn-outline delete-invite-btn" data-id="${sanitizeHTML(inviteId)}" style="padding: 4px 8px; font-size: 0.7rem; border-color: #ef4444; color: #ef4444;">DEL</button>
+                    <div style="font-weight: 600; color: #fff;">${sanitizeHTML(data.teamName)}</div>
+                    <div style="font-size: 10px; color: var(--muted-foreground);">Track: ${sanitizeHTML(data.track || "Not selected")}</div>
+                </td>
+                <td>
+                    <div><strong>${sanitizeHTML(data.leaderName)} (Leader)</strong></div>
+                    <div style="font-size: 10px; color: var(--muted-foreground);">${sanitizeHTML(members)}</div>
+                </td>
+                <td>
+                    <div>${sanitizeHTML(data.college)}</div>
+                    <div style="font-size: 10px; color: var(--muted-foreground);">${sanitizeHTML(data.leaderPhone)}</div>
+                </td>
+                <td>
+                    <span class="role-tag ${data.status === "Approved" ? "badge-verified" : "badge-amber"}">${sanitizeHTML(data.status)}</span>
+                </td>
+                <td>
+                    <button class="btn-outline edit-team-btn" data-id="${sanitizeHTML(id)}" style="padding: 4px 8px; font-size: 9px; margin-right: 4px;">EDIT</button>
+                    <button class="btn-outline delete-team-btn" data-id="${sanitizeHTML(id)}" style="padding: 4px 8px; font-size: 9px; border-color: #ef4444; color: #ef4444;">DEL</button>
                 </td>
             `;
-            invitedTeamsTableBody.appendChild(tr);
+            tbody.appendChild(tr);
         });
 
-        // Invite handlers for invited teams
-        document.querySelectorAll('.invite-btn').forEach(btn => {
-            btn.addEventListener('click', async (e) => {
-                const id = e.target.getAttribute('data-id');
+        // Edit handlers
+        document.querySelectorAll(".edit-team-btn").forEach(btn => {
+            btn.addEventListener("click", (e) => {
+                const teamId = e.target.getAttribute("data-id");
+                openEditModal(teamId);
+            });
+        });
+
+        // Delete handlers
+        document.querySelectorAll(".delete-team-btn").forEach(btn => {
+            btn.addEventListener("click", async (e) => {
+                const teamId = e.target.getAttribute("data-id");
+                if (confirm("Are you sure you want to permanently delete this team?")) {
+                    try {
+                        await deleteDoc(doc(db, "teams", teamId));
+                        showToast("Team deleted successfully.");
+                    } catch (err) {
+                        showToast("Failed to delete team.", "error");
+                    }
+                }
+            });
+        });
+    });
+
+    // Invited Drafts List
+    onSnapshot(collection(db, "invitedTeams"), (snap) => {
+        const tbody = document.getElementById("invitedTeamsTableBody");
+        tbody.innerHTML = "";
+
+        if (snap.empty) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--muted-foreground);">No invited draft teams.</td></tr>';
+            return;
+        }
+
+        snap.docs.forEach(docSnap => {
+            const data = docSnap.data();
+            const id = docSnap.id;
+            const tr = document.createElement("tr");
+            const showInvite = data.status === "Draft" || !data.status;
+            tr.innerHTML = `
+                <td><strong>${sanitizeHTML(data.teamName)}</strong></td>
+                <td>
+                    <div>${sanitizeHTML(data.leaderName)}</div>
+                    <div style="font-size: 10px; color: var(--muted-foreground);">${sanitizeHTML(data.leaderEmail)}</div>
+                </td>
+                <td>${sanitizeHTML(data.college)}</td>
+                <td><span class="role-tag">${sanitizeHTML(data.status || "Draft")}</span></td>
+                <td>
+                    ${showInvite ? `<button class="btn-outline invite-draft-btn" data-id="${sanitizeHTML(id)}" style="padding: 4px 8px; font-size: 9px; margin-right: 4px;">INVITE</button>` : ""}
+                    <button class="btn-outline delete-draft-btn" data-id="${sanitizeHTML(id)}" style="padding: 4px 8px; font-size: 9px; border-color: #ef4444; color: #ef4444;">DEL</button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        // Trigger Invite
+        document.querySelectorAll(".invite-draft-btn").forEach(btn => {
+            btn.addEventListener("click", async (e) => {
+                const draftId = e.target.getAttribute("data-id");
                 e.target.disabled = true;
                 e.target.textContent = "SENDING...";
+
                 try {
-                    const idToken = await auth.currentUser.getIdToken(true);
-                    const response = await fetch(`${API_BASE}/admin/invited-teams/${id}/invite`, {
-                        method: 'POST',
-                        headers: {
-                            'Authorization': `Bearer ${idToken}`,
-                            'Content-Type': 'application/json'
-                        }
+                    const response = await fetch(`${API_BASE}/admin/invited-teams/${draftId}/invite`, {
+                        method: "POST",
+                        headers: { Authorization: `Bearer ${idToken}` }
                     });
-                    if (!response.ok) {
-                        const result = await response.json();
-                        throw new Error(result.error?.message || 'Failed to send invitation');
-                    }
-                    alert("Invitation queued successfully.");
+                    if (!response.ok) throw new Error("Invite failed.");
+                    showToast("Invitation queued successfully.");
                 } catch (err) {
-                    console.error("Error sending invitation:", err);
-                    alert("Error: " + err.message);
+                    showToast(err.message, "error");
                     e.target.disabled = false;
                     e.target.textContent = "INVITE";
                 }
             });
         });
 
-        // Delete handlers for invited teams
-        document.querySelectorAll('.delete-invite-btn').forEach(btn => {
-            btn.addEventListener('click', async (e) => {
-                const id = e.target.getAttribute('data-id');
-                if (!confirm("Are you sure you want to delete this invite?")) return;
-                try {
-                    await deleteDoc(doc(db, "invitedTeams", id));
-                } catch (err) {
-                    console.error("Error deleting invited team:", err);
-                    alert("Failed to delete invited team.");
+        // Delete Draft
+        document.querySelectorAll(".delete-draft-btn").forEach(btn => {
+            btn.addEventListener("click", async (e) => {
+                const draftId = e.target.getAttribute("data-id");
+                if (confirm("Delete this invited draft?")) {
+                    try {
+                        await deleteDoc(doc(db, "invitedTeams", draftId));
+                        showToast("Draft deleted.");
+                    } catch (err) {
+                        showToast("Failed to delete draft.", "error");
+                    }
                 }
             });
         });
-
-    }, (error) => {
-        console.error("Error loading invited teams:", error);
     });
 }
 
-// Handle Admin Review Actions
-async function handleReviewAction(e) {
-    const btn = e.target;
-    const action = btn.getAttribute('data-action');
-    const teamId = btn.getAttribute('data-id');
-    const lastUpdatedAt = parseInt(btn.getAttribute('data-updated'), 10);
+// Edit Modal helpers
+const editTeamModal = document.getElementById("editTeamModal");
+const editTeamForm = document.getElementById("editTeamForm");
 
-    let notes = '';
-    if (action === 'needChanges') {
-        notes = prompt("Enter the required changes (will be shown to the team):");
-        if (notes === null || notes.trim() === '') return; // User cancelled or left empty
-    } else if (action === 'reject') {
-        const confirmReject = confirm("Are you sure you want to REJECT this team? They will be locked out.");
-        if (!confirmReject) return;
-    }
-
-    btn.disabled = true;
-    btn.textContent = "WAIT...";
-
+async function openEditModal(teamId) {
     try {
-        const idToken = await auth.currentUser.getIdToken(true);
-
-        const payload = {
-            teamId,
-            action,
-            lastUpdatedAt,
-            ...(notes ? { notes: notes.trim() } : {})
-        };
-
-        const response = await fetch(`${API_BASE}/admin/review-team`, {
-            method: 'PATCH',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${idToken}`
-            },
-            body: JSON.stringify(payload)
-        });
-
-        const result = await response.json();
-
-        if (!response.ok) {
-            throw new Error(result.error?.message || 'Review action failed');
+        const snap = await getDoc(doc(db, "teams", teamId));
+        if (snap.exists()) {
+            const data = snap.data();
+            document.getElementById("edit_team_id").value = teamId;
+            document.getElementById("edit_team_name").value = data.teamName;
+            document.getElementById("edit_team_college").value = data.college;
+            document.getElementById("edit_team_status").value = data.status;
+            editTeamModal.style.display = "flex";
         }
-
-        // We don't need to manually update the UI; the onSnapshot listener will re-render automatically.
-    } catch (error) {
-        console.error("Review action error:", error);
-        alert(`Error: ${error.message}`);
-        btn.disabled = false;
-        btn.textContent = action.toUpperCase();
+    } catch (err) {
+        showToast("Error loading team data.", "error");
     }
 }
 
-// Load Submissions
-function loadSubmissions() {
-    if (submissionsUnsubscriber) submissionsUnsubscriber();
+document.getElementById("closeEditModalBtn").addEventListener("click", () => {
+    editTeamModal.style.display = "none";
+});
 
-    const submissionsRef = collection(db, "submissions");
-    const q = query(submissionsRef, orderBy("submittedAt", "desc"));
-    
-    submissionsUnsubscriber = onSnapshot(q, (snapshot) => {
-        
-        if (snapshot.empty) {
-            submissionsTableBody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: rgba(255,255,255,0.5);">No submissions found.</td></tr>`;
-            return;
-        }
-        
-        submissionsTableBody.innerHTML = "";
-        
-        snapshot.forEach((sDoc) => {
-            const sub = sDoc.data();
-            const subId = sDoc.id;
-            const teamId = sub.teamId;
-            const roundId = sub.roundId;
-            
-            const teamName = teamCache.get(teamId) || teamId;
-            const roundName = roundCache.get(roundId) || roundId;
-            
-            const date = sub.submittedAt ? sub.submittedAt.toDate().toLocaleString() : "Unknown";
-            
-            const tr = document.createElement("tr");
-            tr.innerHTML = `
-                <td><strong id="sub-team-${subId}">${sanitizeHTML(teamName)}</strong></td>
-                <td><span id="sub-round-${subId}">${sanitizeHTML(roundName)}</span></td>
-                <td><a href="${sanitizeHTML(sub.githubLink)}" target="_blank" rel="noopener noreferrer">Repo ↗</a></td>
-                <td><a href="${sanitizeHTML(sub.demoLink)}" target="_blank" rel="noopener noreferrer">Demo ↗</a></td>
-                <td style="font-size: 0.8rem; color: rgba(255,255,255,0.5); display: flex; align-items: center; justify-content: space-between;">
-                    ${date}
-                    <button class="btn-outline delete-sub-btn" data-id="${sanitizeHTML(subId)}" style="padding: 2px 6px; font-size: 0.6rem; border-color: #ef4444; color: #ef4444;">DEL</button>
-                </td>
-            `;
-            submissionsTableBody.appendChild(tr);
-            
-            // Resolve Team Name in background if missing from cache
-            if (!teamCache.has(teamId)) {
-                getDoc(doc(db, "teams", teamId)).then(teamSnap => {
-                    if (teamSnap.exists()) {
-                        const name = teamSnap.data().teamName || teamId;
-                        teamCache.set(teamId, name);
-                        const cell = document.getElementById(`sub-team-${subId}`);
-                        if (cell) cell.textContent = name;
-                    }
-                }).catch(err => console.error("Error fetching team in background:", err));
-            }
-            
-            // Resolve Round Name in background if missing from cache
-            if (!roundCache.has(roundId)) {
-                getDoc(doc(db, "rounds", roundId)).then(roundSnap => {
-                    if (roundSnap.exists()) {
-                        const title = roundSnap.data().title || roundId;
-                        roundCache.set(roundId, title);
-                        const cell = document.getElementById(`sub-round-${subId}`);
-                        if (cell) cell.textContent = title;
-                    }
-                }).catch(err => console.error("Error fetching round in background:", err));
-            }
-        });
-
-        document.querySelectorAll('.delete-sub-btn').forEach(btn => {
-            btn.addEventListener('click', async (e) => {
-                const subId = e.target.getAttribute('data-id');
-                if (!confirm("Are you sure you want to DELETE this submission?")) return;
-                try {
-                    await deleteDoc(doc(db, "submissions", subId));
-                } catch (err) {
-                    console.error("Error deleting submission:", err);
-                    alert("Failed to delete submission.");
-                }
-            });
-        });
-    }, (error) => {
-        console.error("Error loading submissions:", error);
-    });
-}
-
-// Activate Round — SECURED via Next.js API
-let allRoundsData = []; // Cached from onSnapshot
-
-activateRoundBtn.addEventListener("click", async () => {
-    const selectedRoundId = roundSelect.value;
-    if (!selectedRoundId) {
-        alert("Please select a round first.");
-        return;
-    }
-    
-    // Verify admin is still authenticated
-    if (!auth.currentUser) {
-        alert("Session expired. Please log in again.");
-        window.location.href = '/login';
-        return;
-    }
-
-    const chosen = allRoundsData.find(r => r.roundId === selectedRoundId);
-    if (!chosen) {
-        alert("Selected round data not found.");
-        return;
-    }
-
-    // Confirm action
-    const confirmed = confirm(`Are you sure you want to activate "${chosen.title}"? This will deactivate all other rounds.`);
-    if (!confirmed) return;
-
-    activateRoundBtn.disabled = true;
-    activateRoundBtn.textContent = "ACTIVATING...";
-
-    const roundActionStatus = document.getElementById("roundActionStatus");
+editTeamForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const id = document.getElementById("edit_team_id").value;
+    const name = document.getElementById("edit_team_name").value;
+    const college = document.getElementById("edit_team_college").value;
+    const status = document.getElementById("edit_team_status").value;
 
     try {
-        const idToken = await auth.currentUser.getIdToken(true);
-
-        const payload = {
-            roundId: chosen.roundId,
-            roundTitle: chosen.title,
-            roundDesc: chosen.description || 'Round active'
-        };
-
-        const response = await fetch(`${API_BASE}/admin/rounds/activate`, {
-            method: 'POST',
+        const response = await fetch(`${API_BASE}/admin/edit-team`, {
+            method: "POST",
             headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${idToken}`
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${idToken}`
             },
-            body: JSON.stringify(payload)
+            body: JSON.stringify({ teamId: id, teamName: name, college, status })
         });
-
-        const result = await response.json();
-
-        if (!response.ok) {
-            throw new Error(result.error?.message || 'Failed to activate round');
-        }
-
-        if (roundActionStatus) {
-            roundActionStatus.textContent = `✅ "${chosen.title}" activated successfully.`;
-            roundActionStatus.style.color = '#4ade80';
-            setTimeout(() => { roundActionStatus.textContent = ''; }, 4000);
-        }
-    } catch (error) {
-        console.error("Error activating round:", error);
-        if (roundActionStatus) {
-            roundActionStatus.textContent = `❌ Error: ${error.message}`;
-            roundActionStatus.style.color = 'var(--strike-red)';
-        }
-    } finally {
-        activateRoundBtn.disabled = false;
-        activateRoundBtn.textContent = "ACTIVATE ROUND";
+        
+        if (!response.ok) throw new Error("Update failed.");
+        showToast("Team updated successfully!");
+        editTeamModal.style.display = "none";
+    } catch (err) {
+        showToast(err.message, "error");
     }
 });
 
-// Deactivate All Rounds
+// ─── TAB 4: USERS ACCOUNTS ────────────────────────────────────────────────────
+async function initUserAccounts() {
+    try {
+        const response = await fetch(`${API_BASE}/admin/permissions?limit=50`, {
+            headers: { Authorization: `Bearer ${idToken}` }
+        });
+        const result = await response.json();
+        const tbody = document.getElementById("usersTableBody");
+        tbody.innerHTML = "";
+
+        const users = result.data?.users ?? [];
+        if (users.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--muted-foreground);">No users accounts found.</td></tr>';
+            return;
+        }
+
+        users.forEach(u => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td><strong>${sanitizeHTML(u.uid)}</strong></td>
+                <td>${sanitizeHTML(u.email)}</td>
+                <td><span class="role-tag">${sanitizeHTML(u.role)}</span></td>
+                <td>${sanitizeHTML(u.teamId || "None")}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    } catch (err) {
+        console.error("Error loading users:", err);
+    }
+}
+
+// ─── TAB 5: ROUND MANAGER ────────────────────────────────────────────────────
+const activateRoundBtn = document.getElementById("activateRoundBtn");
+if (activateRoundBtn) {
+    activateRoundBtn.addEventListener("click", async () => {
+        const roundId = document.getElementById("roundSelect").value;
+        if (!roundId) return;
+
+        activateRoundBtn.disabled = true;
+        try {
+            const response = await fetch(`${API_BASE}/admin/rounds/activate`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${idToken}`
+                },
+                body: JSON.stringify({ roundId })
+            });
+
+            if (!response.ok) throw new Error("Activation failed.");
+            showToast("Round activated successfully!");
+        } catch (err) {
+            showToast(err.message, "error");
+        } finally {
+            activateRoundBtn.disabled = false;
+        }
+    });
+}
+
 const deactivateRoundBtn = document.getElementById("deactivateRoundBtn");
 if (deactivateRoundBtn) {
     deactivateRoundBtn.addEventListener("click", async () => {
-        if (!auth.currentUser) { window.location.href = '/login'; return; }
-        if (!confirm("Are you sure you want to DEACTIVATE all rounds? Participants will see no active round.")) return;
-
         deactivateRoundBtn.disabled = true;
-        deactivateRoundBtn.textContent = "DEACTIVATING...";
-
-        const roundActionStatus = document.getElementById("roundActionStatus");
-
         try {
-            const idToken = await auth.currentUser.getIdToken(true);
             const response = await fetch(`${API_BASE}/admin/rounds/activate`, {
-                method: 'POST',
+                method: "POST",
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${idToken}`
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${idToken}`
                 },
                 body: JSON.stringify({ deactivateAll: true })
             });
 
-            const result = await response.json();
-            if (!response.ok) throw new Error(result.error?.message || 'Failed to deactivate rounds');
-
-            if (roundActionStatus) {
-                roundActionStatus.textContent = '✅ All rounds deactivated.';
-                roundActionStatus.style.color = '#4ade80';
-                setTimeout(() => { roundActionStatus.textContent = ''; }, 4000);
-            }
-        } catch (error) {
-            console.error("Error deactivating rounds:", error);
-            if (roundActionStatus) {
-                roundActionStatus.textContent = `❌ Error: ${error.message}`;
-                roundActionStatus.style.color = 'var(--strike-red)';
-            }
+            if (!response.ok) throw new Error("Deactivation failed.");
+            showToast("All rounds deactivated.");
+        } catch (err) {
+            showToast(err.message, "error");
         } finally {
             deactivateRoundBtn.disabled = false;
-            deactivateRoundBtn.textContent = "DEACTIVATE ALL";
         }
     });
 }
 
-// Set Deadline — writes Firestore Timestamp directly without API round-trip
 const setDeadlineBtn = document.getElementById("setDeadlineBtn");
-const deadlineRoundSelect = document.getElementById("deadlineRoundSelect");
-const deadlineInput = document.getElementById("deadlineInput");
-const deadlineStatus = document.getElementById("deadlineStatus");
-
 if (setDeadlineBtn) {
     setDeadlineBtn.addEventListener("click", async () => {
-        const roundId = deadlineRoundSelect?.value;
-        const dateValue = deadlineInput?.value;
-
-        if (!roundId) { alert("Please select a round."); return; }
-        if (!dateValue) { alert("Please set a deadline date/time."); return; }
+        const roundId = document.getElementById("deadlineRoundSelect").value;
+        const deadlineStr = document.getElementById("deadlineInput").value;
+        if (!roundId || !deadlineStr) return;
 
         setDeadlineBtn.disabled = true;
-        setDeadlineBtn.textContent = "SAVING...";
-        if (deadlineStatus) { deadlineStatus.textContent = ''; }
-
         try {
-            const deadlineMs = new Date(dateValue).getTime();
-            if (isNaN(deadlineMs)) throw new Error("Invalid date/time selected.");
-
-            const idToken = await auth.currentUser.getIdToken(true);
-            
-            const payload = {
-                roundId,
-                submissionDeadline: new Date(deadlineMs).toISOString()
-            };
-
+            const timeDate = new Date(deadlineStr);
             const response = await fetch(`${API_BASE}/admin/rounds`, {
-                method: 'PATCH',
+                method: "PATCH",
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${idToken}`
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${idToken}`
                 },
-                body: JSON.stringify(payload)
+                body: JSON.stringify({ roundId, deadline: timeDate.toISOString() })
             });
 
-            const result = await response.json();
-
-            if (!response.ok) {
-                throw new Error(result.error?.message || 'Failed to set deadline');
-            }
-
-            if (deadlineStatus) {
-                deadlineStatus.textContent = `✅ Deadline set: ${new Date(deadlineMs).toLocaleString()}`;
-                deadlineStatus.style.color = '#4ade80';
-                setTimeout(() => { deadlineStatus.textContent = ''; }, 5000);
-            }
-        } catch (error) {
-            console.error("Error setting deadline:", error);
-            if (deadlineStatus) {
-                deadlineStatus.textContent = `❌ Error: ${error.message}`;
-                deadlineStatus.style.color = 'var(--strike-red)';
-            }
+            if (!response.ok) throw new Error("Deadline set failed.");
+            showToast("Deadline configured successfully!");
+        } catch (err) {
+            showToast(err.message, "error");
         } finally {
             setDeadlineBtn.disabled = false;
-            setDeadlineBtn.textContent = "SET DEADLINE";
         }
     });
 }
 
-// Live Active Round Status + Select population — listens to rounds collection
+// ─── TAB 6: MENTOR SESSIONS ──────────────────────────────────────────────────
+function initMentorSessions() {
+    onSnapshot(collection(db, "mentorSlots"), (snap) => {
+        const tbody = document.getElementById("mentorSessionsTableBody");
+        tbody.innerHTML = "";
 
-function listenToActiveRoundStatus() {
-    const statusEl = document.getElementById("activeRoundStatus");
-    if (!statusEl) return;
-
-    const roundsQuery = query(collection(db, "rounds"), orderBy("__name__"));
-    
-    onSnapshot(roundsQuery, (snap) => {
-        const rounds = [];
-        snap.forEach(docSnap => {
-            const data = docSnap.data();
-            rounds.push({
-                roundId: docSnap.id,
-                title: data.title || docSnap.id,
-                description: data.description || '',
-                isActive: data.isActive || false,
-                deadline: data.submissionDeadline ? (data.submissionDeadline.toMillis ? data.submissionDeadline.toMillis() : data.submissionDeadline.seconds * 1000) : null
-            });
-        });
-        
-        allRoundsData = rounds; // Cache for button handlers
-
-        // Populate dropdowns if they exist
-        if (roundSelect) {
-            const currentVal = roundSelect.value;
-            roundSelect.innerHTML = '<option value="">Select a round to activate...</option>';
-            rounds.forEach(r => {
-                const opt = document.createElement("option");
-                opt.value = r.roundId;
-                opt.textContent = `${r.roundId}: ${r.title}`;
-                roundSelect.appendChild(opt);
-            });
-            if (rounds.find(r => r.roundId === currentVal)) roundSelect.value = currentVal;
-        }
-
-        if (deadlineRoundSelect) {
-            const currentVal = deadlineRoundSelect.value;
-            deadlineRoundSelect.innerHTML = '<option value="">Select round to set deadline...</option>';
-            rounds.forEach(r => {
-                const opt = document.createElement("option");
-                opt.value = r.roundId;
-                opt.textContent = `${r.roundId}: ${r.title}`;
-                deadlineRoundSelect.appendChild(opt);
-            });
-            if (rounds.find(r => r.roundId === currentVal)) deadlineRoundSelect.value = currentVal;
-        }
-
-        // Render live status
-        const activeRound = rounds.find(r => r.isActive);
-        if (activeRound) {
-            const deadlineStr = activeRound.deadline ? `— Deadline: ${new Date(activeRound.deadline).toLocaleString()}` : '— No deadline set';
-            statusEl.innerHTML = `<span style="color: #4ade80;">● ACTIVE: ${activeRound.title}</span> <span style="color: var(--muted-foreground); font-size: 10px;">${deadlineStr}</span>`;
-        } else {
-            statusEl.innerHTML = `<span style="color: #ef4444;">● NO ACTIVE ROUND</span>`;
-        }
-    }, (error) => {
-        console.error("Error listening to rounds:", error);
-    });
-}
-
-
-// Broadcast Announcement Form via API
-announcementForm.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    annSubmitBtn.disabled = true;
-    annSubmitBtn.textContent = "TRANSMITTING...";
-    annStatus.textContent = "";
-    
-    try {
-        const idToken = await auth.currentUser.getIdToken(true);
-
-        const payload = {
-            title: sanitizeHTML(annTitle.value),
-            message: sanitizeHTML(annMessage.value)
-        };
-
-        const response = await fetch(`${API_BASE}/admin/announcement`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${idToken}`
-            },
-            body: JSON.stringify(payload)
-        });
-
-        const result = await response.json();
-
-        if (!response.ok) {
-            throw new Error(result.error?.message || 'Failed to broadcast announcement');
-        }
-        
-        annStatus.textContent = "Broadcast transmitted to all dashboards.";
-        annStatus.style.color = "#4ade80";
-        announcementForm.reset();
-        
-        setTimeout(() => { annStatus.textContent = ""; }, 4000);
-    } catch (error) {
-        console.error("Error sending broadcast:", error);
-        annStatus.textContent = `Transmission failed: ${error.message}`;
-        annStatus.style.color = "var(--strike-red)";
-    } finally {
-        annSubmitBtn.disabled = false;
-        annSubmitBtn.textContent = "TRANSMIT";
-    }
-});
-
-// Quick Add Team (Manual)
-const quickAddTeamForm = document.getElementById("quickAddTeamForm");
-const qaTeamName = document.getElementById("qaTeamName");
-const qaLeaderName = document.getElementById("qaLeaderName");
-const qaLeaderEmail = document.getElementById("qaLeaderEmail");
-const qaLeaderPhone = document.getElementById("qaLeaderPhone");
-const qaCollege = document.getElementById("qaCollege");
-const quickAddTeamBtn = document.getElementById("quickAddTeamBtn");
-const quickAddStatus = document.getElementById("quickAddStatus");
-
-if (quickAddTeamForm) {
-    quickAddTeamForm.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        const teamName = qaTeamName.value.trim();
-        const leaderName = qaLeaderName ? qaLeaderName.value.trim() : "";
-        const leaderEmail = qaLeaderEmail ? qaLeaderEmail.value.trim() : "";
-        const leaderPhone = qaLeaderPhone ? qaLeaderPhone.value.trim() : "";
-        const college = qaCollege ? qaCollege.value.trim() : "";
-        
-        if (!teamName || !leaderEmail) return;
-
-        quickAddTeamBtn.disabled = true;
-        quickAddTeamBtn.textContent = "ADDING...";
-        quickAddStatus.textContent = "";
-
-        try {
-            const idToken = await auth.currentUser.getIdToken(true);
-            const payload = {
-                teamName,
-                leaderName,
-                leaderEmail,
-                leaderPhone,
-                college
-            };
-
-            const response = await fetch(`${API_BASE}/admin/invite-team`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${idToken}`
-                },
-                body: JSON.stringify(payload)
-            });
-
-            const result = await response.json();
-
-            if (!response.ok) {
-                throw new Error(result.error?.message || 'Failed to add team manually');
-            }
-
-            quickAddStatus.textContent = "✅ Team invited and email sent.";
-            quickAddStatus.style.color = "#4ade80";
-            quickAddTeamForm.reset();
-        } catch (error) {
-            console.error("Error adding team:", error);
-            quickAddStatus.textContent = `❌ ${error.message}`;
-            quickAddStatus.style.color = "var(--strike-red)";
-        } finally {
-            quickAddTeamBtn.disabled = false;
-            quickAddTeamBtn.textContent = "ADD TEAM";
-            setTimeout(() => { quickAddStatus.textContent = ""; }, 4000);
-        }
-    });
-}
-
-// CSV Import
-const importCsvForm = document.getElementById("importCsvForm");
-const csvFileInput = document.getElementById("csvFileInput");
-const importSubmitBtn = document.getElementById("importSubmitBtn");
-const importStatus = document.getElementById("importStatus");
-
-if (importCsvForm) {
-    importCsvForm.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        
-        const file = csvFileInput.files[0];
-        if (!file) return;
-
-        importSubmitBtn.disabled = true;
-        importSubmitBtn.textContent = "UPLOADING...";
-        importStatus.textContent = "";
-
-        try {
-            // Get fresh Firebase ID token
-            const idToken = await auth.currentUser.getIdToken(true);
-            
-            const formData = new FormData();
-            formData.append('file', file);
-
-            const response = await fetch(`${API_BASE}/admin/import-teams`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${idToken}`
-                },
-                body: formData
-            });
-
-            const result = await response.json();
-
-            if (!response.ok) {
-                throw new Error(result.error?.message || 'Import failed');
-            }
-
-            importStatus.innerHTML = `✅ <strong>Success!</strong><br>
-                Imported: ${result.data.stats.imported}<br>
-                Skipped (duplicates): ${result.data.stats.skipped}<br>
-                Failed: ${result.data.stats.failed}`;
-            importStatus.style.color = "#4ade80";
-            importCsvForm.reset();
-            
-        } catch (error) {
-            console.error("CSV Import Error:", error);
-            importStatus.textContent = `❌ Error: ${error.message}`;
-            importStatus.style.color = "var(--strike-red)";
-        } finally {
-            importSubmitBtn.disabled = false;
-            importSubmitBtn.textContent = "UPLOAD TEAMS";
-        }
-    });
-}
-
-// Manual Invite
-const manualInviteForm = document.getElementById("manualInviteForm");
-const manualInviteBtn = document.getElementById("manualInviteBtn");
-
-if (manualInviteForm) {
-    manualInviteForm.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        
-        manualInviteBtn.disabled = true;
-        manualInviteBtn.textContent = "ADDING...";
-
-        const payload = {
-            teamName: document.getElementById("mi_team").value.trim(),
-            leaderName: document.getElementById("mi_leader").value.trim(),
-            leaderEmail: document.getElementById("mi_email").value.trim(),
-            leaderPhone: document.getElementById("mi_phone").value.trim(),
-            college: document.getElementById("mi_college").value.trim()
-        };
-
-        try {
-            const idToken = await auth.currentUser.getIdToken(true);
-            const response = await fetch(`${API_BASE}/admin/invite-team`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${idToken}`
-                },
-                body: JSON.stringify(payload)
-            });
-
-            const result = await response.json();
-
-            if (!response.ok) {
-                throw new Error(result.error?.message || 'Manual invite failed');
-            }
-
-            alert("Team successfully invited!");
-            manualInviteForm.reset();
-        } catch (error) {
-            console.error("Manual Invite Error:", error);
-            alert("Error: " + error.message);
-        } finally {
-            manualInviteBtn.disabled = false;
-            manualInviteBtn.textContent = "ADD TEAM";
-        }
-    });
-}
-
-// Create Admin (super_admin only)
-const createAdminForm = document.getElementById('createAdminForm');
-const adminEmailInput = document.getElementById('adminEmailInput');
-const createAdminBtn = document.getElementById('createAdminBtn');
-const createAdminStatus = document.getElementById('createAdminStatus');
-
-if (createAdminForm) {
-    createAdminForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const email = adminEmailInput.value.trim();
-        if (!email) return;
-
-        createAdminBtn.disabled = true;
-        createAdminBtn.textContent = 'GRANTING ACCESS...';
-        createAdminStatus.textContent = '';
-        createAdminStatus.style.color = 'rgba(255,255,255,0.6)';
-
-        try {
-            const idToken = await auth.currentUser.getIdToken(true);
-            const response = await fetch(`${API_BASE}/admin/create-admin`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${idToken}`
-                },
-                body: JSON.stringify({ email })
-            });
-
-            const result = await response.json();
-
-            if (!response.ok) {
-                throw new Error(result.error?.message || 'Failed to grant access');
-            }
-
-            createAdminStatus.textContent = `✅ ${result.data.message}`;
-            createAdminStatus.style.color = '#4ade80';
-            createAdminForm.reset();
-            loadAdmins(auth.currentUser);
-        } catch (error) {
-            console.error('Create admin error:', error);
-            createAdminStatus.textContent = `❌ ${error.message}`;
-            createAdminStatus.style.color = 'var(--strike-red)';
-        } finally {
-            createAdminBtn.disabled = false;
-            createAdminBtn.textContent = 'GRANT ADMIN ACCESS';
-        }
-    });
-}
-
-async function loadAdmins(user) {
-    if (!user) return;
-    const adminsTableBody = document.getElementById('adminsTableBody');
-    if (!adminsTableBody) return;
-
-    try {
-        const idToken = await user.getIdToken(true);
-        const res = await fetch(`${API_BASE}/admin/admins`, {
-            headers: { 'Authorization': `Bearer ${idToken}` }
-        });
-        const result = await res.json();
-        
-        if (!res.ok) throw new Error(result.error?.message || 'Failed to fetch admins');
-        
-        adminsTableBody.innerHTML = '';
-        const admins = result.data.admins;
-        
-        if (admins.length === 0) {
-            adminsTableBody.innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--muted-foreground);">No admins found</td></tr>`;
+        if (snap.empty) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--muted-foreground);">No mentor slots scheduled.</td></tr>';
             return;
         }
 
-        admins.forEach(admin => {
-            const tr = document.createElement('tr');
-            let actions = `<span style="font-size:0.7rem; color:rgba(255,255,255,0.3);">NONE</span>`;
-            
-            if (admin.role !== 'super_admin') {
-                actions = `<button class="btn-outline remove-admin-btn" data-uid="${sanitizeHTML(admin.uid)}" style="padding: 4px 8px; font-size: 0.7rem; border-color: #ef4444; color: #ef4444;">REVOKE</button>`;
-            }
-
+        snap.docs.forEach(d => {
+            const data = d.data();
+            const tr = document.createElement("tr");
+            const time = data.scheduledFor ? new Date(data.scheduledFor.seconds * 1000).toLocaleString() : "N/A";
             tr.innerHTML = `
-                <td><span style="font-family: var(--font-mono); font-size: 11px;">${sanitizeHTML(admin.email)}</span></td>
-                <td><span class="role-tag">${sanitizeHTML(admin.role)}</span></td>
-                <td>${actions}</td>
+                <td><strong>${sanitizeHTML(data.mentorName)}</strong></td>
+                <td>${sanitizeHTML(time)}</td>
+                <td>${sanitizeHTML(String(data.durationMins || 20))} mins</td>
+                <td>${sanitizeHTML(data.teamId || "Unassigned")}</td>
+                <td><a href="${sanitizeHTML(data.meetLink || "#")}" target="_blank" style="color: var(--accent);">${data.meetLink ? "Meet Link ↗" : "None"}</a></td>
             `;
-            adminsTableBody.appendChild(tr);
+            tbody.appendChild(tr);
         });
-
-        // Attach event listeners for revoke buttons
-        document.querySelectorAll('.remove-admin-btn').forEach(btn => {
-            btn.addEventListener('click', async (e) => {
-                const uid = e.target.getAttribute('data-uid');
-                if (!confirm('Are you sure you want to revoke admin access?')) return;
-                
-                e.target.disabled = true;
-                e.target.textContent = 'REVOKING...';
-                
-                try {
-                    const idToken = await auth.currentUser.getIdToken(true);
-                    const response = await fetch(`${API_BASE}/admin/admins`, {
-                        method: 'DELETE',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${idToken}`
-                        },
-                        body: JSON.stringify({ uid })
-                    });
-                    const deleteResult = await response.json();
-                    
-                    if (!response.ok) throw new Error(deleteResult.error?.message || 'Failed to revoke access');
-                    
-                    loadAdmins(auth.currentUser);
-                } catch (err) {
-                    console.error('Revoke admin error:', err);
-                    alert(`Error: ${err.message}`);
-                    e.target.disabled = false;
-                    e.target.textContent = 'REVOKE';
-                }
-            });
-        });
-
-    } catch (err) {
-        console.error('Error loading admins:', err);
-        adminsTableBody.innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--strike-red);">Failed to load admins: ${err.message}</td></tr>`;
-    }
-}
-
-// Edit Team Modal Logic
-const editTeamModal = document.getElementById('editTeamModal');
-const editTeamForm = document.getElementById('editTeamForm');
-const closeEditModalBtn = document.getElementById('closeEditModalBtn');
-
-function openEditTeamModal(id, name, college, status) {
-    document.getElementById('edit_team_id').value = id;
-    document.getElementById('edit_team_name').value = name;
-    document.getElementById('edit_team_college').value = college;
-    
-    const statusSelect = document.getElementById('edit_team_status');
-    for (let i = 0; i < statusSelect.options.length; i++) {
-        if (statusSelect.options[i].value === status) {
-            statusSelect.selectedIndex = i;
-            break;
-        }
-    }
-    
-    editTeamModal.style.display = 'flex';
-}
-
-if (closeEditModalBtn) {
-    closeEditModalBtn.addEventListener('click', () => {
-        editTeamModal.style.display = 'none';
     });
 }
 
-if (editTeamForm) {
-    editTeamForm.addEventListener('submit', async (e) => {
+// ─── TAB 7: SUBMISSIONS ──────────────────────────────────────────────────────
+function initSubmissionsRealtime() {
+    onSnapshot(collection(db, "submissions"), (snap) => {
+        const tbody = document.getElementById("submissionsTableBody");
+        tbody.innerHTML = "";
+
+        if (snap.empty) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--muted-foreground);">No deliverables submitted.</td></tr>';
+            return;
+        }
+
+        snap.docs.forEach(d => {
+            const data = d.data();
+            const tr = document.createElement("tr");
+            const time = data.submittedAt ? new Date(data.submittedAt.seconds * 1000).toLocaleString() : "";
+            tr.innerHTML = `
+                <td><strong>${sanitizeHTML(data.teamId.slice(0, 10))}...</strong></td>
+                <td>${sanitizeHTML(data.roundId)}</td>
+                <td><a href="${sanitizeHTML(data.githubLink || "#")}" target="_blank" style="color: var(--primary);">${data.githubLink ? "Repo ↗" : "None"}</a></td>
+                <td><a href="${sanitizeHTML(data.demoLink || "#")}" target="_blank" style="color: var(--accent);">${data.demoLink ? "Demo ↗" : "None"}</a></td>
+                <td style="color: var(--muted-foreground);">${time}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    });
+}
+
+// ─── TAB 8: EVALUATIONS ──────────────────────────────────────────────────────
+function initEvaluations() {
+    onSnapshot(collection(db, "teams"), (snap) => {
+        const tbody = document.getElementById("scoresTableBody");
+        tbody.innerHTML = "";
+
+        if (snap.empty) {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--muted-foreground);">No scores found.</td></tr>';
+            return;
+        }
+
+        snap.docs.forEach(d => {
+            const data = d.data();
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td><strong>${sanitizeHTML(data.teamName)}</strong></td>
+                <td>${sanitizeHTML(String(data.scores?.round1 ?? "-"))}</td>
+                <td>${sanitizeHTML(String(data.scores?.round2 ?? "-"))}</td>
+                <td>${sanitizeHTML(String(data.scores?.round3 ?? "-"))}</td>
+                <td><strong>${sanitizeHTML(String(data.scores?.total ?? 0))}</strong></td>
+                <td><button class="btn-outline grade-btn" data-id="${sanitizeHTML(d.id)}" style="padding: 4px 8px; font-size: 9px;">GRADE</button></td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        document.querySelectorAll(".grade-btn").forEach(btn => {
+            btn.addEventListener("click", () => {
+                switchTab("evaluations");
+                showToast("Use Evaluations tab dropdown to grade rounds.", "success");
+            });
+        });
+    });
+}
+
+// ─── TAB 10: EMAIL QUEUE ─────────────────────────────────────────────────────
+async function initMailQueue() {
+    try {
+        const response = await fetch(`${API_BASE}/admin/mail-queue?limit=20`, {
+            headers: { Authorization: `Bearer ${idToken}` }
+        });
+        const result = await response.json();
+        const tbody = document.getElementById("emailQueueTableBody");
+        tbody.innerHTML = "";
+
+        const jobs = result.data?.jobs ?? [];
+        if (jobs.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--muted-foreground);">Email dispatch queue empty.</td></tr>';
+            return;
+        }
+
+        jobs.forEach(job => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td>${sanitizeHTML(job.to)}</td>
+                <td>${sanitizeHTML(job.template)}</td>
+                <td><span class="role-tag ${job.status === "sent" ? "badge-verified" : "badge-amber"}">${sanitizeHTML(job.status)}</span></td>
+                <td>${sanitizeHTML(String(job.attempts || 0))}</td>
+                <td>
+                    ${job.status === "failed" ? `<button class="btn-outline retry-mail-btn" data-id="${sanitizeHTML(job.id)}" style="padding: 4px 8px; font-size: 9px;">RETRY</button>` : "-"}
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        document.querySelectorAll(".retry-mail-btn").forEach(btn => {
+            btn.addEventListener("click", async (e) => {
+                const jobId = e.target.getAttribute("data-id");
+                try {
+                    const res = await fetch(`${API_BASE}/admin/mail-queue/${jobId}/retry`, {
+                        method: "POST",
+                        headers: { Authorization: `Bearer ${idToken}` }
+                    });
+                    if (!res.ok) throw new Error("Retry trigger failed.");
+                    showToast("Email job queued for retry!");
+                    initMailQueue();
+                } catch (err) {
+                    showToast(err.message, "error");
+                }
+            });
+        });
+    } catch (e) {
+        console.error("Mail queue logs failed:", e);
+    }
+}
+
+// ─── TAB 11: GOOGLE SHEETS SYNC ──────────────────────────────────────────────
+async function initSheetsSyncQueue() {
+    const tbody = document.getElementById("sheetsSyncTableBody");
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--muted-foreground);">Synced and locked.</td></tr>';
+}
+
+// ─── TAB 12: SYSTEM ACTIVITY AUDIT LOGS ──────────────────────────────────────
+async function initActivityLogs() {
+    try {
+        const response = await fetch(`${API_BASE}/admin/logs?type=audit&limit=20`, {
+            headers: { Authorization: `Bearer ${idToken}` }
+        });
+        const result = await response.json();
+        const tbody = document.getElementById("activityLogsTableBody");
+        tbody.innerHTML = "";
+
+        const logs = result.data?.logs ?? [];
+        if (logs.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--muted-foreground);">No audit logs captured.</td></tr>';
+            return;
+        }
+
+        logs.forEach(log => {
+            const tr = document.createElement("tr");
+            const time = log.timestamp ? new Date(log.timestamp.seconds * 1000).toLocaleString() : "";
+            tr.innerHTML = `
+                <td><strong>${sanitizeHTML(log.actorUid || "SYSTEM")}</strong></td>
+                <td>${sanitizeHTML(log.action)}</td>
+                <td>${sanitizeHTML(log.targetId || "-")}</td>
+                <td style="color: var(--muted-foreground);">${sanitizeHTML(JSON.stringify(log.metadata || {}))}</td>
+                <td>${time}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    } catch (err) {
+        console.error("Error logs fetch:", err);
+    }
+}
+
+// ─── TAB 13: ANNOUNCEMENT BROADCAST ──────────────────────────────────────────
+const announcementForm = document.getElementById("announcementForm");
+if (announcementForm) {
+    announcementForm.addEventListener("submit", async (e) => {
         e.preventDefault();
-        
-        const saveBtn = document.getElementById('saveEditModalBtn');
-        saveBtn.disabled = true;
-        saveBtn.textContent = 'SAVING...';
-        
-        const payload = {
-            teamId: document.getElementById('edit_team_id').value,
-            teamName: document.getElementById('edit_team_name').value.trim(),
-            college: document.getElementById('edit_team_college').value.trim(),
-            status: document.getElementById('edit_team_status').value
-        };
+        const btn = document.getElementById("annSubmitBtn");
+        btn.disabled = true;
+        btn.textContent = "TRANSMITTING...";
 
         try {
-            const idToken = await auth.currentUser.getIdToken(true);
-            const response = await fetch(`${API_BASE}/admin/edit-team`, {
-                method: 'PATCH',
+            const response = await fetch(`${API_BASE}/admin/announcement`, {
+                method: "POST",
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${idToken}`
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${idToken}`
                 },
-                body: JSON.stringify(payload)
+                body: JSON.stringify({
+                    title: document.getElementById("annTitle").value,
+                    message: document.getElementById("annMessage").value
+                })
             });
 
-            const result = await response.json();
-
-            if (!response.ok) {
-                throw new Error(result.error?.message || 'Failed to edit team');
-            }
-
-            editTeamModal.style.display = 'none';
-        } catch (error) {
-            console.error('Edit Team Error:', error);
-            alert('Error: ' + error.message);
+            if (!response.ok) throw new Error("Broadcast failed.");
+            showToast("Broadcast stream transmitted!");
+            announcementForm.reset();
+        } catch (err) {
+            showToast(err.message, "error");
         } finally {
-            saveBtn.disabled = false;
-            saveBtn.textContent = 'SAVE CHANGES';
+            btn.disabled = false;
+            btn.textContent = "Transmit Stream";
+        }
+    });
+}
+
+// ─── TAB 14: PLATFORM SETTINGS ────────────────────────────────────────────────
+async function initSystemSettings() {
+    try {
+        const response = await fetch(`${API_BASE}/admin/settings`, {
+            headers: { Authorization: `Bearer ${idToken}` }
+        });
+        const result = await response.json();
+        const settings = result.data?.settings ?? result.settings ?? {};
+
+        document.getElementById("settingOtpLimit").value = settings.otpMaxPerHour || 5;
+        document.getElementById("settingPptSheetId").value = settings.googleSheetPptId || "";
+        document.getElementById("settingProtoSheetId").value = settings.googleSheetProtoId || "";
+    } catch (err) {
+        console.error("Failed loading settings:", err);
+    }
+}
+
+const systemSettingsForm = document.getElementById("systemSettingsForm");
+if (systemSettingsForm) {
+    systemSettingsForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const btn = document.getElementById("saveSettingsBtn");
+        btn.disabled = true;
+        btn.textContent = "SAVING...";
+
+        try {
+            const response = await fetch(`${API_BASE}/admin/settings`, {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${idToken}`
+                },
+                body: JSON.stringify({
+                    otpMaxPerHour: parseInt(document.getElementById("settingOtpLimit").value, 10),
+                    googleSheetPptId: document.getElementById("settingPptSheetId").value,
+                    googleSheetProtoId: document.getElementById("settingProtoSheetId").value
+                })
+            });
+
+            if (!response.ok) throw new Error("Failed to save settings.");
+            showToast("Platform configurations saved!");
+        } catch (err) {
+            showToast(err.message, "error");
+        } finally {
+            btn.disabled = false;
+            btn.textContent = "Save Platform Settings";
         }
     });
 }
