@@ -432,20 +432,52 @@ function loadInvitedTeams() {
         }
 
         invitedTeamsTableBody.innerHTML = "";
-        snapshot.forEach((docSnap) => {
+         snapshot.forEach((docSnap) => {
             const data = docSnap.data();
             const inviteId = docSnap.id;
 
             const tr = document.createElement("tr");
+            const showInvite = data.status === 'Draft' || !data.status;
             tr.innerHTML = `
                 <td><strong>${sanitizeHTML(data.teamName || 'Unnamed')}</strong></td>
                 <td>${sanitizeHTML(data.leaderName || 'N/A')}</td>
                 <td><span style="font-family: var(--font-mono); font-size: 0.8rem; color: rgba(255,255,255,0.8);">${sanitizeHTML(data.college || 'N/A')}</span></td>
+                <td><span class="role-tag" style="background: rgba(0, 180, 216, 0.1); border-color: var(--accent); color: var(--accent); font-weight: 500; font-size: 0.75rem;">${sanitizeHTML(data.status || 'Draft')}</span></td>
                 <td>
+                    ${showInvite ? `<button class="btn-outline invite-btn" data-id="${sanitizeHTML(inviteId)}" style="padding: 4px 8px; font-size: 0.7rem; border-color: var(--accent); color: var(--accent); margin-right: 4px;">INVITE</button>` : ''}
                     <button class="btn-outline delete-invite-btn" data-id="${sanitizeHTML(inviteId)}" style="padding: 4px 8px; font-size: 0.7rem; border-color: #ef4444; color: #ef4444;">DEL</button>
                 </td>
             `;
             invitedTeamsTableBody.appendChild(tr);
+        });
+
+        // Invite handlers for invited teams
+        document.querySelectorAll('.invite-btn').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                const id = e.target.getAttribute('data-id');
+                e.target.disabled = true;
+                e.target.textContent = "SENDING...";
+                try {
+                    const idToken = await auth.currentUser.getIdToken(true);
+                    const response = await fetch(`${API_BASE}/admin/invited-teams/${id}/invite`, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${idToken}`,
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    if (!response.ok) {
+                        const result = await response.json();
+                        throw new Error(result.error?.message || 'Failed to send invitation');
+                    }
+                    alert("Invitation queued successfully.");
+                } catch (err) {
+                    console.error("Error sending invitation:", err);
+                    alert("Error: " + err.message);
+                    e.target.disabled = false;
+                    e.target.textContent = "INVITE";
+                }
+            });
         });
 
         // Delete handlers for invited teams
@@ -977,7 +1009,7 @@ if (importCsvForm) {
             const formData = new FormData();
             formData.append('file', file);
 
-            const response = await fetch(`${API_BASE}/admin/import-csv`, {
+            const response = await fetch(`${API_BASE}/admin/import-teams`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${idToken}`

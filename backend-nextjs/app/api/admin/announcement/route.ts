@@ -45,7 +45,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     const { title, message } = parsed.data;
 
-    await createAnnouncement(token.uid, title, message);
+    await createAnnouncement(token.uid, { title, message, channels: { portal: true } });
 
     const response = apiSuccess(
       { message: `Announcement broadcasted` },

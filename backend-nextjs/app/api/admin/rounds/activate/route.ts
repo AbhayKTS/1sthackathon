@@ -1,22 +1,17 @@
 /**
  * POST /api/admin/rounds/activate
  *
- * Endpoint for an admin to activate a round (and deactivate all others),
- * or deactivate all rounds entirely.
- *
- * Expected payload (activate):
- * { roundId: string, roundTitle: string, roundDesc: string }
- *
- * Expected payload (deactivate all):
- * { deactivateAll: true }
+ * Legacy endpoint — kept for backward compat.
+ * New code should use PATCH /api/admin/rounds + POST /api/admin/rounds/[id]/transition
  *
  * @route POST /api/admin/rounds/activate
+ * @deprecated Use POST /api/admin/rounds/[id]/transition instead
  */
 
 import { type NextRequest, NextResponse } from 'next/server';
 import { apiSuccess, apiError, applyCorsHeaders, handleOptions, requireRole, withAuth } from '@/lib/api-helpers';
 import { Errors } from '@/lib/errors';
-import { activateRound, deactivateAllRounds } from '@/server/services/admin.service';
+import { activateRound } from '@/server/services/admin.service';
 import { z } from 'zod';
 
 export function OPTIONS(request: NextRequest): NextResponse {
@@ -40,10 +35,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       throw Errors.validation('Invalid JSON payload');
     });
 
-    // Handle deactivateAll shorthand
+    // Handle deactivateAll — now a no-op conceptually (use round transition instead)
     if (body.deactivateAll === true) {
-      await deactivateAllRounds(token.uid);
-      const response = apiSuccess({ message: 'All rounds deactivated' }, 200);
+      const response = apiSuccess({ message: 'Use POST /api/admin/rounds/[id]/transition to change round status.' }, 200);
       return applyCorsHeaders(response, origin);
     }
 

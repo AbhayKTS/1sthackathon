@@ -390,6 +390,7 @@
                                 <th>TEAM NAME</th>
                                 <th>LEADER NAME</th>
                                 <th>COLLEGE</th>
+                                <th>STATUS</th>
                                 <th>ACTIONS</th>
                             </tr>
                         </thead>
@@ -465,11 +466,11 @@
                     <div id="quickAddStatus" style="font-size: 11px; font-family: var(--font-mono); min-height: 20px; margin-top: 5px;"></div>
                 </form>
 
-                <h4 style="font-family: var(--font-mono); color: var(--primary); font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 12px; margin-top: 0;">UPLOAD SHORTLIST (CSV)</h4>
+                <h4 style="font-family: var(--font-mono); color: var(--primary); font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 12px; margin-top: 0;">UPLOAD SHORTLIST (CSV / EXCEL)</h4>
                 <p style="font-size: 12px; color: var(--muted-foreground); margin-bottom: 15px; margin-top: 0;">Columns: teamName, leaderName, leaderEmail, leaderPhone, college</p>
                 <form id="importCsvForm" class="dash-form">
                     <div class="form-group">
-                        <input type="file" id="csvFileInput" accept=".csv" required>
+                        <input type="file" id="csvFileInput" accept=".csv, .xlsx, .xls" required>
                     </div>
                     <button type="submit" class="btn-primary" style="width: 100%; margin-bottom: 5px;" id="importSubmitBtn">UPLOAD TEAMS</button>
                     <div id="importStatus" style="font-size: 11px; font-family: var(--font-mono); min-height: 20px; margin-top: 5px;"></div>

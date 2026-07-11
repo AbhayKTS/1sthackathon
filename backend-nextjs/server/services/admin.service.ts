@@ -1,5 +1,8 @@
 /**
- * Admin Service — logic for admin operations (reviewing teams, etc.)
+ * Admin Service — Admin operations (team verification, announcements).
+ *
+ * The old reviewTeam() (approve/reject/needChanges) is kept for backward compat
+ * but teams now primarily flow through the invitation-based onboarding system.
  *
  * @module server/services/admin.service
  */
@@ -7,240 +10,189 @@
 import { FieldValue } from 'firebase-admin/firestore';
 import { getAdminDb } from '@/lib/firebase-admin';
 import { Errors } from '@/lib/errors';
-import { writeAuditLog, type AuditAction } from './audit.service';
-import { createTeamNotification } from './notification.service';
-import { sendEmail } from './email.service';
-import { env } from '@/lib/env';
+import { writeAuditLog } from './audit.service';
+import { createNotification } from './notification.service';
+import { createMailJob } from './mail-queue.service';
+import { env, getPortalBaseUrl } from '@/lib/env';
 
-export type ReviewAction = 'approve' | 'reject' | 'needChanges';
-
-export interface ReviewTeamInput {
-  teamId: string;
-  action: ReviewAction;
-  notes?: string;
-  lastUpdatedAt: number; // Client sends timestamp ms for optimistic lock
-}
+// ─── Team Verification (new admin-driven flow) ────────────────────────────────
 
 /**
- * Reviews a team profile submission.
- * Uses optimistic locking to prevent concurrent admin overwrites.
+ * Admin marks a team as Verified.
+ * This is the final admin action — team is now active and can participate.
  */
-export async function reviewTeam(adminUid: string, input: ReviewTeamInput): Promise<void> {
+export async function verifyTeam(adminUid: string, teamId: string): Promise<void> {
   const db = getAdminDb();
-  const teamRef = db.collection('teams').doc(input.teamId);
+  const teamRef = db.collection('teams').doc(teamId);
+  const snap = await teamRef.get();
 
-  if (input.action === 'needChanges' && !input.notes) {
-    throw Errors.validation("Notes are required when requesting changes.");
-  }
+  if (!snap.exists) throw Errors.notFound('Team not found.');
 
-  let leaderId = '';
-  let teamName = 'Hacker';
+  const teamData = snap.data()!;
 
-  await db.runTransaction(async (tx) => {
-    const snap = await tx.get(teamRef);
-    if (!snap.exists) {
-      throw Errors.notFound("Team not found.");
-    }
-
-    const teamData = snap.data()!;
-    leaderId = teamData['leaderId'];
-    teamName = teamData['teamName'] || 'Hacker';
-    const serverUpdatedAt = teamData['updatedAt'];
-    let serverUpdatedMs = 0;
-
-    if (serverUpdatedAt) {
-        // Handle Firestore Timestamp or standard JS Date fallback
-        serverUpdatedMs = serverUpdatedAt.toMillis 
-            ? serverUpdatedAt.toMillis() 
-            : new Date(serverUpdatedAt).getTime();
-    }
-
-    // Optimistic lock check (allow a 5000ms drift/delay window to prevent overly strict failures)
-    if (serverUpdatedMs > 0 && Math.abs(serverUpdatedMs - input.lastUpdatedAt) > 5000) {
-      throw Errors.conflict("The team profile was modified by someone else since you loaded it. Please refresh and try again.");
-    }
-
-    if (teamData['status'] !== 'Submitted') {
-      throw Errors.validation(`Cannot review a team that is currently in '${teamData['status']}' state.`);
-    }
-
-    let newStatus = teamData['status'];
-    const updateData: any = { updatedAt: FieldValue.serverTimestamp() };
-
-    switch (input.action) {
-      case 'approve':
-        newStatus = 'Approved';
-        break;
-      case 'reject':
-        newStatus = 'Rejected';
-        break;
-      case 'needChanges':
-        newStatus = 'Incomplete';
-        updateData.needChangesHistory = FieldValue.arrayUnion({
-          notes: input.notes,
-          timestamp: new Date().toISOString(),
-          reviewedBy: adminUid
-        });
-        break;
-    }
-
-    updateData.status = newStatus;
-    tx.update(teamRef, updateData);
-
-    // If approved or rejected, we should also update invitedTeams (optional, but good for tracking)
-    if (teamData['invitedTeamId']) {
-        const inviteRef = db.collection('invitedTeams').doc(teamData['invitedTeamId']);
-        tx.update(inviteRef, { status: newStatus, updatedAt: FieldValue.serverTimestamp() });
-    } else if (newStatus === 'Approved') {
-        const inviteRef = db.collection('invitedTeams').doc();
-        tx.set(inviteRef, {
-            teamName: teamName,
-            leaderName: teamData['leaderName'] || 'Unknown',
-            leaderEmail: teamData['leaderEmail'] ? teamData['leaderEmail'].toLowerCase().trim() : '',
-            status: 'Approved',
-            importedAt: FieldValue.serverTimestamp(),
-            updatedAt: FieldValue.serverTimestamp(),
-        });
-        updateData.invitedTeamId = inviteRef.id;
-    }
-  });
-
-  const auditActionMap: Record<ReviewAction, AuditAction> = {
-    approve: 'team.approved',
-    reject: 'team.rejected',
-    needChanges: 'team.need_changes'
-  };
-
-  await writeAuditLog({
-    action: auditActionMap[input.action],
-    actorUid: adminUid,
-    actorRole: 'admin',
-    targetId: input.teamId,
-    targetType: 'teams',
-    metadata: { action: input.action, notes: input.notes || null },
-    ip: null,
-  });
-
-  // Notifications and Emails
-  try {
-      if (leaderId) {
-          const userSnap = await db.collection('users').doc(leaderId).get();
-          if (userSnap.exists) {
-              const leaderEmail = userSnap.data()!.email;
-              const baseUrl = process.env.NODE_ENV === 'production' ? 'https://revengershack.tech' : (env.NEXT_PUBLIC_APP_URL || 'http://localhost:5173');
-              const loginUrl = `${baseUrl}/login`;
-
-              if (input.action === 'approve') {
-                  await createTeamNotification(input.teamId, 'team_approved', 'Clearance Granted', 'Your team profile has been approved. The dashboard is now fully unlocked.');
-                  await sendEmail({ to: leaderEmail, template: 'approved', variables: { teamName, loginUrl } }).catch(console.error);
-              } else if (input.action === 'reject') {
-                  await createTeamNotification(input.teamId, 'team_rejected', 'Clearance Denied', 'Your team application has been rejected by central command.');
-                  await sendEmail({ to: leaderEmail, template: 'rejected', variables: { teamName } }).catch(console.error);
-              } else if (input.action === 'needChanges') {
-                  await createTeamNotification(input.teamId, 'team_need_changes', 'Intel Required', 'Admin has requested changes to your team profile. Please address them and resubmit.');
-                  await sendEmail({ to: leaderEmail, template: 'needChanges', variables: { teamName, notes: input.notes || '', loginUrl } }).catch(console.error);
-              }
-          }
-      }
-  } catch (e) {
-      console.error("Failed to send review notifications/emails", e);
-  }
-}
-
-/**
- * Activates a specific round and deactivates all currently active rounds.
- * Removed hardcoded ["round-1","round-2","round-3"] constraint — any roundId accepted.
- */
-export async function activateRound(adminUid: string, roundId: string, roundTitle: string, roundDesc: string): Promise<void> {
-  const db = getAdminDb();
-
-  const batch = db.batch();
-
-  // Deactivate currently active rounds
-  const activeSnap = await db.collection('rounds').where('isActive', '==', true).get();
-  activeSnap.docs.forEach(doc => {
-    if (doc.id !== roundId) {
-      batch.update(doc.ref, { isActive: false, updatedAt: FieldValue.serverTimestamp(), updatedBy: adminUid });
-    }
-  });
-
-  // Activate (or create) the target round
-  const targetRef = db.collection('rounds').doc(roundId);
-  batch.set(targetRef, {
-    isActive: true,
-    title: roundTitle,
-    description: roundDesc,
-    isLocked: false,
+  await teamRef.update({
+    status: 'Verified',
+    verifiedAt: FieldValue.serverTimestamp(),
     updatedAt: FieldValue.serverTimestamp(),
-    updatedBy: adminUid,
-  }, { merge: true });
+  });
 
-  await batch.commit();
+  // Update corresponding invitedTeam
+  if (teamData['invitedTeamId']) {
+    await db.collection('invitedTeams').doc(teamData['invitedTeamId'] as string).update({
+      status: 'Verified',
+      updatedAt: FieldValue.serverTimestamp(),
+    });
+  }
 
   await writeAuditLog({
-    action: 'round.activated',
+    action: 'team.verified',
     actorUid: adminUid,
     actorRole: 'admin',
-    targetId: roundId,
-    targetType: 'rounds',
-    metadata: { roundTitle },
+    targetId: teamId,
+    targetType: 'teams',
+    metadata: { teamName: teamData['teamName'] },
     ip: null,
   });
 }
 
+// ─── Time Leap / Finalist Flags ───────────────────────────────────────────────
 
 /**
- * Deactivates all rounds without activating any.
- * Dynamic — reads currently active rounds rather than hardcoded IDs.
+ * Admin sets Time Leap eligibility for a team.
  */
-export async function deactivateAllRounds(adminUid: string): Promise<void> {
+export async function setTimeLeapEligible(
+  adminUid: string,
+  teamId: string,
+  eligible: boolean,
+): Promise<void> {
   const db = getAdminDb();
+  const teamRef = db.collection('teams').doc(teamId);
+  const snap = await teamRef.get();
+  if (!snap.exists) throw Errors.notFound('Team not found.');
 
-  const activeSnap = await db.collection('rounds').where('isActive', '==', true).get();
-
-  const batch = db.batch();
-  activeSnap.docs.forEach(doc => {
-    batch.update(doc.ref, {
-      isActive: false,
-      updatedAt: FieldValue.serverTimestamp(),
-      updatedBy: adminUid,
-    });
+  await teamRef.update({
+    isTimeLeapEligible: eligible,
+    updatedAt: FieldValue.serverTimestamp(),
   });
 
-  if (activeSnap.docs.length > 0) {
+  await writeAuditLog({
+    action: 'team.timeleap_eligible_set',
+    actorUid: adminUid,
+    actorRole: 'admin',
+    targetId: teamId,
+    targetType: 'teams',
+    metadata: { eligible },
+    ip: null,
+  });
+}
+
+/**
+ * Admin bulk-sets Time Leap eligibility for multiple teams.
+ */
+export async function bulkSetTimeLeapEligible(
+  adminUid: string,
+  teamIds: string[],
+  eligible: boolean,
+): Promise<void> {
+  const db = getAdminDb();
+  const CHUNK = 450;
+
+  for (let i = 0; i < teamIds.length; i += CHUNK) {
+    const chunk = teamIds.slice(i, i + CHUNK);
+    const batch = db.batch();
+
+    for (const teamId of chunk) {
+      const ref = db.collection('teams').doc(teamId);
+      batch.update(ref, {
+        isTimeLeapEligible: eligible,
+        updatedAt: FieldValue.serverTimestamp(),
+      });
+    }
+
     await batch.commit();
   }
 
   await writeAuditLog({
-    action: 'round.activated', // reuse closest; deactivateAllRounds is still a round state change
+    action: 'team.timeleap_eligible_set',
     actorUid: adminUid,
     actorRole: 'admin',
-    targetId: 'all',
-    targetType: 'rounds',
-    metadata: { deactivatedCount: activeSnap.docs.length },
+    targetId: 'bulk',
+    targetType: 'teams',
+    metadata: { teamIds, eligible, count: teamIds.length },
     ip: null,
   });
 }
 
 /**
- * Broadcasts an announcement to all teams.
- * After writing to Firestore, fires Discord webhook (if configured) and
- * WhatsApp stub (pending provider confirmation).
- * Each broadcast channel is independently try/catch wrapped — failure in one
- * channel never blocks the Firestore write or other channels.
+ * Admin sets finalist flags.
  */
-export async function createAnnouncement(adminUid: string, title: string, message: string): Promise<void> {
+export async function setFinalistFlags(
+  adminUid: string,
+  teamId: string,
+  flags: { isFinalist?: boolean; isTimeLeapQualified?: boolean },
+): Promise<void> {
   const db = getAdminDb();
-  
+  const teamRef = db.collection('teams').doc(teamId);
+  const snap = await teamRef.get();
+  if (!snap.exists) throw Errors.notFound('Team not found.');
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const update: any = { updatedAt: FieldValue.serverTimestamp() };
+  if (flags.isFinalist !== undefined) update.isFinalist = flags.isFinalist;
+  if (flags.isTimeLeapQualified !== undefined) update.isTimeLeapQualified = flags.isTimeLeapQualified;
+
+  await teamRef.update(update);
+
+  await writeAuditLog({
+    action: 'team.finalist_set',
+    actorUid: adminUid,
+    actorRole: 'admin',
+    targetId: teamId,
+    targetType: 'teams',
+    metadata: { flags },
+    ip: null,
+  });
+}
+
+// ─── Announcements ────────────────────────────────────────────────────────────
+
+export interface CreateAnnouncementInput {
+  title: string;
+  message: string;
+  channels: {
+    portal?: boolean;
+    email?: boolean;
+    discord?: boolean;
+    whatsapp?: boolean;
+  };
+}
+
+/**
+ * Creates an announcement and broadcasts to all configured channels.
+ * Each channel is independently try/catch wrapped — failure in one never blocks others.
+ */
+export async function createAnnouncement(
+  adminUid: string,
+  input: CreateAnnouncementInput,
+): Promise<string> {
+  const db = getAdminDb();
+  const channels = {
+    portal: input.channels.portal ?? true,
+    email: input.channels.email ?? false,
+    discord: input.channels.discord ?? false,
+    whatsapp: input.channels.whatsapp ?? false,
+  };
+
   const docRef = await db.collection('announcements').add({
-    title,
-    message,
+    title: input.title.trim(),
+    message: input.message.trim(),
     timestamp: FieldValue.serverTimestamp(),
     createdBy: adminUid,
     updatedBy: null,
     updatedAt: null,
-    isVisible: true,
-    version: 1
+    isVisible: channels.portal,
+    version: 1,
+    channels,
   });
 
   await writeAuditLog({
@@ -249,21 +201,20 @@ export async function createAnnouncement(adminUid: string, title: string, messag
     actorRole: 'admin',
     targetId: docRef.id,
     targetType: 'announcements',
-    metadata: { title },
+    metadata: { title: input.title, channels },
     ip: null,
   });
 
-  // ── Discord broadcast ───────────────────────────────────────────────────────
-  // Non-blocking: runs in background after response has been sent
-  if (env.DISCORD_WEBHOOK_URL) {
+  // ── Discord broadcast (non-blocking) ───────────────────────────────────────
+  if (channels.discord && env.DISCORD_WEBHOOK_URL) {
     fetch(env.DISCORD_WEBHOOK_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         embeds: [{
-          title: `📢 ${title}`,
-          description: message,
-          color: 0xe50914, // RevengersHack red
+          title: `📢 ${input.title}`,
+          description: input.message,
+          color: 0xe50914,
           footer: { text: 'RevengersHack Portal' },
           timestamp: new Date().toISOString(),
         }],
@@ -273,26 +224,77 @@ export async function createAnnouncement(adminUid: string, title: string, messag
     });
   }
 
-  // ── WhatsApp broadcast (STUB — provider not yet confirmed) ─────────────────
-  // TODO: Replace with actual WhatsApp API call once provider & token confirmed.
-  // if (env.WHATSAPP_API_TOKEN) {
-  //   postToWhatsApp({ token: env.WHATSAPP_API_TOKEN, message: `${title}\n\n${message}` });
-  // }
+  // ── WhatsApp broadcast (non-blocking, when provider configured) ────────────
+  if (channels.whatsapp && env.WHATSAPP_API_TOKEN && env.WHATSAPP_API_URL) {
+    fetch(env.WHATSAPP_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${env.WHATSAPP_API_TOKEN}`,
+      },
+      body: JSON.stringify({
+        text: `*${input.title}*\n\n${input.message}`,
+      }),
+    }).catch((err) => {
+      console.error('[admin.service] WhatsApp broadcast failed (non-fatal):', err?.message);
+    });
+  }
+
+  // ── Email broadcast to all Verified teams' leaders (queue-based) ───────────
+  if (channels.email) {
+    const teamsSnap = await db
+      .collection('teams')
+      .where('status', '==', 'Verified')
+      .select('leaderEmail', 'teamName')
+      .get();
+
+    const loginUrl = getPortalBaseUrl();
+
+    const emailJobs = teamsSnap.docs.map((d) => ({
+      to: d.data()['leaderEmail'] as string,
+      template: 'announcement' as const,
+      variables: {
+        title: input.title,
+        message: input.message,
+        loginUrl,
+        teamName: d.data()['teamName'] as string,
+      },
+      priority: 'normal' as const,
+      createdBy: adminUid,
+    }));
+
+    if (emailJobs.length > 0) {
+      const { createMailJobs } = await import('./mail-queue.service');
+      await createMailJobs(emailJobs).catch((err) => {
+        console.error('[admin.service] Failed to queue announcement emails:', err);
+      });
+    }
+  }
+
+  return docRef.id;
 }
 
 /**
  * Edits an existing announcement.
  */
-export async function editAnnouncement(adminUid: string, annId: string, title: string, message: string): Promise<void> {
+export async function editAnnouncement(
+  adminUid: string,
+  annId: string,
+  title: string,
+  message: string,
+): Promise<void> {
   const db = getAdminDb();
   const ref = db.collection('announcements').doc(annId);
+  const snap = await ref.get();
+
+  if (!snap.exists) throw Errors.notFound('Announcement not found.');
 
   await ref.update({
-    title,
-    message,
+    title: title.trim(),
+    message: message.trim(),
     updatedBy: adminUid,
     updatedAt: FieldValue.serverTimestamp(),
-    version: FieldValue.increment(1)
+    version: FieldValue.increment(1),
   });
 
   await writeAuditLog({
@@ -307,7 +309,7 @@ export async function editAnnouncement(adminUid: string, annId: string, title: s
 }
 
 /**
- * Soft deletes an announcement.
+ * Soft-deletes an announcement (sets isVisible: false).
  */
 export async function deleteAnnouncement(adminUid: string, annId: string): Promise<void> {
   const db = getAdminDb();
@@ -316,7 +318,7 @@ export async function deleteAnnouncement(adminUid: string, annId: string): Promi
   await ref.update({
     isVisible: false,
     updatedBy: adminUid,
-    updatedAt: FieldValue.serverTimestamp()
+    updatedAt: FieldValue.serverTimestamp(),
   });
 
   await writeAuditLog({
@@ -328,4 +330,173 @@ export async function deleteAnnouncement(adminUid: string, annId: string): Promi
     metadata: {},
     ip: null,
   });
+}
+
+// ─── Settings ─────────────────────────────────────────────────────────────────
+
+/**
+ * Gets platform settings.
+ */
+export async function getSettings(): Promise<Record<string, unknown>> {
+  const db = getAdminDb();
+  const snap = await db.collection('settings').doc('platform').get();
+  if (!snap.exists) return {};
+  return snap.data() ?? {};
+}
+
+/**
+ * Updates platform settings. Only super_admin should call this.
+ */
+export async function updateSettings(
+  adminUid: string,
+  input: Record<string, unknown>,
+): Promise<void> {
+  const db = getAdminDb();
+  const ref = db.collection('settings').doc('platform');
+
+  await ref.set(
+    { ...input, updatedAt: FieldValue.serverTimestamp(), updatedBy: adminUid },
+    { merge: true }
+  );
+
+  await writeAuditLog({
+    action: 'settings.updated',
+    actorUid: adminUid,
+    actorRole: 'super_admin',
+    targetId: 'platform',
+    targetType: 'settings',
+    metadata: { updatedFields: Object.keys(input) },
+    ip: null,
+  });
+}
+
+// ─── Legacy (kept for backward compat) ───────────────────────────────────────
+
+export type ReviewAction = 'approve' | 'reject' | 'needChanges';
+
+export interface ReviewTeamInput {
+  teamId: string;
+  action: ReviewAction;
+  notes?: string;
+  lastUpdatedAt: number;
+}
+
+/**
+ * @deprecated Use the new invitation-based onboarding flow instead.
+ * Kept for backward compatibility with existing API routes.
+ */
+export async function reviewTeam(adminUid: string, input: ReviewTeamInput): Promise<void> {
+  const db = getAdminDb();
+  const teamRef = db.collection('teams').doc(input.teamId);
+
+  if (input.action === 'needChanges' && !input.notes) {
+    throw Errors.validation('Notes are required when requesting changes.');
+  }
+
+  let teamName = 'Unknown Team';
+  let leaderId = '';
+
+  await db.runTransaction(async (tx) => {
+    const snap = await tx.get(teamRef);
+    if (!snap.exists) throw Errors.notFound('Team not found.');
+
+    const teamData = snap.data()!;
+    teamName = teamData['teamName'] ?? 'Unknown Team';
+    leaderId = teamData['leaderId'] ?? '';
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const updateData: any = { updatedAt: FieldValue.serverTimestamp() };
+
+    if (input.action === 'approve') {
+      updateData.status = 'Verified';
+      updateData.verifiedAt = FieldValue.serverTimestamp();
+    } else if (input.action === 'reject') {
+      updateData.status = 'Draft';
+      updateData.adminNotes = input.notes ?? null;
+    } else if (input.action === 'needChanges') {
+      updateData.adminNotes = input.notes ?? null;
+    }
+
+    tx.update(teamRef, updateData);
+  });
+
+  await writeAuditLog({
+    action: input.action === 'approve' ? 'team.verified' : 'team.updated',
+    actorUid: adminUid,
+    actorRole: 'admin',
+    targetId: input.teamId,
+    targetType: 'teams',
+    metadata: { action: input.action, notes: input.notes },
+    ip: null,
+  });
+
+  // Send notification if leader exists
+  if (leaderId) {
+    try {
+      const userSnap = await db.collection('users').doc(leaderId).get();
+      if (userSnap.exists) {
+        const leaderEmail = userSnap.data()!.email as string;
+        const loginUrl = `${getPortalBaseUrl()}/login`;
+
+        if (input.action === 'approve') {
+          await createNotification({
+            userId: leaderId,
+            type: 'team_approved',
+            title: 'Clearance Granted',
+            message: 'Your team has been verified. The dashboard is now fully unlocked.'
+          });
+          await createMailJob({ to: leaderEmail, template: 'approved', variables: { teamName, loginUrl }, createdBy: adminUid });
+        } else if (input.action === 'needChanges') {
+          await createNotification({
+            userId: leaderId,
+            type: 'team_need_changes',
+            title: 'Intel Required',
+            message: 'Admin has requested changes to your profile.'
+          });
+          await createMailJob({ to: leaderEmail, template: 'need_changes', variables: { teamName, notes: input.notes ?? '', loginUrl }, createdBy: adminUid });
+        }
+      }
+    } catch (err) {
+      console.error('[admin.service] Failed to send review notifications:', err);
+    }
+  }
+}
+
+// ─── Old activateRound helper — kept as shim ─────────────────────────────────
+
+/**
+ * @deprecated Use round-state.service.ts transitionRound() instead.
+ */
+export async function activateRound(
+  adminUid: string,
+  roundId: string,
+  roundTitle: string,
+  roundDesc: string,
+): Promise<void> {
+  const { transitionRound, updateRound } = await import('./round-state.service');
+  const db = getAdminDb();
+  const snap = await db.collection('rounds').doc(roundId).get();
+
+  if (!snap.exists) {
+    // Create the round first
+    const { createRound } = await import('./round-state.service');
+    await createRound(adminUid, {
+      roundId,
+      title: roundTitle,
+      description: roundDesc,
+      type: 'general',
+      submissionType: 'github_link',
+    });
+    await transitionRound(adminUid, roundId, 'Published');
+    await transitionRound(adminUid, roundId, 'Active');
+  } else {
+    const current = snap.data()!;
+    if (current['status'] === 'Draft') {
+      await transitionRound(adminUid, roundId, 'Published');
+      await transitionRound(adminUid, roundId, 'Active');
+    } else if (current['status'] === 'Published') {
+      await transitionRound(adminUid, roundId, 'Active');
+    }
+    await updateRound(adminUid, roundId, { title: roundTitle, description: roundDesc });
+  }
 }

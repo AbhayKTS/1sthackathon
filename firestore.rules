@@ -1,152 +1,297 @@
 rules_version = '2';
+
+//
+// RevengersHack 2026 — Firestore Security Rules
+//
+// Architecture: ALL WRITES to sensitive collections happen via the
+// backend-nextjs API (Firebase Admin SDK, bypasses these rules).
+// These rules defend against direct client SDK attacks.
+//
+// Roles are stored in users/{uid}.role and validated by the API.
+// Client SDK reads must be explicitly permitted here.
+//
+// Collections:
+//   users, teams, invitedTeams, rounds, submissions, sessions,
+//   evaluations, leaderboard, announcements, mailQueue, mentorSlots,
+//   judges, permissions, activityLogs, auditLogs, settings, googleSheets,
+//   otpCodes, otpRateLimits, notifications, emailLogs, tickets
+//
+// ─── RULE CONVENTIONS ────────────────────────────────────────────────────────
+// isAuth()       — has a valid Firebase Auth session
+// isAdmin()      — role is admin or super_admin
+// isSuperAdmin() — role is super_admin
+// isOwnUser(uid) — the authenticated uid matches the target
+// isTeamMember() — authenticated user belongs to the team (memberEmails array)
+// isTeamLeader() — authenticated user is the team leader
+//
+
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // HELPER FUNCTION: Verify caller is an admin by reading their users doc.
-    // Used by rules that need admin-only access from client SDK.
-    // Note: privileged mutations should go through the Next.js API (Admin SDK).
-    // This helper is retained for backward compatibility with the Vite frontend.
-    // ─────────────────────────────────────────────────────────────────────────
+    // ─── Helper Functions ─────────────────────────────────────────────────────
+
+    function isAuth() {
+      return request.auth != null;
+    }
+
+    function getRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+
     function isAdmin() {
-      return request.auth != null
-        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+      return isAuth() && getRole() in ['admin', 'super_admin'];
     }
 
     function isSuperAdmin() {
-      return request.auth != null
-        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'super_admin';
+      return isAuth() && getRole() == 'super_admin';
     }
 
-    function isAdminOrSuperAdmin() {
-      return isAdmin() || isSuperAdmin();
+    function isParticipant() {
+      return isAuth() && getRole() in ['participant_leader', 'participant_member'];
     }
 
-    // ─── Phase 1: Users ───────────────────────────────────────────────────
-    // Read: own doc only (no bulk listing).
-    // Write: ALL writes via Admin SDK (Next.js API routes) — deny client writes.
-    match /users/{userId} {
-      allow read: if request.auth != null && request.auth.uid == userId;
-      allow write: if false; // All mutations via Admin SDK API routes only — prevents client-side role escalation
+    function isOwnUser(uid) {
+      return isAuth() && request.auth.uid == uid;
     }
 
-    // ─── Phase 1: OTP Codes ───────────────────────────────────────────────
-    // Server-only via Admin SDK. Zero client access.
+    // ─── Users ────────────────────────────────────────────────────────────────
+    // Participants can read their own doc. Admins can read all.
+    // Writes are Admin SDK only.
+
+    match /users/{uid} {
+      allow read: if isOwnUser(uid) || isAdmin();
+      allow write: if false; // Admin SDK only
+    }
+
+    // ─── Invited Teams ────────────────────────────────────────────────────────
+    // Participants can read the invitedTeam linked to them.
+    // Admins can read/write all (for panel display; mutations via API).
+
+    match /invitedTeams/{docId} {
+      allow read: if isAdmin() ||
+        (isAuth() && resource.data.leaderEmail == request.auth.token.email);
+      allow write: if false; // Admin SDK only
+    }
+
+    // ─── Teams ────────────────────────────────────────────────────────────────
+    // Participants can read their own team (matched by memberEmails or leaderId).
+    // Admins can read all.
+
+    match /teams/{teamId} {
+      allow read: if isAdmin() ||
+        (isAuth() && (
+          resource.data.leaderId == request.auth.uid ||
+          request.auth.token.email in resource.data.memberEmails
+        ));
+      allow write: if false; // Admin SDK only
+    }
+
+    // ─── Rounds ───────────────────────────────────────────────────────────────
+    // Participants can read Published/Active/Locked/Completed rounds.
+    // Draft and Archived rounds are admin-only.
+    // allowedTeams is enforced by API, not here (too complex for rules).
+
+    match /rounds/{roundId} {
+      allow read: if isAdmin() ||
+        (isAuth() && resource.data.isVisible == true &&
+         resource.data.status in ['Published', 'Active', 'Locked', 'Evaluation', 'Completed']);
+      allow write: if false; // Admin SDK only
+    }
+
+    // ─── Submissions ──────────────────────────────────────────────────────────
+    // Team leader can read their own submissions.
+    // Admins can read all.
+    // Writes via API only.
+
+    match /submissions/{submissionId} {
+      allow read: if isAdmin() ||
+        (isAuth() && resource.data.submittedBy == request.auth.uid);
+      allow write: if false; // Admin SDK only
+    }
+
+    // ─── Sessions (legacy) ────────────────────────────────────────────────────
+    // Legacy sessions collection (from old round.service assignSession)
+
+    match /sessions/{sessionId} {
+      allow read: if isAdmin() ||
+        (isAuth() && resource.data.teamId != null &&
+         exists(/databases/$(database)/documents/teams/$(resource.data.teamId)) &&
+         get(/databases/$(database)/documents/teams/$(resource.data.teamId)).data.leaderId == request.auth.uid);
+      allow write: if false; // Admin SDK only
+    }
+
+    // ─── Mentor Slots ─────────────────────────────────────────────────────────
+    // Team can read their slot IF meetLinkVisibleAt has passed for the link,
+    // OR if they're reading non-sensitive fields.
+    // The time-gate on meetLink is enforced by the API (server-side), not rules.
+    // Rules only allow the read — the API strips meetLink if too early.
+
+    match /mentorSlots/{slotId} {
+      allow read: if isAdmin() ||
+        (isAuth() && resource.data.teamId != null &&
+         exists(/databases/$(database)/documents/teams/$(resource.data.teamId)) &&
+         get(/databases/$(database)/documents/teams/$(resource.data.teamId)).data.leaderId == request.auth.uid);
+      allow write: if false; // Admin SDK only
+    }
+
+    // ─── Evaluations ─────────────────────────────────────────────────────────
+    // Admins and judges can read evaluations.
+    // Participants NEVER have read access to evaluations.
+    // Published scores visible via leaderboard subcollection only.
+
+    match /evaluations/{evalId} {
+      allow read: if isAdmin() ||
+        (isAuth() && getRole() == 'judge');
+      allow write: if false; // Admin SDK only
+    }
+
+    // ─── Leaderboard ─────────────────────────────────────────────────────────
+    // The top-level round doc is readable by all logged-in users if published.
+    // The standings subcollection is readable if the round doc isPublished=true.
+    // Unpublished leaderboards (isPublished=false) → admin-only.
+
+    match /leaderboard/{roundId} {
+      allow read: if isAdmin() ||
+        (isAuth() && resource.data.isPublished == true);
+      allow write: if false; // Admin SDK only
+
+      match /standings/{teamId} {
+        allow read: if isAdmin() ||
+          (isAuth() &&
+           get(/databases/$(database)/documents/leaderboard/$(roundId)).data.isPublished == true);
+        allow write: if false; // Admin SDK only
+      }
+    }
+
+    // ─── Announcements ────────────────────────────────────────────────────────
+    // All authenticated users can read visible announcements.
+
+    match /announcements/{annId} {
+      allow read: if isAuth() && resource.data.isVisible == true;
+      allow read: if isAdmin(); // Admins see all including hidden
+      allow write: if false; // Admin SDK only
+    }
+
+    // ─── Mail Queue ───────────────────────────────────────────────────────────
+    // Zero client access. Admin SDK only.
+
+    match /mailQueue/{jobId} {
+      allow read, write: if false;
+    }
+
+    // ─── Email Logs ───────────────────────────────────────────────────────────
+    // Admin SDK only.
+
+    match /emailLogs/{logId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    // ─── Google Sheets Sync Queue ─────────────────────────────────────────────
+    // Admin SDK only.
+
+    match /googleSheets/{syncJobId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    // ─── Judges ───────────────────────────────────────────────────────────────
+
+    match /judges/{judgeId} {
+      allow read: if isAdmin();
+      allow write: if false; // Admin SDK only
+    }
+
+    // ─── Permissions ─────────────────────────────────────────────────────────
+    // Super admin can read all. Admins can read their own.
+
+    match /permissions/{userId} {
+      allow read: if isSuperAdmin() ||
+        (isAdmin() && isOwnUser(userId));
+      allow write: if false; // Admin SDK only
+    }
+
+    // ─── Settings ─────────────────────────────────────────────────────────────
+    // Admins can read platform settings (for admin panel display).
+    // Participants cannot read settings (contains internal URLs/tokens).
+
+    match /settings/{key} {
+      allow read: if isAdmin();
+      allow write: if false; // Admin SDK only
+    }
+
+    // ─── Audit Logs ───────────────────────────────────────────────────────────
+    // Admin read only. No client writes ever.
+
+    match /auditLogs/{logId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    // ─── Legacy AuditLogs (capital A, old collection name) ────────────────────
+    match /AuditLogs/{logId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    // ─── Activity Logs ────────────────────────────────────────────────────────
+    // Admin read only. Writes via Admin SDK only.
+
+    match /activityLogs/{logId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    // ─── OTP Codes ────────────────────────────────────────────────────────────
+    // Zero client access. Admin SDK only.
+
     match /otpCodes/{docId} {
       allow read, write: if false;
     }
 
-    // ─── Phase 1: OTP Rate Limits ─────────────────────────────────────────
-    // Server-only via Admin SDK. Zero client access.
-    match /otpRateLimits/{docId} {
+    // ─── OTP Rate Limits ─────────────────────────────────────────────────────
+    // Zero client access. Admin SDK only.
+
+    match /otpRateLimits/{email} {
       allow read, write: if false;
     }
 
-    // ─── Phase 2: Invited Teams ───────────────────────────────────────────
-    // Admin read/write only. No client access from participants.
-    match /invitedTeams/{docId} {
-      allow read, write: if isAdminOrSuperAdmin();
+    // ─── Notifications ────────────────────────────────────────────────────────
+    // Users can read their own notifications. Writes via Admin SDK only.
+
+    match /notifications/{notifId} {
+      allow read: if isAuth() && resource.data.userId == request.auth.uid;
+      allow write: if false; // Admin SDK only
     }
 
-    // ─── Phase 5: Audit Logs ─────────────────────────────────────────────
-    // Admin read only. No client writes — append-only via Admin SDK.
-    match /AuditLogs/{docId} {
-      allow read: if isAdminOrSuperAdmin();
+    // ─── Tickets ─────────────────────────────────────────────────────────────
+    // Users can read/create their own tickets. Admin can read all.
+
+    match /tickets/{ticketId} {
+      allow read: if isAdmin() ||
+        (isAuth() && resource.data.createdBy == request.auth.uid);
+      allow create: if isAuth() &&
+        request.resource.data.createdBy == request.auth.uid &&
+        request.resource.data.status == 'open' &&
+        request.resource.data.message.size() > 0 &&
+        request.resource.data.message.size() <= 2000;
+      allow update: if false; // Replies via Admin SDK
+    }
+
+    // ─── Dead Collections (read-only for migration) ───────────────────────────
+    // These will be deleted after migration is confirmed.
+
+    match /hackathondata/{docId} {
+      allow read: if isAdmin();
       allow write: if false;
     }
 
-    // ─── Phase 11: Email Logs ─────────────────────────────────────────────
-    // Admin read only. No client writes — written by email service (Admin SDK).
-    match /emailLogs/{docId} {
-      allow read: if isAdminOrSuperAdmin();
+    match /teamData2/{docId} {
+      allow read: if isAdmin();
       allow write: if false;
     }
 
-    // ─── Phase 10: Notifications ─────────────────────────────────────────
-    // Participants read/update own notifications (to mark as read).
-    // No client create — created by Admin SDK as side-effect of other actions.
-    match /notifications/{docId} {
-      allow read, update: if request.auth != null
-        && resource.data.userId == request.auth.uid;
-      allow create, delete: if false;
-    }
-
-    // ─── Phase 12: Support Tickets ─────────────────────────────────────────
-    match /tickets/{docId} {
-      allow read: if request.auth != null && (resource.data.userId == request.auth.uid || isAdminOrSuperAdmin());
-      allow write: if false;
-    }
-
-    // ─── Existing: Join Gang Leads (Landing page interest form) ──────────
-    // Any authenticated user (including anonymous) can create.
-    match /joinGangLeads/{docId} {
-      allow create: if request.auth != null
-        && request.resource.data.keys().hasAll(['name', 'email', 'number', 'teamName'])
-        && request.resource.data.name is string
-        && request.resource.data.email is string
-        && request.resource.data.number is string
-        && request.resource.data.teamName is string;
-      allow read, update, delete: if isAdminOrSuperAdmin();
-    }
-
-    // ─── Existing: Teams ─────────────────────────────────────────────────
-    // Anyone logged in can read team names and scores for the leaderboard.
-    // All writes are restricted to admins.
-    match /teams/{teamId} {
-      allow read: if request.auth != null;
-      allow write: if isAdminOrSuperAdmin();
-    }
-
-    // ─── Existing: Rounds ────────────────────────────────────────────────
-    // Any authenticated user can read. Writes moved to Admin SDK.
-    match /rounds/{roundId} {
-      allow read: if request.auth != null;
-      allow write: if false;
-    }
-
-    // ─── Existing: Announcements ─────────────────────────────────────────
-    // Any authenticated user can read announcements. Writes via Admin SDK.
-    match /announcements/{annId} {
-      allow read: if request.auth != null;
-      allow create, update, delete: if false; 
-      
-      // Phase 7: Subcollection for tracking user read states
-      match /ReadState/{userId} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
-      }
-    }
-
-    // ─── Existing: Submissions ───────────────────────────────────────────
-    // Participants can only read their own team's submissions. Admins can read all.
-    // All writes are handled via the Admin SDK API (server-side).
-    match /submissions/{subId} {
-      allow read: if request.auth != null && (
-        isAdminOrSuperAdmin() ||
-        resource.data.teamId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.teamId
-      );
-      allow create, update, delete: if false;
-    }
-
-    // ─── Sessions (Stage 6d) ─────────────────────────────────────────────
-    // Participants can read their own team's sessions (meeting links / slots).
-    // All writes are via Admin SDK (admin assigns sessions).
-    // Session doc IDs are composite: teamId_roundId.
-    match /sessions/{sessionId} {
-      allow read: if request.auth != null && (
-        isAdminOrSuperAdmin() ||
-        resource.data.teamId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.teamId
-      );
-      allow write: if false;
-    }
-
-    // ─── Leaderboard ─────────────────────────────────────────────────────
-    // Admin read only from client. All writes via Admin SDK only.
-    match /leaderboard/{teamId} {
-      allow read: if isAdminOrSuperAdmin();
-      allow write: if false;
-    }
-
-    // ─── Default: Deny Everything Else ───────────────────────────────────
+    // ─── Catch-all: deny all other reads/writes ────────────────────────────────
     match /{document=**} {
       allow read, write: if false;
     }

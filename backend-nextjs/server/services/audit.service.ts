@@ -5,41 +5,17 @@
  * Call writeAuditLog() as the final step inside every API route that mutates data.
  *
  * AuditLogs are append-only — never updated or deleted.
+ * Collection name: `auditLogs` (lowercase, consistent with all other collections).
  *
  * @module server/services/audit.service
  */
 
 import { FieldValue } from 'firebase-admin/firestore';
 import { getAdminDb } from '@/lib/firebase-admin';
+import type { AuditAction } from '@/types/index';
 
-export type AuditAction =
-  | 'auth.otp_requested'
-  | 'auth.otp_verified'
-  | 'auth.user_created'
-  | 'team.invitation_imported'
-  | 'team.invitation_email_sent'
-  | 'team.profile_submitted'
-  | 'team.approved'
-  | 'team.rejected'
-  | 'team.need_changes'
-  | 'team.updated'
-  | 'team.member_removed'
-  | 'team.member_added'
-  | 'round.activated'
-  | 'round.deactivated'
-  | 'announcement.created'
-  | 'announcement.updated'
-  | 'announcement.deleted'
-  | 'submission.submitted'
-  | 'submission.locked'
-  | 'ticket.created'
-  | 'ticket.replied'
-  | 'ticket.responded'
-  | 'ticket.closed'
-  | 'admin.created'
-  | 'admin.role_changed'
-  | 'admin.score_permission_changed'
-  | 'leaderboard.score_updated';
+// Re-export so existing callers that import AuditAction from here still work
+export type { AuditAction };
 
 export interface AuditLogEntry {
   action: AuditAction;
@@ -57,18 +33,20 @@ export interface AuditLogEntry {
  * Writes an audit log entry to Firestore.
  * Non-blocking — errors are swallowed to prevent audit failures from
  * blocking the primary operation, but are logged server-side.
+ *
+ * Collection: `auditLogs` (canonical name as of 2026-07-11)
+ * Old name `AuditLogs` is still readable via the old security rules.
  */
 export async function writeAuditLog(entry: AuditLogEntry): Promise<void> {
   try {
     await getAdminDb()
-      .collection('AuditLogs')
+      .collection('auditLogs')
       .add({
         ...entry,
         at: FieldValue.serverTimestamp(),
       });
   } catch {
     // Audit log write failure must not block the primary operation.
-    // In production, this should be sent to a monitoring service (e.g., Sentry).
     // eslint-disable-next-line no-console -- intentional: audit failure is operational
     console.error('[AuditService] Failed to write audit log:', entry.action);
   }

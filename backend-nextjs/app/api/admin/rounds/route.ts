@@ -1,9 +1,7 @@
 /**
- * PATCH /api/admin/rounds/[roundId]  — update a round's fields
- * GET   /api/admin/rounds             — list all rounds
- *
- * isActive and isLocked are independently settable.
- * No hardcoded list of round IDs — any roundId is accepted.
+ * GET  /api/admin/rounds — list all rounds (admin view, all statuses)
+ * POST /api/admin/rounds — create a new round (status: Draft)
+ * PATCH /api/admin/rounds — update round fields (backward compat)
  *
  * @route /api/admin/rounds
  */
@@ -11,44 +9,62 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { apiSuccess, apiError, applyCorsHeaders, handleOptions, requireRole, withAuth } from '@/lib/api-helpers';
 import { Errors } from '@/lib/errors';
-import { updateRound, listRounds, ensureRoundExists, type UpdateRoundInput } from '@/server/services/round.service';
-import { z } from 'zod';
+import { createRound, updateRound, listRounds } from '@/server/services/round-state.service';
+import type { RoundType, SubmissionType } from '@/types/index';
 
 export function OPTIONS(request: NextRequest): NextResponse {
   return handleOptions(request);
 }
 
-/** GET /api/admin/rounds — list all rounds */
+/** GET /api/admin/rounds — list all rounds (admin, all statuses) */
 export async function GET(request: NextRequest): Promise<NextResponse> {
   const origin = request.headers.get('origin') ?? '';
   try {
     const token = await withAuth(request);
     requireRole(token, ['admin', 'super_admin']);
 
-    const rounds = await listRounds();
-    const response = apiSuccess({ rounds }, 200);
+    const rounds = await listRounds({ isAdmin: true });
+    const response = apiSuccess({ rounds });
     return applyCorsHeaders(response, origin);
   } catch (err) {
     return applyCorsHeaders(apiError(err, origin), origin);
   }
 }
 
-const updateSchema = z.object({
-  roundId: z.string().min(1, 'Round ID is required'),
-  title: z.string().optional(),
-  description: z.string().optional(),
-  type: z.enum(['ppt', 'mentoring_prototype', 'timeleap', 'judges_final', 'general']).optional(),
-  isActive: z.boolean().optional(),
-  isLocked: z.boolean().optional(),
-  startsAt: z.string().nullable().optional(),
-  endsAt: z.string().nullable().optional(),
-  submissionDeadline: z.string().nullable().optional(),
-  googleSheetId: z.string().nullable().optional(),
-  // If true and round doc doesn't exist, create it with defaults first
-  createIfMissing: z.boolean().optional().default(false),
-});
+/** POST /api/admin/rounds — create a new round in Draft status */
+export async function POST(request: NextRequest): Promise<NextResponse> {
+  const origin = request.headers.get('origin') ?? '';
+  try {
+    const token = await withAuth(request);
+    requireRole(token, ['admin', 'super_admin']);
 
-/** PATCH /api/admin/rounds — update any field(s) on a round */
+    const body = await request.json().catch(() => {
+      throw Errors.validation('Invalid JSON payload');
+    });
+
+    if (!body.roundId?.trim()) throw Errors.validation('roundId is required.');
+    if (!body.title?.trim()) throw Errors.validation('title is required.');
+    if (!body.type) throw Errors.validation('type is required.');
+    if (!body.submissionType) throw Errors.validation('submissionType is required.');
+
+    const roundId = (body.roundId as string).trim().toLowerCase().replace(/\s+/g, '-');
+
+    await createRound(token.uid, {
+      roundId,
+      title: body.title.trim(),
+      description: body.description?.trim() ?? '',
+      type: body.type as RoundType,
+      submissionType: body.submissionType as SubmissionType,
+    });
+
+    const response = apiSuccess({ created: true, roundId }, 201);
+    return applyCorsHeaders(response, origin);
+  } catch (err) {
+    return applyCorsHeaders(apiError(err, origin), origin);
+  }
+}
+
+/** PATCH /api/admin/rounds — update round fields (backward compat wrapper) */
 export async function PATCH(request: NextRequest): Promise<NextResponse> {
   const origin = request.headers.get('origin') ?? '';
   try {
@@ -59,21 +75,31 @@ export async function PATCH(request: NextRequest): Promise<NextResponse> {
       throw Errors.validation('Invalid JSON payload');
     });
 
-    const parsed = updateSchema.safeParse(body);
-    if (!parsed.success) {
-      throw Errors.validation(parsed.error.issues[0]?.message || 'Validation failed');
-    }
+    const roundId = body.roundId as string;
+    if (!roundId?.trim()) throw Errors.validation('roundId is required in body.');
 
-    const { roundId, createIfMissing, ...fields } = parsed.data;
+    const { roundId: _id, ...fields } = body;
 
-    if (createIfMissing) {
-      await ensureRoundExists(token.uid, roundId, fields as UpdateRoundInput);
-    }
+    await updateRound(token.uid, roundId, {
+      title: fields.title,
+      description: fields.description,
+      instructions: fields.instructions,
+      resources: fields.resources,
+      pptViewerLink: fields.pptViewerLink,
+      driveLink: fields.driveLink,
+      canvaViewerLink: fields.canvaViewerLink,
+      type: fields.type as RoundType,
+      submissionType: fields.submissionType as SubmissionType,
+      allowedTeams: fields.allowedTeams,
+      startsAt: fields.startsAt,
+      endsAt: fields.endsAt,
+      submissionDeadline: fields.submissionDeadline,
+      timerDuration: fields.timerDuration,
+      googleSheetId: fields.googleSheetId,
+      isVisible: fields.isVisible,
+    });
 
-    const input: UpdateRoundInput = fields as UpdateRoundInput;
-    await updateRound(token.uid, roundId, input);
-
-    const response = apiSuccess({ message: `Round "${roundId}" updated.` }, 200);
+    const response = apiSuccess({ message: `Round "${roundId}" updated.` });
     return applyCorsHeaders(response, origin);
   } catch (err) {
     return applyCorsHeaders(apiError(err, origin), origin);

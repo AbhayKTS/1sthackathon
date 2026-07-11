@@ -91,7 +91,7 @@ export async function updateRound(
   await roundRef.update(update);
 
   await writeAuditLog({
-    action: 'round.activated',
+    action: 'round.updated',
     actorUid: adminUid,
     actorRole: 'admin',
     targetId: roundId,
@@ -180,7 +180,7 @@ export async function assignSession(
   }, { merge: true });
 
   await writeAuditLog({
-    action: 'round.activated', // reuse closest action; future: add 'session.assigned'
+    action: 'round.session_assigned',
     actorUid: adminUid,
     actorRole: 'admin',
     targetId: sessionId,
