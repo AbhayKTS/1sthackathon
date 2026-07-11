@@ -46,6 +46,15 @@ export interface SubmitPayloadInput {
 export async function submitPayload(userUid: string, input: SubmitPayloadInput): Promise<void> {
   const db = getAdminDb();
 
+  // Check if submissions are paused
+  const settingsSnap = await db.collection('settings').doc('platform').get();
+  if (settingsSnap.exists) {
+    const data = settingsSnap.data()!;
+    if (data['maintenanceMode'] === true || data['emergencyMode'] === true || data['submissionsPaused'] === true) {
+      throw Errors.forbidden('Submissions are currently paused by the system administrator.');
+    }
+  }
+
   // 1. Verify team is Verified and caller is team leader
   const teamRef = db.collection('teams').doc(input.teamId);
   const teamSnap = await teamRef.get();

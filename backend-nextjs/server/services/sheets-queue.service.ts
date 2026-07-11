@@ -75,6 +75,17 @@ export interface SheetsProcessResult {
  */
 export async function processSheetsQueue(): Promise<SheetsProcessResult> {
   const db = getAdminDb();
+
+  // Check if sheets sync is paused in settings
+  const settingsSnap = await db.collection('settings').doc('platform').get();
+  if (settingsSnap.exists) {
+    const data = settingsSnap.data()!;
+    if (data['emergencyMode'] === true || data['sheetsPaused'] === true) {
+      console.log('[sheets-queue] Sheets sync processing is paused due to emergency/maintenance settings.');
+      return { processed: 0, synced: 0, failed: 0, retried: 0 };
+    }
+  }
+
   const batchSize = env.SHEETS_QUEUE_BATCH_SIZE ?? 10;
   const maxAttempts = env.SHEETS_QUEUE_MAX_ATTEMPTS ?? 3;
 

@@ -59,10 +59,22 @@ export async function withAuth(request: NextRequest): Promise<AuthenticatedToken
       throw Errors.forbidden('Your account has been deactivated. Please contact support.');
     }
 
+    // Maintenance Mode Check
+    const role = userData.role as UserRole;
+    if (role !== 'super_admin' && role !== 'admin') {
+      const settingsSnap = await getAdminDb().collection('settings').doc('platform').get();
+      if (settingsSnap.exists) {
+        const settingsData = settingsSnap.data()!;
+        if (settingsData['maintenanceMode'] === true) {
+          throw new AppError('Platform is currently undergoing maintenance. Please try again later.', 503, 'INTERNAL_ERROR');
+        }
+      }
+    }
+
     return {
       uid: decoded.uid,
       email: decoded.email ?? userData.email,
-      role: userData.role as UserRole,
+      role,
     };
   } catch (err) {
     if (err instanceof AppError) throw err;

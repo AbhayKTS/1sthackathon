@@ -121,6 +121,17 @@ export interface ProcessResult {
  */
 export async function processMailQueue(): Promise<ProcessResult> {
   const db = getAdminDb();
+
+  // Check if emails are paused in settings
+  const settingsSnap = await db.collection('settings').doc('platform').get();
+  if (settingsSnap.exists) {
+    const data = settingsSnap.data()!;
+    if (data['emergencyMode'] === true || data['emailsPaused'] === true) {
+      console.log('[mail-queue] Mail processing is paused due to emergency/maintenance settings.');
+      return { processed: 0, sent: 0, failed: 0, retried: 0 };
+    }
+  }
+
   const batchSize = env.MAIL_QUEUE_BATCH_SIZE ?? 20;
   const maxAttempts = env.MAIL_QUEUE_MAX_ATTEMPTS ?? 3;
 

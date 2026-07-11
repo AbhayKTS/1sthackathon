@@ -114,4 +114,55 @@ describe('Security Hardening Service Tests', () => {
       );
     });
   });
+
+  describe('Emergency & Maintenance Mode Restrictions', () => {
+    it('blocks submissions when emergencyMode or submissionsPaused is active', async () => {
+      const teamId = 'team-123';
+      const roundId = 'round-1';
+
+      // Seed settings with emergencyMode enabled
+      await db.collection('settings').doc('platform').set({
+        emergencyMode: true,
+      });
+
+      // Seed team
+      await db.collection('teams').doc(teamId).set({
+        status: 'Verified',
+        leaderId: 'leader-123',
+        leaderEmail: 'leader@test.com',
+        leaderPhone: '1112223333',
+        college: 'Test College',
+        members: [],
+      });
+
+      const payload = {
+        teamId,
+        roundId,
+        githubLink: 'https://github.com/my-repo',
+        demoLink: 'https://demo.com',
+      };
+
+      await expect(submitPayload('leader-123', payload)).rejects.toThrowError(
+        /Submissions are currently paused/i
+      );
+    });
+
+    it('blocks onboarding when registrationsPaused is active', async () => {
+      // Seed settings with registrationsPaused enabled
+      await db.collection('settings').doc('platform').set({
+        registrationsPaused: true,
+      });
+
+      const { completeLeaderProfile } = await import('@/server/services/onboarding.service');
+      const input = {
+        phone: '+919999999999',
+        college: 'Stanford University',
+        github: 'https://github.com/leader',
+      };
+
+      await expect(completeLeaderProfile('user-id-not-existing', input)).rejects.toThrowError(
+        /Registrations and onboarding are currently paused/i
+      );
+    });
+  });
 });

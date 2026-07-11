@@ -176,6 +176,16 @@ export async function createAnnouncement(
   input: CreateAnnouncementInput,
 ): Promise<string> {
   const db = getAdminDb();
+
+  // Check if announcements are paused
+  const settingsSnap = await db.collection('settings').doc('platform').get();
+  if (settingsSnap.exists) {
+    const data = settingsSnap.data()!;
+    if (data['emergencyMode'] === true || data['announcementsPaused'] === true) {
+      throw Errors.forbidden('Announcements and broadcasting are currently paused by the system administrator.');
+    }
+  }
+
   const channels = {
     portal: input.channels.portal ?? true,
     email: input.channels.email ?? false,

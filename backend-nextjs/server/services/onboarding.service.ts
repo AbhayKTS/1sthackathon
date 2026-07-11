@@ -66,11 +66,22 @@ export function normalisePhone(raw: string, label = 'Phone'): string {
  * 3. Updates InvitedTeams status to LeaderRegistered
  * 4. Queues member invitation emails
  */
+async function assertRegistrationsNotPaused(db: FirebaseFirestore.Firestore) {
+  const settingsSnap = await db.collection('settings').doc('platform').get();
+  if (settingsSnap.exists) {
+    const data = settingsSnap.data()!;
+    if (data['maintenanceMode'] === true || data['emergencyMode'] === true || data['registrationsPaused'] === true) {
+      throw Errors.forbidden('Registrations and onboarding are currently paused by the system administrator.');
+    }
+  }
+}
+
 export async function completeLeaderProfile(
   uid: string,
   input: OnboardingProfileInput,
 ): Promise<void> {
   const db = getAdminDb();
+  await assertRegistrationsNotPaused(db);
 
   // 1. Validate phone
   const normalisedPhone = normalisePhone(input.phone, 'Mobile number');
@@ -254,6 +265,7 @@ export async function completeMemberProfile(
   input: OnboardingProfileInput,
 ): Promise<void> {
   const db = getAdminDb();
+  await assertRegistrationsNotPaused(db);
 
   const normalisedPhone = normalisePhone(input.phone, 'Mobile number');
 

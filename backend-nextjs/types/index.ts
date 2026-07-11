@@ -381,6 +381,12 @@ export interface PlatformSettings {
   predefinedProblemStatements: string[];
   predefinedDomains: string[];
   maintenanceMode: boolean;
+  emergencyMode?: boolean;
+  registrationsPaused?: boolean;
+  submissionsPaused?: boolean;
+  emailsPaused?: boolean;
+  sheetsPaused?: boolean;
+  announcementsPaused?: boolean;
   portalBaseUrl: string;
 }
 
