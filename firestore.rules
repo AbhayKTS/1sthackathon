@@ -46,9 +46,6 @@ service cloud.firestore {
       return isAuth() && getRole() == 'super_admin';
     }
 
-    function isParticipant() {
-      return isAuth() && getRole() in ['participant_leader', 'participant_member'];
-    }
 
     function isOwnUser(uid) {
       return isAuth() && request.auth.uid == uid;
