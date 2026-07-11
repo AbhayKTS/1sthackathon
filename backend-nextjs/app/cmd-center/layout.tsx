@@ -80,8 +80,8 @@ export default function AdminLayout({
     return (
       <div className="min-h-screen bg-[#060606] flex items-center justify-center px-4">
         <div className="glass-card max-w-md w-full p-8 border border-red-900/30 text-center">
-          <div className="w-16 h-16 bg-red-950/40 border border-red-500/50 rounded-full flex items-center justify-center mx-auto mb-6 text-red-500">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8">
+          <div className="w-16 h-16 bg-red-950/40 border border-red-500/50 rounded-full flex items-center justify-center mx-auto mb-6 text-red-500" style={{ width: "64px", height: "64px" }}>
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8" style={{ width: "32px", height: "32px" }}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v-6.75a2.25 2.25 0 0 0 2.25-2.25z" />
             </svg>
           </div>
@@ -113,7 +113,7 @@ export default function AdminLayout({
       {/* Sidebar Nav */}
       <aside className="w-full md:w-64 bg-[#0a0a0a] border-b md:border-b-0 md:border-r border-[var(--card-border)] flex flex-col z-20">
         <div className="h-16 px-6 border-b border-[var(--card-border)] flex items-center justify-between">
-          <Link href="/admin" className="flex items-center gap-3">
+          <Link href="/cmd-center" className="flex items-center gap-3">
             <span className="w-8 h-8 rounded bg-[#e50914] text-white font-bold flex items-center justify-center font-mono">R</span>
             <span className="font-display font-bold tracking-widest text-sm text-white">
               REVENGERS<span className="text-gray-500 font-normal">/</span>ADMIN
@@ -139,10 +139,10 @@ export default function AdminLayout({
         <nav className="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto custom-scrollbar">
           <div className="text-[9px] font-mono text-zinc-600 tracking-widest uppercase px-3 mb-2">Systems</div>
           <Link 
-            href="/admin" 
+            href="/cmd-center" 
             className="flex items-center gap-3 px-3 py-2 text-zinc-300 hover:text-white rounded hover:bg-zinc-900/60 border border-transparent hover:border-zinc-800/50 text-xs font-medium tracking-wide transition-all"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 text-[#e50914]">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 text-[#e50914]" style={{ width: "16px", height: "16px" }}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 8.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25A2.25 2.25 0 0 1 13.5 18v-2.25Z" />
             </svg>
             Command Dashboard
