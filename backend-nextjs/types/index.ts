@@ -428,6 +428,7 @@ export type AuditAction =
   | 'round.session_assigned'       // was misused as 'round.activated'
   // Submissions
   | 'submission.submitted'
+  | 'submission.updated'
   | 'submission.locked'
   // Evaluations
   | 'evaluation.draft_score_entered'

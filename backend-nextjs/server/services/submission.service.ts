@@ -63,7 +63,17 @@ export async function submitPayload(userUid: string, input: SubmitPayloadInput):
   if (teamData['leaderId'] !== userUid) {
     throw Errors.forbidden('Only the team leader can submit the payload.');
   }
+  // 1b. Verify existing submission is not locked
+  const submissionId = `${input.teamId}_${input.roundId}`;
+  const submissionRef = db.collection('submissions').doc(submissionId);
+  const existingSubSnap = await submissionRef.get();
 
+  if (existingSubSnap.exists) {
+    const existingData = existingSubSnap.data()!;
+    if (existingData.status === 'Locked' || existingData.lockedAt !== null) {
+      throw Errors.forbidden('This submission has been locked for evaluation and cannot be altered.');
+    }
+  }
   // 2. Verify round is Active and not Locked
   const roundRef = db.collection('rounds').doc(input.roundId);
   const roundSnap = await roundRef.get();
@@ -167,8 +177,6 @@ export async function submitPayload(userUid: string, input: SubmitPayloadInput):
   }
 
   // 6. Upsert submission doc (composite ID = idempotent re-submit)
-  const submissionId = `${input.teamId}_${input.roundId}`;
-  const submissionRef = db.collection('submissions').doc(submissionId);
   await submissionRef.set(submissionDoc, { merge: true });
 
   // 7. Queue Google Sheets sync (non-blocking, fallback env vars for sheet ID)
@@ -195,13 +203,33 @@ export async function submitPayload(userUid: string, input: SubmitPayloadInput):
   }
 
   // 8. Audit log
+  const isUpdate = existingSubSnap.exists;
+  const oldValues = isUpdate ? existingSubSnap.data() : null;
   await writeAuditLog({
-    action: 'submission.submitted',
+    action: isUpdate ? 'submission.updated' : 'submission.submitted',
     actorUid: userUid,
     actorRole: 'participant_leader',
     targetId: submissionId,
     targetType: 'submissions',
-    metadata: { teamId: input.teamId, roundId: input.roundId, submissionType },
+    metadata: {
+      teamId: input.teamId,
+      roundId: input.roundId,
+      submissionType,
+      ...(isUpdate && {
+        oldFields: {
+          pptLink: oldValues?.pptLink || null,
+          prototypeLink: oldValues?.prototypeLink || null,
+          githubLink: oldValues?.githubLink || null,
+          demoLink: oldValues?.demoLink || null,
+        },
+        newFields: {
+          pptLink: submissionDoc.pptLink || null,
+          prototypeLink: submissionDoc.prototypeLink || null,
+          githubLink: submissionDoc.githubLink || null,
+          demoLink: submissionDoc.demoLink || null,
+        }
+      })
+    },
     ip: null,
   });
 

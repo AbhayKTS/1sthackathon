@@ -35,6 +35,7 @@ import {
   checkInviteStatus,
   checkAndIncrementRateLimit,
   generateAndStoreOtp,
+  checkIpRateLimit,
 } from '@/server/services/auth.service';
 import { sendEmail } from '@/server/services/email.service';
 import { writeAuditLog } from '@/server/services/audit.service';
@@ -75,6 +76,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     }
 
     const { email } = parsed.data;
+
+    // 1b. Check IP-based rate limit
+    const ip = request.headers.get('x-forwarded-for') ?? '127.0.0.1';
+    await checkIpRateLimit(ip);
 
     // 2. Check invite status (throws NOT_INVITED or FORBIDDEN if not shortlisted)
     const invite = await checkInviteStatus(email);

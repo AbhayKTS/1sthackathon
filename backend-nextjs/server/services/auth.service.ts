@@ -189,6 +189,58 @@ export async function checkAndIncrementRateLimit(email: string): Promise<void> {
   });
 }
 
+/**
+ * Checks and atomically increments the request rate limit for an IP address.
+ * Allows max 20 requests per rolling 1-hour window.
+ */
+export async function checkIpRateLimit(ip: string): Promise<void> {
+  const db = getAdminDb();
+  const docId = `ip_${encodeURIComponent(ip)}`;
+  const ref = db.collection('otpRateLimits').doc(docId);
+  const maxPerHour = 20; // 20 requests per hour per IP
+  const windowMs = 60 * 60 * 1000; // 1 hour
+
+  await db.runTransaction(async (tx) => {
+    const snap = await tx.get(ref);
+    const now = Date.now();
+
+    if (!snap.exists) {
+      tx.set(ref, {
+        ip,
+        count: 1,
+        windowStart: FieldValue.serverTimestamp(),
+        lastRequest: FieldValue.serverTimestamp(),
+      });
+      return;
+    }
+
+    const data = snap.data()!;
+    const windowStartMs = data['windowStart'] && (data['windowStart'] as any).toMillis 
+      ? (data['windowStart'] as any).toMillis() 
+      : Date.now();
+
+    if (now - windowStartMs > windowMs) {
+      tx.set(ref, {
+        ip,
+        count: 1,
+        windowStart: FieldValue.serverTimestamp(),
+        lastRequest: FieldValue.serverTimestamp(),
+      });
+      return;
+    }
+
+    const currentCount = data['count'] as number;
+    if (currentCount >= maxPerHour) {
+      throw Errors.rateLimited('Too many requests from this IP. Please try again in an hour.');
+    }
+
+    tx.update(ref, {
+      count: FieldValue.increment(1),
+      lastRequest: FieldValue.serverTimestamp(),
+    });
+  });
+}
+
 // ─── OTP Generation & Storage ─────────────────────────────────────────────────
 
 export interface GeneratedOtp {

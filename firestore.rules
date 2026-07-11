@@ -56,7 +56,7 @@ service cloud.firestore {
     // Writes are Admin SDK only.
 
     match /users/{uid} {
-      allow read: if isOwnUser(uid) || isAdmin();
+      allow read: if (isOwnUser(uid) && request.auth.token.email_verified == true) || isAdmin();
       allow write: if false; // Admin SDK only
     }
 
@@ -66,7 +66,7 @@ service cloud.firestore {
 
     match /invitedTeams/{docId} {
       allow read: if isAdmin() ||
-        (isAuth() && resource.data.leaderEmail == request.auth.token.email);
+        (isAuth() && request.auth.token.email_verified == true && resource.data.leaderEmail == request.auth.token.email);
       allow write: if false; // Admin SDK only
     }
 
@@ -76,7 +76,7 @@ service cloud.firestore {
 
     match /teams/{teamId} {
       allow read: if isAdmin() ||
-        (isAuth() && (
+        (isAuth() && request.auth.token.email_verified == true && (
           resource.data.leaderId == request.auth.uid ||
           request.auth.token.email in resource.data.memberEmails
         ));
@@ -102,7 +102,7 @@ service cloud.firestore {
 
     match /submissions/{submissionId} {
       allow read: if isAdmin() ||
-        (isAuth() && resource.data.submittedBy == request.auth.uid);
+        (isAuth() && request.auth.token.email_verified == true && resource.data.submittedBy == request.auth.uid);
       allow write: if false; // Admin SDK only
     }
 
@@ -266,8 +266,8 @@ service cloud.firestore {
 
     match /tickets/{ticketId} {
       allow read: if isAdmin() ||
-        (isAuth() && resource.data.createdBy == request.auth.uid);
-      allow create: if isAuth() &&
+        (isAuth() && request.auth.token.email_verified == true && resource.data.createdBy == request.auth.uid);
+      allow create: if isAuth() && request.auth.token.email_verified == true &&
         request.resource.data.createdBy == request.auth.uid &&
         request.resource.data.status == 'open' &&
         request.resource.data.message.size() > 0 &&

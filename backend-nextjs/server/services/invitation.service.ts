@@ -99,6 +99,30 @@ function extractMembersFromRow(row: CsvRow): Array<{
  * Skips duplicates by leaderEmail.
  * Uses chunked batched writes (50/batch).
  */
+import { z } from 'zod';
+
+const CsvRowSchema = z.object({
+  teamName: z.string().min(1, 'Team name is required.').max(100, 'Team name too long.'),
+  leaderName: z.string().min(1, 'Leader name is required.').max(100, 'Leader name too long.'),
+  leaderEmail: z.string().email('Invalid email format.').toLowerCase().trim(),
+  leaderPhone: z.string().min(10, 'Phone must be at least 10 digits.').max(15, 'Phone too long.').trim(),
+  college: z.string().min(1, 'College is required.').max(200, 'College name too long.'),
+  domain: z.string().max(100).optional(),
+  problemStatement: z.string().max(2000).optional(),
+});
+
+function hasFormulaInjection(val: string | undefined | null): boolean {
+  if (!val) return false;
+  const trimmed = val.trim();
+  return trimmed.startsWith('=') || trimmed.startsWith('+') || trimmed.startsWith('-') || trimmed.startsWith('@');
+}
+
+/**
+ * Imports a batch of teams from parsed CSV/Excel data.
+ * Creates invitedTeams documents in Draft status.
+ * Skips duplicates by leaderEmail.
+ * Uses chunked batched writes (50/batch).
+ */
 export async function importInvitations(
   records: CsvRow[],
   actorUid: string,
@@ -114,35 +138,95 @@ export async function importInvitations(
     errors: [],
   };
 
-  // Fetch all existing leaderEmails for deduplication
-  const existingDocs = await db.collection('invitedTeams').select('leaderEmail').get();
+  // Fetch all existing emails and phones from invitedTeams (for deduplication)
+  const existingInvitedDocs = await db.collection('invitedTeams').select('leaderEmail', 'leaderPhone').get();
   const existingEmails = new Set(
-    existingDocs.docs.map((doc) => (doc.data()['leaderEmail'] as string).toLowerCase())
+    existingInvitedDocs.docs.map((doc) => (doc.data()['leaderEmail'] as string).toLowerCase().trim())
   );
+  const existingPhones = new Set(
+    existingInvitedDocs.docs.map((doc) => (doc.data()['leaderPhone'] as string).trim())
+  );
+
+  // Fetch all existing emails and phones from verified teams
+  const existingTeamDocs = await db.collection('teams').select('leaderEmail', 'leaderPhone').get();
+  existingTeamDocs.docs.forEach((doc) => {
+    const data = doc.data();
+    if (data['leaderEmail']) existingEmails.add(data['leaderEmail'].toLowerCase().trim());
+    if (data['leaderPhone']) existingPhones.add(data['leaderPhone'].trim());
+  });
 
   const validRecords: CsvRow[] = [];
 
   records.forEach((record, idx) => {
-    if (!record.leaderEmail?.trim()) {
+    // 1. Zod input validation
+    const parsed = CsvRowSchema.safeParse(record);
+    if (!parsed.success) {
       result.failed++;
-      result.errors.push({ row: idx + 2, email: '', reason: 'Missing leaderEmail' });
+      result.errors.push({
+        row: idx + 2,
+        email: record.leaderEmail || '',
+        reason: parsed.error.issues[0]?.message || 'Validation error'
+      });
       return;
     }
 
-    if (!record.teamName?.trim()) {
+    const data = parsed.data;
+
+    // 2. CSV Formula Injection check
+    const hasInjection = Object.values(record).some(val => 
+      typeof val === 'string' && hasFormulaInjection(val)
+    );
+    if (hasInjection) {
       result.failed++;
-      result.errors.push({ row: idx + 2, email: record.leaderEmail, reason: 'Missing teamName' });
+      result.errors.push({
+        row: idx + 2,
+        email: data.leaderEmail,
+        reason: 'Formula Injection detected (value starts with =, +, -, @)'
+      });
       return;
     }
 
-    const email = record.leaderEmail.toLowerCase().trim();
-    if (existingEmails.has(email)) {
+    // 3. Member Validation
+    const members = extractMembersFromRow(record);
+    for (const m of members) {
+      if (hasFormulaInjection(m.name) || hasFormulaInjection(m.email) || hasFormulaInjection(m.college)) {
+        result.failed++;
+        result.errors.push({
+          row: idx + 2,
+          email: data.leaderEmail,
+          reason: 'Formula Injection detected in member details'
+        });
+        return;
+      }
+      if (!m.email.includes('@')) {
+        result.failed++;
+        result.errors.push({
+          row: idx + 2,
+          email: data.leaderEmail,
+          reason: `Invalid email format for member: ${m.email}`
+        });
+        return;
+      }
+    }
+
+    // 4. Duplicate checks
+    if (existingEmails.has(data.leaderEmail)) {
       result.skipped++;
+      return;
+    }
+    if (existingPhones.has(data.leaderPhone)) {
+      result.failed++;
+      result.errors.push({
+        row: idx + 2,
+        email: data.leaderEmail,
+        reason: `Duplicate phone number: ${data.leaderPhone}`
+      });
       return;
     }
 
     validRecords.push(record);
-    existingEmails.add(email); // Prevent intra-CSV duplicates
+    existingEmails.add(data.leaderEmail); // Prevent intra-CSV duplicates
+    existingPhones.add(data.leaderPhone);
   });
 
   if (validRecords.length === 0) return result;

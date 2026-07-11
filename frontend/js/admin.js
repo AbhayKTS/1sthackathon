@@ -53,6 +53,23 @@ function sanitizeHTML(str) {
 let idToken = null;
 let currentAdminRole = null;
 const roundCache = new Map();
+let activeListeners = [];
+
+function registerListener(unsub) {
+    activeListeners.push(unsub);
+    return unsub;
+}
+
+function cleanupListeners() {
+    activeListeners.forEach(unsub => {
+        try {
+            unsub();
+        } catch (e) {
+            console.error("Error detaching listener:", e);
+        }
+    });
+    activeListeners = [];
+}
 
 // Elements
 const userEmailDisplay = document.getElementById("userEmailDisplay");
@@ -61,6 +78,8 @@ const logoutBtn = document.getElementById("logoutBtn");
 
 // ─── AUTH & INITIALIZATION ───────────────────────────────────────────────────
 onAuthStateChanged(auth, async (user) => {
+    cleanupListeners();
+
     if (!user) {
         window.location.href = "/login.html";
         return;
@@ -131,22 +150,22 @@ async function precacheRounds() {
 // ─── TAB 1: DASHBOARD OVERVIEW ────────────────────────────────────────────────
 function initDashboardRealtime() {
     // Stat counters
-    onSnapshot(collection(db, "invitedTeams"), (snap) => {
+    registerListener(onSnapshot(collection(db, "invitedTeams"), (snap) => {
         document.getElementById("statInvited").textContent = snap.size;
-    });
-    onSnapshot(collection(db, "users"), (snap) => {
+    }));
+    registerListener(onSnapshot(collection(db, "users"), (snap) => {
         document.getElementById("statUsers").textContent = snap.size;
-    });
-    onSnapshot(collection(db, "submissions"), (snap) => {
+    }));
+    registerListener(onSnapshot(collection(db, "submissions"), (snap) => {
         document.getElementById("statSubmitted").textContent = snap.size;
-    });
-    onSnapshot(query(collection(db, "teams")), (snap) => {
+    }));
+    registerListener(onSnapshot(query(collection(db, "teams")), (snap) => {
         const approvedCount = snap.docs.filter(d => d.data().status === "Approved").length;
         document.getElementById("statApproved").textContent = approvedCount;
-    });
+    }));
 
     // Active Round Widget
-    onSnapshot(collection(db, "rounds"), (snap) => {
+    registerListener(onSnapshot(collection(db, "rounds"), (snap) => {
         const activeRound = snap.docs.find(d => d.data().status === "Active");
         const statusBox = document.getElementById("activeRoundStatus");
         
@@ -183,10 +202,10 @@ function initDashboardRealtime() {
         } else {
             statusBox.innerHTML = "No active rounds currently.";
         }
-    });
+    }));
 
     // Recent Submissions Feed
-    onSnapshot(query(collection(db, "submissions"), orderBy("submittedAt", "desc")), (snap) => {
+    registerListener(onSnapshot(query(collection(db, "submissions"), orderBy("submittedAt", "desc")), (snap) => {
         const recentSubmissionsBody = document.getElementById("recentSubmissionsBody");
         recentSubmissionsBody.innerHTML = "";
         
@@ -206,10 +225,10 @@ function initDashboardRealtime() {
             `;
             recentSubmissionsBody.appendChild(tr);
         });
-    });
+    }));
 
     // Announcements Feed
-    onSnapshot(query(collection(db, "announcements"), orderBy("timestamp", "desc")), (snap) => {
+    registerListener(onSnapshot(query(collection(db, "announcements"), orderBy("timestamp", "desc")), (snap) => {
         const announcementFeedBody = document.getElementById("announcementFeedBody");
         announcementFeedBody.innerHTML = "";
         
@@ -232,7 +251,7 @@ function initDashboardRealtime() {
             `;
             announcementFeedBody.appendChild(div);
         });
-    });
+    }));
 }
 
 // ─── TAB 2: REGISTRATION IMPORT ──────────────────────────────────────────────
@@ -313,7 +332,7 @@ if (importCsvForm) {
 // ─── TAB 3: TEAMS MANAGEMENT ─────────────────────────────────────────────────
 function initTeamsRealtime() {
     // Teams List
-    onSnapshot(collection(db, "teams"), (snap) => {
+    registerListener(onSnapshot(collection(db, "teams"), (snap) => {
         const tbody = document.getElementById("teamsTableBody");
         tbody.innerHTML = "";
 
@@ -373,10 +392,10 @@ function initTeamsRealtime() {
                 }
             });
         });
-    });
+    }));
 
     // Invited Drafts List
-    onSnapshot(collection(db, "invitedTeams"), (snap) => {
+    registerListener(onSnapshot(collection(db, "invitedTeams"), (snap) => {
         const tbody = document.getElementById("invitedTeamsTableBody");
         tbody.innerHTML = "";
 
@@ -442,7 +461,7 @@ function initTeamsRealtime() {
                 }
             });
         });
-    });
+    }));
 }
 
 // Edit Modal helpers
@@ -608,7 +627,7 @@ if (setDeadlineBtn) {
 
 // ─── TAB 6: MENTOR SESSIONS ──────────────────────────────────────────────────
 function initMentorSessions() {
-    onSnapshot(collection(db, "mentorSlots"), (snap) => {
+    registerListener(onSnapshot(collection(db, "mentorSlots"), (snap) => {
         const tbody = document.getElementById("mentorSessionsTableBody");
         tbody.innerHTML = "";
 
@@ -630,12 +649,12 @@ function initMentorSessions() {
             `;
             tbody.appendChild(tr);
         });
-    });
+    }));
 }
 
 // ─── TAB 7: SUBMISSIONS ──────────────────────────────────────────────────────
 function initSubmissionsRealtime() {
-    onSnapshot(collection(db, "submissions"), (snap) => {
+    registerListener(onSnapshot(collection(db, "submissions"), (snap) => {
         const tbody = document.getElementById("submissionsTableBody");
         tbody.innerHTML = "";
 
@@ -657,12 +676,12 @@ function initSubmissionsRealtime() {
             `;
             tbody.appendChild(tr);
         });
-    });
+    }));
 }
 
 // ─── TAB 8: EVALUATIONS ──────────────────────────────────────────────────────
 function initEvaluations() {
-    onSnapshot(collection(db, "teams"), (snap) => {
+    registerListener(onSnapshot(collection(db, "teams"), (snap) => {
         const tbody = document.getElementById("scoresTableBody");
         tbody.innerHTML = "";
 
@@ -691,7 +710,7 @@ function initEvaluations() {
                 showToast("Use Evaluations tab dropdown to grade rounds.", "success");
             });
         });
-    });
+    }));
 }
 
 // ─── TAB 10: EMAIL QUEUE ─────────────────────────────────────────────────────
