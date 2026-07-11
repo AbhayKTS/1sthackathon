@@ -3,24 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard | RevengersHack</title>
-    <link rel="stylesheet" href="css/style.css">
+    <title>Mission Control | RevengersHack Admin</title>
     <link rel="icon" type="image/png" href="/assets/images/image.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --background: #0a0a0a;
-            --foreground: #ffffff;
-            --surface: #111111;
-            --surface-2: #1a1a1a;
-            --muted-foreground: #888888;
-            --border: #222222;
-            --border-strong: #2a2a2a;
-            --primary: #e63946;
+            --background: #060606;
+            --foreground: #f5f5f7;
+            --surface: rgba(18, 18, 18, 0.7);
+            --surface-hover: rgba(25, 25, 25, 0.8);
+            --border: rgba(255, 255, 255, 0.08);
+            --primary: #e50914;
+            --primary-glow: rgba(229, 9, 20, 0.15);
             --accent: #00b4d8;
-            --strike-red: var(--primary); /* For compatibility with admin.js */
+            --accent-glow: rgba(0, 180, 216, 0.2);
+            --success: #10b981;
+            --warning: #f59e0b;
+            --muted-foreground: #88888b;
             --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
             --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
             --font-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
@@ -29,195 +30,392 @@
         * {
             box-sizing: border-box;
             scrollbar-width: thin;
-            scrollbar-color: var(--primary) var(--surface-2);
-        }
-        
-        *::-webkit-scrollbar {
-            width: 10px;
-            height: 10px;
-        }
-        *::-webkit-scrollbar-track {
-            background: var(--surface-2);
-        }
-        *::-webkit-scrollbar-thumb {
-            background: var(--primary);
-            border-radius: 4px;
+            scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
         }
 
         body {
-            background: var(--background);
-            min-height: 100vh;
+            background-color: var(--background);
             color: var(--foreground);
             font-family: var(--font-sans);
             margin: 0;
             padding: 0;
-        }
-        
-        /* Dashboard Layout */
-        .dash-nav {
+            min-height: 100vh;
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px 40px;
-            background: rgba(10, 10, 10, 0.9);
-            border-bottom: 1px solid var(--border);
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            backdrop-filter: blur(8px);
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(229, 9, 20, 0.04) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(0, 180, 216, 0.04) 0%, transparent 40%);
+            background-attachment: fixed;
         }
 
-        .dash-nav a.logo {
-            text-decoration: none;
+        /* Sidebar navigation */
+        .sidebar {
+            width: 260px;
+            background: #0a0a0a;
+            border-right: 1px solid var(--border);
+            height: 100vh;
+            position: sticky;
+            top: 0;
+            display: flex;
+            flex-direction: column;
+            z-index: 100;
+        }
+
+        .sidebar-brand {
+            height: 64px;
+            padding: 0 24px;
+            border-bottom: 1px solid var(--border);
             display: flex;
             align-items: center;
             gap: 12px;
+            text-decoration: none;
         }
-        
-        .dash-nav .logo-icon {
-            display: grid;
-            place-items: center;
+
+        .logo-icon {
             width: 32px;
             height: 32px;
             background: var(--primary);
-            color: var(--foreground);
+            color: #fff;
             font-family: var(--font-mono);
             font-weight: 700;
-            font-size: 14px;
-            border-radius: 2px;
+            display: grid;
+            place-items: center;
+            border-radius: 4px;
         }
-        
-        .dash-nav .logo-text {
+
+        .logo-text {
             font-family: var(--font-display);
             font-weight: 700;
-            color: var(--foreground);
-            letter-spacing: 0.18em;
-            font-size: 14px;
+            letter-spacing: 0.15em;
+            color: #fff;
+            font-size: 13px;
         }
-        .dash-nav .logo-text span {
+
+        .logo-text span {
             color: var(--muted-foreground);
         }
 
-        .dash-container {
-            max-width: 1400px;
-            margin: 30px auto;
-            padding: 0 20px;
-            display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: 20px;
-            position: relative;
-            z-index: 10;
+        .user-profile-section {
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--border);
+            background: rgba(0, 0, 0, 0.2);
         }
 
-        @media (max-width: 900px) {
-            .dash-container {
-                grid-template-columns: 1fr;
-            }
+        .clearance-label {
+            font-size: 9px;
+            font-mono: var(--font-mono);
+            color: var(--muted-foreground);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
         }
 
-        /* Card Styles */
-        .card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            padding: 24px;
-            margin-bottom: 20px;
-            position: relative;
-            border-radius: 2px;
-        }
-
-        .card-header {
-            font-family: var(--font-mono);
-            color: var(--foreground);
+        .role-badge-display {
             font-size: 11px;
             font-weight: 600;
-            letter-spacing: 0.2em;
-            margin-bottom: 20px;
-            text-transform: uppercase;
-            border-bottom: 1px solid var(--border);
-            padding-bottom: 12px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        /* Forms in Dashboard */
-        .dash-form .form-group {
-            margin-bottom: 15px;
-        }
-        
-        .dash-form input, .dash-form textarea, .dash-form select {
-            background: var(--surface-2);
-            border: 1px solid var(--border);
-            border-radius: 2px;
-            color: var(--foreground);
-            padding: 8px 12px;
-            width: 100%;
+            color: var(--primary);
             font-family: var(--font-mono);
-            font-size: 14px;
-            transition: border-color 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
         }
 
-        .dash-form input:focus, .dash-form textarea:focus, .dash-form select:focus {
-            outline: none;
-            border-color: var(--primary);
-        }
-        .dash-form select:focus {
-            border-color: var(--accent);
+        .user-email-display {
+            font-size: 10px;
+            color: var(--muted-foreground);
+            margin-top: 4px;
+            word-break: break-all;
         }
 
-        /* Data Tables */
-        .data-table {
+        .nav-menu {
+            flex: 1;
+            padding: 24px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            overflow-y: auto;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 16px;
+            color: #c5c5c7;
+            text-decoration: none;
+            font-size: 12px;
+            font-weight: 500;
+            border-radius: 6px;
+            border: 1px solid transparent;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: transparent;
             width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
-        }
-        .data-table th, .data-table td {
-            padding: 12px;
-            border-bottom: 1px solid var(--border);
             text-align: left;
         }
-        .data-table th {
+
+        .nav-item:hover, .nav-item.active {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.03);
+            border-color: var(--border);
+        }
+
+        .nav-item.active {
+            border-color: rgba(229, 9, 20, 0.25);
+            box-shadow: 0 0 10px var(--primary-glow);
+        }
+
+        .sidebar-footer {
+            padding: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .btn-logout {
+            width: 100%;
+            padding: 10px;
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--muted-foreground);
+            font-family: var(--font-mono);
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-logout:hover {
+            color: var(--primary);
+            border-color: rgba(229, 9, 20, 0.3);
+            background: rgba(229, 9, 20, 0.05);
+        }
+
+        /* Main Display Layout */
+        .main-content {
+            flex: 1;
+            padding: 40px;
+            overflow-y: auto;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .page-header {
+            margin-bottom: 32px;
+        }
+
+        .page-title {
+            font-family: var(--font-display);
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            margin: 0;
+            color: #fff;
+        }
+
+        .page-subtitle {
             font-family: var(--font-mono);
             font-size: 10px;
             color: var(--muted-foreground);
             text-transform: uppercase;
             letter-spacing: 0.15em;
+            margin-top: 4px;
+        }
+
+        /* Glassmorphic cards */
+        .glass-card {
+            background: var(--surface);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 24px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+            margin-bottom: 24px;
+        }
+
+        .card-title-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 16px;
+            margin-bottom: 20px;
+        }
+
+        .card-title {
+            font-family: var(--font-display);
+            font-size: 14px;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            color: #fff;
+            text-transform: uppercase;
+        }
+
+        /* Metrics */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+
+        .metric-box {
+            background: rgba(18, 18, 18, 0.5);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .metric-box:hover {
+            border-color: rgba(255, 255, 255, 0.15);
+            background: rgba(255, 255, 255, 0.02);
+            transform: translateY(-2px);
+        }
+
+        .metric-title {
+            font-family: var(--font-mono);
+            font-size: 10px;
+            color: var(--muted-foreground);
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        .metric-value {
+            font-family: var(--font-display);
+            font-size: 2.25rem;
+            font-weight: 700;
+            color: #fff;
+            margin: 0;
+        }
+
+        /* Tab panels display */
+        .tab-panel {
+            display: none;
+        }
+
+        .tab-panel.active {
+            display: block;
+        }
+
+        /* Forms styling */
+        .dash-form {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-label {
+            font-family: var(--font-mono);
+            font-size: 9px;
+            color: var(--muted-foreground);
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+
+        .form-input, .form-textarea, .form-select {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            color: #fff;
+            padding: 10px 14px;
+            font-family: var(--font-mono);
+            font-size: 13px;
+            width: 100%;
+            transition: border-color 0.2s;
+        }
+
+        .form-input:focus, .form-textarea:focus, .form-select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 10px var(--primary-glow);
+        }
+
+        /* Data Tables */
+        .data-table-wrapper {
+            overflow-x: auto;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        .data-table th, .data-table td {
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .data-table th {
+            font-family: var(--font-mono);
+            font-size: 10px;
+            color: var(--muted-foreground);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
             font-weight: 500;
         }
+
         .data-table td {
-            font-size: 14px;
+            font-size: 13px;
         }
+
         .data-table tbody tr:hover {
-            background: rgba(255, 255, 255, 0.02);
+            background: rgba(255, 255, 255, 0.015);
         }
-        .data-table a {
-            color: var(--accent);
-            text-decoration: none;
+
+        /* Badges & Tags */
+        .role-tag {
+            font-size: 10px;
+            background: rgba(255, 255, 255, 0.04);
+            padding: 4px 8px;
+            border-radius: 4px;
+            color: #fff;
+            display: inline-block;
+            border: 1px solid var(--border);
+            font-family: var(--font-mono);
         }
-        .data-table a:hover {
-            text-decoration: underline;
+
+        .badge-verified {
+            background: rgba(16, 185, 129, 0.1);
+            border-color: rgba(16, 185, 129, 0.2);
+            color: var(--success);
         }
-        
-        /* Buttons */
-        button {
-            cursor: pointer;
+
+        .badge-amber {
+            background: rgba(245, 158, 11, 0.1);
+            border-color: rgba(245, 158, 11, 0.2);
+            color: var(--warning);
         }
+
+        /* Buttons styling */
         .btn-primary {
             background: var(--primary);
-            color: var(--primary-foreground);
+            color: #fff;
             border: none;
-            padding: 8px 16px;
+            padding: 10px 20px;
             font-family: var(--font-mono);
             font-weight: 600;
             font-size: 11px;
-            letter-spacing: 0.14em;
+            letter-spacing: 0.1em;
             text-transform: uppercase;
-            border-radius: 2px;
+            border-radius: 4px;
+            cursor: pointer;
             transition: filter 0.2s;
         }
+
         .btn-primary:hover {
-            filter: brightness(1.1);
+            filter: brightness(1.15);
         }
+
         .btn-outline {
             background: transparent;
             color: var(--primary);
@@ -226,143 +424,241 @@
             font-family: var(--font-mono);
             font-weight: 600;
             font-size: 11px;
-            letter-spacing: 0.14em;
+            letter-spacing: 0.15em;
             text-transform: uppercase;
-            border-radius: 2px;
-            transition: background 0.2s;
-        }
-        .btn-outline:hover {
-            background: rgba(230, 57, 70, 0.1);
-        }
-        
-        .role-tag {
-            font-size: 11px;
-            background: var(--surface-2);
-            padding: 3px 8px;
-            border-radius: 2px;
-            color: var(--foreground);
-            display: inline-block;
-            margin-right: 5px;
-            margin-bottom: 5px;
-            border: 1px solid var(--border);
-        }
-        
-        .toggle-btn {
-            background: transparent;
-            border: 1px solid var(--primary);
-            color: var(--primary);
-            padding: 4px 10px;
-            font-size: 11px;
-            font-family: var(--font-mono);
+            border-radius: 4px;
             cursor: pointer;
-            border-radius: 2px;
-        }
-        .toggle-btn.active {
-            background: rgba(230, 57, 70, 0.2);
-            color: var(--foreground);
+            transition: all 0.2s;
         }
 
-        /* Super Admin only panels */
+        .btn-outline:hover {
+            background: rgba(229, 9, 20, 0.08);
+        }
+
         .superadmin-only {
             display: none;
         }
         body.is-superadmin .superadmin-only {
             display: block;
         }
-        .superadmin-badge {
-            display: inline-block;
-            font-family: var(--font-mono);
-            font-size: 9px;
-            background: linear-gradient(135deg, #7c3aed, #4f46e5);
-            color: #fff;
-            padding: 2px 6px;
-            border-radius: 2px;
-            letter-spacing: 0.1em;
-            margin-left: 8px;
-            vertical-align: middle;
-        }
-
-        /* Analytics Grid */
-        #analyticsGrid {
-            display: grid; 
-            grid-template-columns: repeat(4, 1fr); 
-            gap: 16px; 
-            margin-top: 10px;
-        }
-        .stat-box {
-            background: #111111;
-            border-radius: 2px;
-            padding: 24px;
-            text-align: center;
-        }
-        .stat-box h3 {
-            font-family: var(--font-mono);
-            margin-bottom: 8px;
-            font-size: 10px;
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-            margin-top: 0;
-        }
-        .stat-box h2 {
-            font-family: var(--font-display);
-            font-size: 2.25rem;
-            font-weight: 700;
-            margin: 0;
-            color: var(--foreground);
-        }
     </style>
 </head>
 <body>
 
-    <nav class="dash-nav">
-        <a href="/" class="logo">
+    <!-- Sidebar component -->
+    <aside class="sidebar">
+        <a href="/" class="sidebar-brand">
             <span class="logo-icon">R</span>
             <span class="logo-text">REVENGERS<span>/</span>ADMIN</span>
         </a>
-        <div style="display: flex; gap: 16px; align-items: center;">
-            <span id="userEmailDisplay" style="font-family: var(--font-mono); font-size: 11px; color: var(--muted-foreground); letter-spacing: 0.14em; text-transform: uppercase;"></span>
-            <button id="logoutBtn" class="btn-primary">LOGOUT</button>
-        </div>
-    </nav>
 
-    <div class="dash-container">
-        <!-- Main Column -->
-        <div class="main-column">
-            
-            <!-- Analytics -->
-            <div class="card" style="border: none; padding: 0;">
-                <div class="card-header" style="justify-content: space-between; padding-bottom: 15px; margin-bottom: 10px;">
-                    <span style="color: var(--primary); font-size: 14px;">/</span>
-                    <span>CONVERSION FUNNEL & METRICS</span>
+        <div class="user-profile-section">
+            <div class="clearance-label">Clearance Level</div>
+            <div class="role-badge-display" id="roleBadgeDisplay">Admin Panel</div>
+            <div class="user-email-display" id="userEmailDisplay">Loading...</div>
+        </div>
+
+        <nav class="nav-menu">
+            <button class="nav-item active" onclick="switchTab('dashboard')">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" style="width: 16px; height: 16px;">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 8.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25A2.25 2.25 0 0 1 13.5 18v-2.25Z" />
+                </svg>
+                Dashboard
+            </button>
+            <button class="nav-item" onclick="switchTab('teams')">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" style="width: 16px; height: 16px;">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z" />
+                </svg>
+                Team Management
+            </button>
+            <button class="nav-item" onclick="switchTab('submissions')">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" style="width: 16px; height: 16px;">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.375M9 18h3.375m-6.42 2.25H18a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 0 0-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 13.5 2.25H15c1.03 0 1.9.732 2.076 1.708m-9.42 0A2.25 2.25 0 0 1 9 6.108v11.642a2.25 2.25 0 0 1-2.25 2.25Z" />
+                </svg>
+                Submission Review
+            </button>
+            <button class="nav-item" onclick="switchTab('scores')">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" style="width: 16px; height: 16px;">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-16.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-16.25v16.25" />
+                </svg>
+                Score Evaluator
+            </button>
+        </nav>
+
+        <div class="sidebar-footer">
+            <button id="logoutBtn" class="btn-logout">LOGOUT</button>
+        </div>
+    </aside>
+
+    <!-- Main display container -->
+    <main class="main-content">
+        
+        <!-- Header -->
+        <div class="page-header">
+            <h1 class="page-title">MISSION CONTROL</h1>
+            <p class="page-subtitle">Central Tactical Command Grid</p>
+        </div>
+
+        <!-- Metrics Grid -->
+        <div class="metrics-grid">
+            <div class="metric-box" id="statBoxInvited">
+                <div class="metric-title" style="color: var(--accent);">Invited Drafts</div>
+                <div class="metric-value" id="statInvited">0</div>
+            </div>
+            <div class="metric-box" id="statBoxUsers">
+                <div class="metric-title" style="color: var(--primary);">Verified Teams</div>
+                <div class="metric-value" id="statUsers">0</div>
+            </div>
+            <div class="metric-box" id="statBoxSubmitted">
+                <div class="metric-title" style="color: var(--accent);">Profiles Submitted</div>
+                <div class="metric-value" id="statSubmitted">0</div>
+            </div>
+            <div class="metric-box" id="statBoxApproved">
+                <div class="metric-title" style="color: var(--success);">Approved Teams</div>
+                <div class="metric-value" id="statApproved">0</div>
+            </div>
+        </div>
+
+        <!-- TAB 1: Dashboard Panel -->
+        <div id="panel-dashboard" class="tab-panel active">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6" style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px;">
+                <!-- Left grid col: Quick Control lists -->
+                <div style="display: flex; flex-direction: column; gap: 24px;">
+                    
+                    <!-- Round Control -->
+                    <div class="glass-card">
+                        <div class="card-title-section">
+                            <span class="card-title" style="color: var(--accent);">Round Control</span>
+                        </div>
+                        <div id="activeRoundStatus" style="margin-bottom: 16px; padding: 12px; border: 1px solid var(--border); border-radius: 4px; font-family: var(--font-mono); font-size: 11px; color: var(--muted-foreground); background: rgba(0,0,0,0.2);">
+                            Checking active round status...
+                        </div>
+                        <div class="dash-form">
+                            <div class="form-group">
+                                <label class="form-label">SWITCH ACTIVE ROUND</label>
+                                <select id="roundSelect" class="form-select">
+                                    <option value="">Select a round to activate...</option>
+                                </select>
+                            </div>
+                            <div style="display: flex; gap: 10px;">
+                                <button id="activateRoundBtn" class="btn-outline" style="flex: 1; color: var(--accent); border-color: var(--accent);">ACTIVATE ROUND</button>
+                                <button id="deactivateRoundBtn" class="btn-outline" style="flex: 1; color: #ef4444; border-color: #ef4444;">DEACTIVATE ALL</button>
+                            </div>
+                            <div id="roundActionStatus" style="font-size: 11px; font-family: var(--font-mono); min-height: 16px;"></div>
+                        </div>
+
+                        <div class="dash-form" style="margin-top: 24px; border-top: 1px solid var(--border); padding-top: 20px;">
+                            <div class="form-group">
+                                <label class="form-label">SET DEADLINE</label>
+                                <select id="deadlineRoundSelect" class="form-select" style="margin-bottom: 10px;">
+                                    <option value="">Select round to set deadline...</option>
+                                </select>
+                                <input type="datetime-local" id="deadlineInput" class="form-input">
+                            </div>
+                            <button id="setDeadlineBtn" class="btn-primary" style="width: 100%;">SET DEADLINE</button>
+                            <div id="deadlineStatus" style="font-size: 11px; font-family: var(--font-mono); min-height: 16px; margin-top: 8px;"></div>
+                        </div>
+                    </div>
+
+                    <!-- Announcements Broadcast -->
+                    <div class="glass-card">
+                        <div class="card-title-section">
+                            <span class="card-title">Broadcast Intel</span>
+                        </div>
+                        <form id="announcementForm" class="dash-form">
+                            <div class="form-group">
+                                <label class="form-label">TITLE</label>
+                                <input type="text" id="annTitle" class="form-input" placeholder="ALERT" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">MESSAGE</label>
+                                <textarea id="annMessage" class="form-textarea" placeholder="Type your broadcast here..." rows="4" required style="resize: none;"></textarea>
+                            </div>
+                            <button type="submit" class="btn-outline" id="annSubmitBtn" style="width: 100%;">TRANSMIT</button>
+                            <div id="annStatus" style="margin-top: 10px; font-size: 11px; font-family: var(--font-mono); min-height: 16px;"></div>
+                        </form>
+                    </div>
+
                 </div>
-                <div id="analyticsGrid" style="gap: 20px;">
-                    <div class="stat-box" id="statBoxInvited" style="cursor: pointer; transition: background 0.2s;">
-                        <h3 style="color: var(--accent);">INVITED TEAMS</h3>
-                        <h2 id="statInvited">0</h2>
+
+                <!-- Right grid col: Sidebar add panel -->
+                <div style="display: flex; flex-direction: column; gap: 24px;">
+                    
+                    <!-- Team Import/Creation -->
+                    <div class="glass-card">
+                        <div class="card-title-section">
+                            <span class="card-title">Add Teams</span>
+                        </div>
+                        <h4 style="font-family: var(--font-mono); color: var(--accent); font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 12px; margin-top: 0;">QUICK ADD (MANUAL)</h4>
+                        <form id="quickAddTeamForm" class="dash-form" style="margin-bottom: 25px; border-bottom: 1px solid var(--border); padding-bottom: 20px;">
+                            <div class="form-group">
+                                <input type="text" id="qaTeamName" class="form-input" placeholder="Team Name" required style="margin-bottom: 10px;">
+                                <input type="text" id="qaLeaderName" class="form-input" placeholder="Leader Name" required style="margin-bottom: 10px;">
+                                <input type="email" id="qaLeaderEmail" class="form-input" placeholder="Leader Email" required style="margin-bottom: 10px;">
+                                <input type="tel" id="qaLeaderPhone" class="form-input" placeholder="Leader Phone" required style="margin-bottom: 10px;">
+                                <input type="text" id="qaCollege" class="form-input" placeholder="College" required style="margin-bottom: 10px;">
+                            </div>
+                            <button type="submit" class="btn-outline" style="width: 100%; border-color: var(--accent); color: var(--accent);" id="quickAddTeamBtn">ADD TEAM</button>
+                            <div id="quickAddStatus" style="font-size: 11px; font-family: var(--font-mono); min-height: 20px; margin-top: 5px;"></div>
+                        </form>
+
+                        <h4 style="font-family: var(--font-mono); color: var(--primary); font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 12px; margin-top: 0;">UPLOAD SHORTLIST (CSV/EXCEL)</h4>
+                        <p style="font-size: 11px; color: var(--muted-foreground); margin-bottom: 15px; margin-top: 0; font-family: var(--font-mono);">Columns: teamName, leaderName, leaderEmail, leaderPhone, college</p>
+                        <form id="importCsvForm" class="dash-form">
+                            <div class="form-group">
+                                <input type="file" id="csvFileInput" class="form-input" accept=".csv, .xlsx, .xls" required>
+                            </div>
+                            <button type="submit" class="btn-primary" style="width: 100%;" id="importSubmitBtn">UPLOAD TEAMS</button>
+                            <div id="importStatus" style="font-size: 11px; font-family: var(--font-mono); min-height: 20px; margin-top: 5px;"></div>
+                        </form>
                     </div>
-                    <div class="stat-box" id="statBoxUsers" style="cursor: pointer; transition: background 0.2s;">
-                        <h3 style="color: var(--primary);">VERIFIED USERS</h3>
-                        <h2 id="statUsers">0</h2>
+
+                    <!-- Manage Access (superadmin only) -->
+                    <div class="glass-card superadmin-only" id="manageAccessCard" style="border-color: #7c3aed;">
+                        <div class="card-title-section">
+                            <span class="card-title" style="color: #a78bfa;">Manage Access</span>
+                            <span style="font-family: var(--font-mono); font-size: 8px; background: #7c3aed; color: #fff; padding: 2px 6px; border-radius: 2px; font-weight: bold; letter-spacing: 0.05em;">SUPER ADMIN</span>
+                        </div>
+                        <form id="createAdminForm" class="dash-form">
+                            <div class="form-group">
+                                <label class="form-label">EMAIL TO GRANT ACCESS</label>
+                                <input type="email" id="adminEmailInput" class="form-input" placeholder="person@example.com" required style="border-color: #7c3aed;">
+                            </div>
+                            <button type="submit" id="createAdminBtn" class="btn-primary" style="width: 100%; background: linear-gradient(135deg, #7c3aed, #4f46e5); border: none;">GRANT ACCESS</button>
+                            <div id="createAdminStatus" style="font-size: 11px; font-family: var(--font-mono); min-height: 20px; margin-top: 5px;"></div>
+                        </form>
+
+                        <div style="margin-top: 20px; border-top: 1px solid var(--border); padding-top: 15px;">
+                            <h4 style="font-family: var(--font-mono); color: #a78bfa; font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 10px; margin-top: 0;">EXISTING ADMINS</h4>
+                            <div class="data-table-wrapper" style="max-height: 180px; overflow-y: auto;">
+                                <table class="data-table" id="adminsTable">
+                                    <thead>
+                                        <tr style="border-b border-zinc-800">
+                                            <th>EMAIL</th>
+                                            <th>ROLE</th>
+                                            <th>ACTION</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="adminsTableBody">
+                                        <tr><td colspan="3" style="text-align: center; color: var(--muted-foreground);">Loading admins...</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
                     </div>
-                    <div class="stat-box" id="statBoxSubmitted" style="cursor: pointer; transition: background 0.2s;">
-                        <h3 style="color: var(--accent);">PROFILES SUBMITTED</h3>
-                        <h2 id="statSubmitted">0</h2>
-                    </div>
-                    <div class="stat-box" id="statBoxApproved" style="cursor: pointer; transition: background 0.2s;">
-                        <h3 style="color: #22c55e;">APPROVED TEAMS</h3>
-                        <h2 id="statApproved">0</h2>
-                    </div>
-                    <div class="stat-box superadmin-only" style="display:none; grid-column: span 4;">
-                        <h3 style="color: #a78bfa;">JOIN LEADS</h3>
-                        <h2 id="statLeads">0</h2>
-                    </div>
+
                 </div>
             </div>
+        </div>
 
-            <!-- Team Management -->
-            <div class="card" id="teamManagementCard">
-                <div class="card-header">Team Management</div>
-                <div style="overflow-x: auto;">
+        <!-- TAB 2: Teams Management Panel -->
+        <div id="panel-teams" class="tab-panel">
+            <!-- Team Management Table -->
+            <div class="glass-card" id="teamManagementCard">
+                <div class="card-title-section">
+                    <span class="card-title">Team Management</span>
+                </div>
+                <div class="data-table-wrapper">
                     <table class="data-table" id="teamsTable">
                         <thead>
                             <tr>
@@ -381,9 +677,11 @@
             </div>
 
             <!-- Invited Teams List -->
-            <div class="card" id="invitedTeamsCard" style="display: none;">
-                <div class="card-header" style="color: var(--accent); border-bottom-color: var(--border);">Invited Teams Overview</div>
-                <div style="overflow-x: auto;">
+            <div class="glass-card" id="invitedTeamsCard">
+                <div class="card-title-section">
+                    <span class="card-title" style="color: var(--accent);">Invited Teams Overview</span>
+                </div>
+                <div class="data-table-wrapper">
                     <table class="data-table" id="invitedTeamsTable">
                         <thead>
                             <tr>
@@ -395,16 +693,20 @@
                             </tr>
                         </thead>
                         <tbody id="invitedTeamsTableBody">
-                            <tr><td colspan="4" style="text-align: center; color: var(--muted-foreground);">Loading invited teams...</td></tr>
+                            <tr><td colspan="5" style="text-align: center; color: var(--muted-foreground);">Loading invited teams...</td></tr>
                         </tbody>
                     </table>
                 </div>
             </div>
+        </div>
 
-            <!-- Submission Review -->
-            <div class="card">
-                <div class="card-header" style="border-bottom-color: var(--border);">Submission Review</div>
-                <div style="overflow-x: auto;">
+        <!-- TAB 3: Submission Review Panel -->
+        <div id="panel-submissions" class="tab-panel">
+            <div class="glass-card">
+                <div class="card-title-section">
+                    <span class="card-title">Submission Review</span>
+                </div>
+                <div class="data-table-wrapper">
                     <table class="data-table" id="submissionsTable">
                         <thead>
                             <tr>
@@ -421,11 +723,15 @@
                     </table>
                 </div>
             </div>
+        </div>
 
-            <!-- Score Management -->
-            <div class="card">
-                <div class="card-header" style="color: var(--gold, #FFD700); border-bottom-color: var(--border);">Score Management</div>
-                <div style="overflow-x: auto;">
+        <!-- TAB 4: Score Evaluator Panel -->
+        <div id="panel-scores" class="tab-panel">
+            <div class="glass-card">
+                <div class="card-title-section">
+                    <span class="card-title" style="color: var(--gold, #FFD700);">Score Evaluator & Management</span>
+                </div>
+                <div class="data-table-wrapper">
                     <table class="data-table" id="scoresTable">
                         <thead>
                             <tr>
@@ -443,161 +749,65 @@
                     </table>
                 </div>
             </div>
-
         </div>
 
-        <!-- Sidebar Column -->
-        <div class="sidebar-column">
-            
-            <!-- Team Import -->
-            <div class="card">
-                <div class="card-header">Add Teams</div>
-
-                <h4 style="font-family: var(--font-mono); color: var(--accent); font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 12px; margin-top: 0;">QUICK ADD (MANUAL)</h4>
-                <form id="quickAddTeamForm" class="dash-form" style="margin-bottom: 25px; border-bottom: 1px solid var(--border); padding-bottom: 20px;">
-                    <div class="form-group" style="margin-bottom: 10px;">
-                        <input type="text" id="qaTeamName" placeholder="Team Name" required style="margin-bottom: 10px;">
-                        <input type="text" id="qaLeaderName" placeholder="Leader Name" required style="margin-bottom: 10px;">
-                        <input type="email" id="qaLeaderEmail" placeholder="Leader Email" required style="margin-bottom: 10px;">
-                        <input type="tel" id="qaLeaderPhone" placeholder="Leader Phone" required style="margin-bottom: 10px;">
-                        <input type="text" id="qaCollege" placeholder="College" required style="margin-bottom: 10px;">
-                    </div>
-                    <button type="submit" class="btn-outline" style="width: 100%; border-color: var(--accent); color: var(--accent);" id="quickAddTeamBtn">ADD TEAM</button>
-                    <div id="quickAddStatus" style="font-size: 11px; font-family: var(--font-mono); min-height: 20px; margin-top: 5px;"></div>
-                </form>
-
-                <h4 style="font-family: var(--font-mono); color: var(--primary); font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 12px; margin-top: 0;">UPLOAD SHORTLIST (CSV / EXCEL)</h4>
-                <p style="font-size: 12px; color: var(--muted-foreground); margin-bottom: 15px; margin-top: 0;">Columns: teamName, leaderName, leaderEmail, leaderPhone, college</p>
-                <form id="importCsvForm" class="dash-form">
-                    <div class="form-group">
-                        <input type="file" id="csvFileInput" accept=".csv, .xlsx, .xls" required>
-                    </div>
-                    <button type="submit" class="btn-primary" style="width: 100%; margin-bottom: 5px;" id="importSubmitBtn">UPLOAD TEAMS</button>
-                    <div id="importStatus" style="font-size: 11px; font-family: var(--font-mono); min-height: 20px; margin-top: 5px;"></div>
-                </form>
-            </div>
-
-            <!-- Round Control -->
-            <div class="card">
-                <div class="card-header" style="color: var(--accent);">Round Control</div>
-
-                <!-- Live status display -->
-                <div id="activeRoundStatus" style="margin-bottom: 16px; padding: 10px 14px; border: 1px solid var(--border); border-radius: 2px; font-family: var(--font-mono); font-size: 11px; color: var(--muted-foreground);">
-                    <span style="color: var(--muted-foreground);">Checking active round...</span>
-                </div>
-
-                <h4 style="font-family: var(--font-mono); color: var(--accent); font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 12px; margin-top: 0;">SWITCH ACTIVE ROUND</h4>
-                <div class="form-group dash-form">
-                    <select id="roundSelect" style="margin-bottom: 10px;">
-                        <option value="">Select a round to activate...</option>
-                        <!-- Options populated dynamically by admin.js -->
-                    </select>
-                </div>
-                <div style="display: flex; gap: 8px; margin-bottom: 16px;">
-                    <button id="activateRoundBtn" class="btn-outline" style="flex: 1; color: var(--accent); border-color: var(--accent);">ACTIVATE ROUND</button>
-                    <button id="deactivateRoundBtn" class="btn-outline" style="flex: 1; color: #ef4444; border-color: #ef4444;">DEACTIVATE ALL</button>
-                </div>
-                <div id="roundActionStatus" style="font-size: 11px; font-family: var(--font-mono); min-height: 16px; margin-bottom: 16px;"></div>
-
-                <h4 style="font-family: var(--font-mono); color: var(--primary); font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 12px; margin-top: 0;">SET DEADLINE</h4>
-                <div class="form-group dash-form" style="margin-bottom: 8px;">
-                    <select id="deadlineRoundSelect" style="margin-bottom: 10px;">
-                        <option value="">Select round to set deadline...</option>
-                        <!-- Options populated dynamically by admin.js -->
-                    </select>
-                    <input type="datetime-local" id="deadlineInput" style="margin-bottom: 10px;">
-                </div>
-                <button id="setDeadlineBtn" class="btn-outline" style="width: 100%; color: var(--primary); border-color: var(--primary);">SET DEADLINE</button>
-                <div id="deadlineStatus" style="font-size: 11px; font-family: var(--font-mono); min-height: 16px; margin-top: 8px;"></div>
-            </div>
-
-
-            <!-- Announcements Panel -->
-            <div class="card">
-                <div class="card-header">Broadcast Intel</div>
-                <form id="announcementForm" class="dash-form">
-                    <div class="form-group">
-                        <label style="font-family: var(--font-mono); font-size: 10px; color: var(--muted-foreground); text-transform: uppercase; letter-spacing: 0.1em; display: block; margin-bottom: 5px;">TITLE</label>
-                        <input type="text" id="annTitle" placeholder="ALERT" required>
-                    </div>
-                    <div class="form-group">
-                        <label style="font-family: var(--font-mono); font-size: 10px; color: var(--muted-foreground); text-transform: uppercase; letter-spacing: 0.1em; display: block; margin-bottom: 5px;">MESSAGE</label>
-                        <textarea id="annMessage" placeholder="Type your broadcast here..." rows="4" required style="resize: none;"></textarea>
-                    </div>
-                    <button type="submit" class="btn-outline" style="width: 100%;" id="annSubmitBtn">TRANSMIT</button>
-                    <div id="annStatus" style="margin-top: 10px; font-size: 11px; font-family: var(--font-mono); min-height: 16px;"></div>
-                </form>
-            </div>
-
-            <!-- Manage Access (super_admin only) -->
-            <div class="card superadmin-only" id="manageAccessCard" style="border-color: #7c3aed;">
-                <div class="card-header">
-                    Manage Access
-                    <span class="superadmin-badge">SUPER ADMIN</span>
-                </div>
-                <p style="font-size: 12px; color: var(--muted-foreground); margin-bottom: 15px; margin-top: 0;">Invite a person as an Admin by email. They will be able to log in via OTP and access this portal.</p>
-                <form id="createAdminForm" class="dash-form">
-                    <div class="form-group">
-                        <label style="font-family: var(--font-mono); font-size: 10px; color: var(--muted-foreground); text-transform: uppercase; letter-spacing: 0.1em; display: block; margin-bottom: 5px;">EMAIL TO GRANT ACCESS</label>
-                        <input type="email" id="adminEmailInput" placeholder="person@example.com" required style="border-color: #7c3aed;">
-                    </div>
-                    <button type="submit" id="createAdminBtn" class="btn-primary" style="width: 100%; background: linear-gradient(135deg, #7c3aed, #4f46e5); border: none; margin-bottom: 5px;">GRANT ADMIN ACCESS</button>
-                    <div id="createAdminStatus" style="font-size: 11px; font-family: var(--font-mono); min-height: 20px; margin-top: 5px;"></div>
-                </form>
-
-                <div style="margin-top: 20px; border-top: 1px solid var(--border); padding-top: 15px;">
-                    <h4 style="font-family: var(--font-mono); color: #a78bfa; font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 10px; margin-top: 0;">EXISTING ADMINS</h4>
-                    <div style="overflow-x: auto; max-height: 200px; overflow-y: auto;">
-                        <table class="data-table" id="adminsTable" style="margin-top: 0;">
-                            <thead>
-                                <tr>
-                                    <th>EMAIL</th>
-                                    <th>ROLE</th>
-                                    <th>ACTION</th>
-                                </tr>
-                            </thead>
-                            <tbody id="adminsTableBody">
-                                <tr><td colspan="3" style="text-align: center; color: var(--muted-foreground);">Loading admins...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-        </div>
-    </div>
+    </main>
 
     <!-- Edit Team Modal (Hidden by default) -->
-    <div id="editTeamModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(4px);">
-        <div style="background: #111; border: 1px solid #333; border-radius: 4px; padding: 24px; width: 400px; max-width: 90%;">
-            <h3 style="color: #fff; margin-top: 0; letter-spacing: 2px;">EDIT TEAM</h3>
-            <form id="editTeamForm" style="display: flex; flex-direction: column; gap: 12px; margin-top: 16px;">
+    <div id="editTeamModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(4px);">
+        <div class="glass-card" style="width: 440px; max-width: 95%; margin: 0;">
+            <h3 style="color: #fff; margin-top: 0; font-family: var(--font-display); letter-spacing: 2px; font-size: 16px; border-bottom: 1px solid var(--border); padding-bottom: 12px; margin-bottom: 20px;">EDIT TEAM</h3>
+            <form id="editTeamForm" class="dash-form">
                 <input type="hidden" id="edit_team_id">
                 
-                <label style="color: rgba(255,255,255,0.6); font-size: 0.8rem;">Team Name</label>
-                <input type="text" id="edit_team_name" required style="background: rgba(0,0,0,0.5); border: 1px solid #333; color: #fff; padding: 8px; font-size: 0.9rem;">
+                <div class="form-group">
+                    <label class="form-label">Team Name</label>
+                    <input type="text" id="edit_team_name" required class="form-input">
+                </div>
                 
-                <label style="color: rgba(255,255,255,0.6); font-size: 0.8rem;">College</label>
-                <input type="text" id="edit_team_college" required style="background: rgba(0,0,0,0.5); border: 1px solid #333; color: #fff; padding: 8px; font-size: 0.9rem;">
+                <div class="form-group">
+                    <label class="form-label">College</label>
+                    <input type="text" id="edit_team_college" required class="form-input">
+                </div>
                 
-                <label style="color: rgba(255,255,255,0.6); font-size: 0.8rem;">Status</label>
-                <select id="edit_team_status" style="background: rgba(0,0,0,0.5); border: 1px solid #333; color: #fff; padding: 8px; font-size: 0.9rem;">
-                    <option value="Submitted">Submitted</option>
-                    <option value="Approved">Approved</option>
-                    <option value="Rejected">Rejected</option>
-                    <option value="Incomplete">Incomplete</option>
-                </select>
+                <div class="form-group">
+                    <label class="form-label">Status</label>
+                    <select id="edit_team_status" class="form-select">
+                        <option value="Submitted">Submitted</option>
+                        <option value="Approved">Approved</option>
+                        <option value="Rejected">Rejected</option>
+                        <option value="Incomplete">Incomplete</option>
+                    </select>
+                </div>
 
                 <div style="display: flex; gap: 10px; margin-top: 12px;">
-                    <button type="button" id="closeEditModalBtn" style="flex: 1; background: transparent; border: 1px solid #333; color: #fff; padding: 10px; cursor: pointer;">CANCEL</button>
-                    <button type="submit" id="saveEditModalBtn" style="flex: 1; background: #e50914; border: none; color: #fff; padding: 10px; font-weight: bold; cursor: pointer;">SAVE CHANGES</button>
+                    <button type="button" id="closeEditModalBtn" class="btn-outline" style="flex: 1; border-color: var(--border); color: #fff;">CANCEL</button>
+                    <button type="submit" id="saveEditModalBtn" class="btn-primary" style="flex: 1;">SAVE CHANGES</button>
                 </div>
             </form>
         </div>
     </div>
 
+    <!-- Tab switcher JS -->
+    <script>
+        function switchTab(tabId) {
+            // Remove active class from all nav items
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            // Add active class to clicked nav item
+            event.currentTarget.classList.add('active');
+
+            // Hide all tab panels
+            document.querySelectorAll('.tab-panel').forEach(panel => {
+                panel.classList.remove('active');
+            });
+            // Show selected tab panel
+            document.getElementById('panel-' + tabId).classList.add('active');
+        }
+    </script>
+
     <!-- Firebase SDKs & App Logic -->
     <script type="module" src="js/admin.js"></script>
 </body>
 </html>
-<!-- trigger vercel deploy -->
