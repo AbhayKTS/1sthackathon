@@ -189,43 +189,48 @@ export async function transitionRound(
 ): Promise<void> {
   const db = getAdminDb();
   const ref = db.collection('rounds').doc(roundId);
-  const snap = await ref.get();
+  let fromStatusStr = '';
 
-  if (!snap.exists) throw Errors.notFound(`Round "${roundId}"`);
+  await db.runTransaction(async (transaction) => {
+    const snap = await transaction.get(ref);
 
-  const current = snap.data() as RoundDoc;
-  const fromStatus = current.status;
+    if (!snap.exists) throw Errors.notFound(`Round "${roundId}"`);
 
-  // Validate transition
-  const allowedNext = ROUND_TRANSITIONS[fromStatus];
-  if (!allowedNext.includes(toStatus)) {
-    throw Errors.validation(
-      `Cannot transition round from '${fromStatus}' to '${toStatus}'. ` +
-      `Allowed transitions: ${allowedNext.join(', ') || 'none (terminal state)'}.`
-    );
-  }
+    const current = snap.data() as RoundDoc;
+    const fromStatus = current.status;
+    fromStatusStr = fromStatus;
 
-  // Completed → Archived requires super_admin for score publishing side-effect
-  if (toStatus === 'Archived' && !isSuperAdmin) {
-    // Archiving is admin-ok
-  }
+    // Validate transition
+    const allowedNext = ROUND_TRANSITIONS[fromStatus];
+    if (!allowedNext.includes(toStatus)) {
+      throw Errors.validation(
+        `Cannot transition round from '${fromStatus}' to '${toStatus}'. ` +
+        `Allowed transitions: ${allowedNext.join(', ') || 'none (terminal state)'}.`
+      );
+    }
 
-  // Evaluation → Completed: only super_admin (this step publishes scores)
-  if (fromStatus === 'Evaluation' && toStatus === 'Completed' && !isSuperAdmin) {
-    throw Errors.forbidden('Only super_admin can complete an Evaluation round (this publishes scores).');
-  }
+    // Completed → Archived requires super_admin for score publishing side-effect
+    if (toStatus === 'Archived' && !isSuperAdmin) {
+      // Archiving is admin-ok
+    }
 
-  const legacyFlags = deriveLegacyFlags(toStatus);
+    // Evaluation → Completed: only super_admin (this step publishes scores)
+    if (fromStatus === 'Evaluation' && toStatus === 'Completed' && !isSuperAdmin) {
+      throw Errors.forbidden('Only super_admin can complete an Evaluation round (this publishes scores).');
+    }
 
-  await ref.update({
-    status: toStatus,
-    // Keep legacy flags in sync
-    isActive: legacyFlags.isActive,
-    isLocked: legacyFlags.isLocked,
-    // Auto-set isVisible when publishing
-    ...(toStatus === 'Published' && { isVisible: true }),
-    updatedAt: FieldValue.serverTimestamp(),
-    updatedBy: adminUid,
+    const legacyFlags = deriveLegacyFlags(toStatus);
+
+    transaction.update(ref, {
+      status: toStatus,
+      // Keep legacy flags in sync
+      isActive: legacyFlags.isActive,
+      isLocked: legacyFlags.isLocked,
+      // Auto-set isVisible when publishing
+      ...(toStatus === 'Published' && { isVisible: true }),
+      updatedAt: FieldValue.serverTimestamp(),
+      updatedBy: adminUid,
+    });
   });
 
   await writeAuditLog({
@@ -234,7 +239,7 @@ export async function transitionRound(
     actorRole: isSuperAdmin ? 'super_admin' : 'admin',
     targetId: roundId,
     targetType: 'rounds',
-    metadata: { from: fromStatus, to: toStatus },
+    metadata: { from: fromStatusStr, to: toStatus },
     ip: null,
   });
 }

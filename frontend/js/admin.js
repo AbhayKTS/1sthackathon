@@ -76,6 +76,92 @@ const userEmailDisplay = document.getElementById("userEmailDisplay");
 const roleBadgeDisplay = document.getElementById("roleBadgeDisplay");
 const logoutBtn = document.getElementById("logoutBtn");
 
+const tabTitles = {
+    dashboard: ["DASHBOARD OVERVIEW", "Central Operational Metrics"],
+    import: ["REGISTRATION IMPORT", "Manual Draft Entry & CSV/Excel Upload Shortlist"],
+    teams: ["TEAMS LIFE-CYCLE", "Comprehensive Hackathon Team Management"],
+    users: ["USER ACCOUNTS", "Registered Platform Participant Roles"],
+    rounds: ["ROUND MANAGER", "Hackathon Round States & Deadlines Config"],
+    mentor: ["MENTOR SESSIONS", "Mentor Booking Schedules & Meeting Links"],
+    submissions: ["SUBMISSIONS LOG", "Live Participant Deliverable Links"],
+    evaluations: ["ROUND EVALUATIONS", "Evaluate Submissions & Input Scores"],
+    leaderboard: ["STANDINGS LEADERBOARD", "Live Rank Standing of Active Teams"],
+    "email-queue": ["EMAIL QUEUE JOBS", "Monitor Mail Delivery Queue & Retry Jobs"],
+    "sheets-sync": ["SHEETS SYNC", "Double-Write Google Sheets Queue Logs"],
+    logs: ["ACTIVITY AUDIT LOGS", "Internal System Log Feeds & Events"],
+    announcements: ["ANNOUNCEMENTS", "Broadcast Multi-channel Alerts & Broadcasts"],
+    settings: ["SYSTEM SETTINGS", "Global Platform Property Configurations"],
+    "system-health": ["SYSTEM HEALTH MONITOR", "Real-time Queue Statuses & Emergency Control Deck"],
+};
+
+let tabControlsWired = false;
+
+function switchTab(tabId, sourceElement) {
+    document.querySelectorAll(".nav-item").forEach((item) => {
+        item.classList.remove("active");
+    });
+
+    if (sourceElement?.classList?.contains("nav-item")) {
+        sourceElement.classList.add("active");
+    } else {
+        document.querySelector(`.nav-item[data-tab="${tabId}"]`)?.classList.add("active");
+    }
+
+    document.querySelectorAll(".tab-panel").forEach((panel) => {
+        panel.classList.remove("active");
+    });
+
+    const panel = document.getElementById(`panel-${tabId}`);
+    if (panel) {
+        panel.classList.add("active");
+    }
+
+    const title = tabTitles[tabId];
+    if (title) {
+        const pageTitleText = document.getElementById("pageTitleText");
+        const pageSubtitleText = document.getElementById("pageSubtitleText");
+
+        if (pageTitleText) pageTitleText.textContent = title[0];
+        if (pageSubtitleText) pageSubtitleText.textContent = title[1];
+    }
+}
+
+window.switchTab = switchTab;
+
+function wireTabControls() {
+    if (tabControlsWired) {
+        return;
+    }
+
+    document.querySelectorAll("[data-tab]").forEach((element) => {
+        element.addEventListener("click", () => {
+            switchTab(element.dataset.tab, element);
+        });
+
+        element.addEventListener("keydown", (event) => {
+            if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                switchTab(element.dataset.tab, element);
+            }
+        });
+    });
+
+    tabControlsWired = true;
+}
+
+function startStartupTask(label, task) {
+    try {
+        const result = task();
+        if (result && typeof result.then === "function") {
+            void result.catch((error) => {
+                console.error(`Startup task failed (${label}):`, error);
+            });
+        }
+    } catch (error) {
+        console.error(`Startup task failed (${label}):`, error);
+    }
+}
+
 // ─── AUTH & INITIALIZATION ───────────────────────────────────────────────────
 onAuthStateChanged(auth, async (user) => {
     cleanupListeners();
@@ -110,20 +196,21 @@ onAuthStateChanged(auth, async (user) => {
             document.body.classList.add("is-superadmin");
         }
 
-        // Initialize lists & streams
-        precacheRounds().then(() => {
-            initDashboardRealtime();
-            initTeamsRealtime();
-            initSubmissionsRealtime();
-            initUserAccounts();
-            initMentorSessions();
-            initEvaluations();
-            initMailQueue();
-            initSheetsSyncQueue();
-            initActivityLogs();
-            initSystemSettings();
-            initSystemHealth();
-        });
+        wireTabControls();
+
+        // Initialize lists & streams independently so one failure never blocks the rest.
+        await precacheRounds();
+        startStartupTask("dashboard realtime", initDashboardRealtime);
+        startStartupTask("teams realtime", initTeamsRealtime);
+        startStartupTask("submissions realtime", initSubmissionsRealtime);
+        startStartupTask("user accounts", initUserAccounts);
+        startStartupTask("mentor sessions", initMentorSessions);
+        startStartupTask("evaluations", initEvaluations);
+        startStartupTask("mail queue", initMailQueue);
+        startStartupTask("sheets sync", initSheetsSyncQueue);
+        startStartupTask("activity logs", initActivityLogs);
+        startStartupTask("system settings", initSystemSettings);
+        startStartupTask("system health", initSystemHealth);
 
     } catch (err) {
         console.error("Auth validation failed:", err);

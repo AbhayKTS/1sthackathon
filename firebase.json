@@ -37,7 +37,7 @@
           },
           {
             "key": "Content-Security-Policy",
-            "value": "default-src 'self'; script-src 'self' https://apis.google.com https://www.gstatic.com https://www.google.com https://www.googleapis.com https://www.googletagmanager.com https://www.google-analytics.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://*.vercel.app https://1sthackathon-sm69.vercel.app https://*.googleapis.com https://*.firebaseio.com https://*.cloudfunctions.net https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://www.googleapis.com https://www.google-analytics.com https://analytics.google.com https://stats.g.doubleclick.net; frame-src https://accounts.google.com https://*.firebaseapp.com; media-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'"
+            "value": "default-src 'self'; script-src 'self' https://apis.google.com https://www.gstatic.com https://www.google.com https://www.googleapis.com https://www.googletagmanager.com https://www.google-analytics.com; script-src-attr 'none'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://*.vercel.app https://1sthackathon-sm69.vercel.app https://*.googleapis.com https://*.firebaseio.com https://*.cloudfunctions.net https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://www.googleapis.com https://www.google-analytics.com https://analytics.google.com https://stats.g.doubleclick.net; frame-src https://accounts.google.com https://*.firebaseapp.com; media-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'"
           }
         ]
       }
@@ -71,4 +71,4 @@
     },
     "singleProjectMode": true
   }
-}
+}

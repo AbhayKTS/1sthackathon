@@ -150,6 +150,8 @@ export async function completeLeaderProfile(
       joinedAt: null,
     }));
 
+    const isSolo = membersArray.length === 0;
+
     const teamData = {
       teamName: inviteData['teamName'] as string,
       invitedTeamId,
@@ -164,8 +166,8 @@ export async function completeLeaderProfile(
       leaderCollege: input.college.trim(),
       members: membersArray,
       memberEmails: membersArray.map((m) => m.email),
-      status: 'Draft',
-      registrationLocked: false,
+      status: isSolo ? 'Verified' : 'Draft',
+      registrationLocked: isSolo,
       adminNotes: null,
       isTimeLeapEligible: false,
       isTimeLeapQualified: false,
@@ -178,8 +180,8 @@ export async function completeLeaderProfile(
       tx.set(teamRef, {
         ...teamData,
         createdAt: FieldValue.serverTimestamp(),
-        verifiedAt: null,
-        registrationLockedAt: null,
+        verifiedAt: isSolo ? FieldValue.serverTimestamp() : null,
+        registrationLockedAt: isSolo ? FieldValue.serverTimestamp() : null,
       });
 
       // Link user to team
@@ -187,13 +189,22 @@ export async function completeLeaderProfile(
     } else {
       // Update existing team doc
       const existingTeamRef = teamSnap.docs[0]!.ref;
-      tx.update(existingTeamRef, teamData);
+      // Preserve verifiedAt and registrationLockedAt if already set
+      const updateData = {
+        ...teamData,
+        ...(isSolo && {
+          verifiedAt: FieldValue.serverTimestamp(),
+          registrationLockedAt: FieldValue.serverTimestamp(),
+        }),
+      };
+      tx.update(existingTeamRef, updateData);
     }
 
     // Update invited team status
     tx.update(inviteRef, {
-      status: 'LeaderRegistered' as InvitedTeamStatus,
+      status: (isSolo ? 'Verified' : 'LeaderRegistered') as InvitedTeamStatus,
       leaderRegisteredAt: FieldValue.serverTimestamp(),
+      ...(isSolo && { allMembersRegisteredAt: FieldValue.serverTimestamp() }),
       updatedAt: FieldValue.serverTimestamp(),
     });
   });

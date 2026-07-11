@@ -517,21 +517,21 @@
             </div>
 
             <nav class="nav-menu">
-                <button class="nav-item active" onclick="switchTab('dashboard')">Dashboard Overview</button>
-                <button class="nav-item" onclick="switchTab('import')">Registration Import</button>
-                <button class="nav-item" onclick="switchTab('teams')">Teams</button>
-                <button class="nav-item" onclick="switchTab('users')">Users</button>
-                <button class="nav-item" onclick="switchTab('rounds')">Round Manager</button>
-                <button class="nav-item" onclick="switchTab('mentor')">Mentor Sessions</button>
-                <button class="nav-item" onclick="switchTab('submissions')">Submissions</button>
-                <button class="nav-item" onclick="switchTab('evaluations')">Evaluations</button>
-                <button class="nav-item" onclick="switchTab('leaderboard')">Leaderboard</button>
-                <button class="nav-item" onclick="switchTab('email-queue')">Email Queue</button>
-                <button class="nav-item" onclick="switchTab('sheets-sync')">Google Sheets Sync</button>
-                <button class="nav-item" onclick="switchTab('logs')">Activity Logs</button>
-                <button class="nav-item" onclick="switchTab('announcements')">Announcements</button>
-                <button class="nav-item" onclick="switchTab('settings')">Settings</button>
-                <button class="nav-item" onclick="switchTab('system-health')">System Health</button>
+                <button type="button" class="nav-item active" data-tab="dashboard">Dashboard Overview</button>
+                <button type="button" class="nav-item" data-tab="import">Registration Import</button>
+                <button type="button" class="nav-item" data-tab="teams">Teams</button>
+                <button type="button" class="nav-item" data-tab="users">Users</button>
+                <button type="button" class="nav-item" data-tab="rounds">Round Manager</button>
+                <button type="button" class="nav-item" data-tab="mentor">Mentor Sessions</button>
+                <button type="button" class="nav-item" data-tab="submissions">Submissions</button>
+                <button type="button" class="nav-item" data-tab="evaluations">Evaluations</button>
+                <button type="button" class="nav-item" data-tab="leaderboard">Leaderboard</button>
+                <button type="button" class="nav-item" data-tab="email-queue">Email Queue</button>
+                <button type="button" class="nav-item" data-tab="sheets-sync">Google Sheets Sync</button>
+                <button type="button" class="nav-item" data-tab="logs">Activity Logs</button>
+                <button type="button" class="nav-item" data-tab="announcements">Announcements</button>
+                <button type="button" class="nav-item" data-tab="settings">Settings</button>
+                <button type="button" class="nav-item" data-tab="system-health">System Health</button>
             </nav>
 
             <div class="sidebar-footer">
@@ -557,19 +557,19 @@
             <!-- TAB 1: Dashboard Overview -->
             <div id="panel-dashboard" class="tab-panel active">
                 <div class="metrics-grid">
-                    <div class="metric-box" onclick="switchTab('import')">
+                    <div class="metric-box" role="button" tabindex="0" data-tab="import">
                         <div class="metric-title" style="color: var(--accent);">Invited Drafts</div>
                         <div class="metric-value" id="statInvited">0</div>
                     </div>
-                    <div class="metric-box" onclick="switchTab('users')">
+                    <div class="metric-box" role="button" tabindex="0" data-tab="users">
                         <div class="metric-title" style="color: var(--primary);">Verified Users</div>
                         <div class="metric-value" id="statUsers">0</div>
                     </div>
-                    <div class="metric-box" onclick="switchTab('teams')">
+                    <div class="metric-box" role="button" tabindex="0" data-tab="teams">
                         <div class="metric-title" style="color: var(--accent);">Profiles Submitted</div>
                         <div class="metric-value" id="statSubmitted">0</div>
                     </div>
-                    <div class="metric-box" onclick="switchTab('teams')">
+                    <div class="metric-box" role="button" tabindex="0" data-tab="teams">
                         <div class="metric-title" style="color: var(--success);">Approved Teams</div>
                         <div class="metric-value" id="statApproved">0</div>
                     </div>
@@ -1171,54 +1171,6 @@
             </form>
         </div>
     </div>
-
-    <!-- Layout & Tab switching logic -->
-    <script>
-        function switchTab(tabId) {
-            // Remove active class from all nav items
-            document.querySelectorAll('.nav-item').forEach(item => {
-                item.classList.remove('active');
-            });
-            
-            // Add active class to clicked nav item
-            event.currentTarget.classList.add('active');
-
-            // Hide all tab panels
-            document.querySelectorAll('.tab-panel').forEach(panel => {
-                panel.classList.remove('active');
-            });
-            
-            // Show selected tab panel
-            document.getElementById('panel-' + tabId).classList.add('active');
-
-            // Update Header Title Text
-            const pageTitleText = document.getElementById('pageTitleText');
-            const pageSubtitleText = document.getElementById('pageSubtitleText');
-            
-            const titlesMap = {
-                'dashboard': ['DASHBOARD OVERVIEW', 'Central Operational Metrics'],
-                'import': ['REGISTRATION IMPORT', 'Manual Draft Entry & CSV/Excel Upload Shortlist'],
-                'teams': ['TEAMS LIFE-CYCLE', 'Comprehensive Hackathon Team Management'],
-                'users': ['USER ACCOUNTS', 'Registered Platform Participant Roles'],
-                'rounds': ['ROUND MANAGER', 'Hackathon Round States & Deadlines Config'],
-                'mentor': ['MENTOR SESSIONS', 'Mentor Booking Schedules & Meeting Links'],
-                'submissions': ['SUBMISSIONS LOG', 'Live Participant Deliverable Links'],
-                'evaluations': ['ROUND EVALUATIONS', 'Evaluate Submissions & Input Scores'],
-                'leaderboard': ['STANDINGS LEADERBOARD', 'Live Rank Standing of Active Teams'],
-                'email-queue': ['EMAIL QUEUE JOBS', 'Monitor Mail Delivery Queue & Retry Jobs'],
-                'sheets-sync': ['SHEETS SYNC', 'Double-Write Google Sheets Queue Logs'],
-                'logs': ['ACTIVITY AUDIT LOGS', 'Internal System Log Feeds & Events'],
-                'announcements': ['ANNOUNCEMENTS', 'Broadcast Multi-channel Alerts & Broadcasts'],
-                'settings': ['SYSTEM SETTINGS', 'Global Platform Property Configurations'],
-                'system-health': ['SYSTEM HEALTH MONITOR', 'Real-time Queue Statuses & Emergency Control Deck']
-            };
-
-            if (titlesMap[tabId]) {
-                pageTitleText.textContent = titlesMap[tabId][0];
-                pageSubtitleText.textContent = titlesMap[tabId][1];
-            }
-        }
-    </script>
 
     <!-- Firebase SDKs & App Logic -->
     <script type="module" src="js/admin.js"></script>

@@ -96,10 +96,31 @@ if (!_parsed.success && !isBuildTime) {
 // At runtime, all vars are present and validated
 export const env = (_parsed.data ?? {}) as z.infer<typeof envSchema>;
 
+/**
+ * Strict CORS allowlist.
+ *
+ * Only the production frontend origins and local development origins are
+ * accepted. Every other origin is rejected.
+ */
+const strictAllowedOrigins = new Set([
+  'https://revengershack.tech',
+  'https://www.revengershack.tech',
+  'http://localhost:3000',
+  'http://localhost:3001',
+  'http://localhost:5173',
+  'http://localhost:4173',
+  'http://127.0.0.1:3000',
+  'http://127.0.0.1:3001',
+  'http://127.0.0.1:5173',
+  'http://127.0.0.1:4173',
+]);
+
 /** Parsed allowed origins as an array */
-export const allowedOrigins: string[] = env.ALLOWED_ORIGINS
-  ? env.ALLOWED_ORIGINS.split(',').map((o) => o.trim())
-  : ['http://localhost:5173'];
+export const allowedOrigins: string[] = [...strictAllowedOrigins];
+
+export function isAllowedOrigin(origin: string): boolean {
+  return strictAllowedOrigins.has(origin);
+}
 
 /** Base URL for the participant portal */
 export function getPortalBaseUrl(): string {

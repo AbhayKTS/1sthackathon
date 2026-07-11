@@ -56,7 +56,7 @@ service cloud.firestore {
     // Writes are Admin SDK only.
 
     match /users/{uid} {
-      allow read: if (isOwnUser(uid) && request.auth.token.email_verified == true) || isAdmin();
+      allow read: if isOwnUser(uid) || isAdmin();
       allow write: if false; // Admin SDK only
     }
 
@@ -66,7 +66,7 @@ service cloud.firestore {
 
     match /invitedTeams/{docId} {
       allow read: if isAdmin() ||
-        (isAuth() && request.auth.token.email_verified == true && resource.data.leaderEmail == request.auth.token.email);
+        (isAuth() && resource.data.keys().hasAny(['leaderEmail']) && resource.data.leaderEmail == request.auth.token.email);
       allow write: if false; // Admin SDK only
     }
 
@@ -76,9 +76,9 @@ service cloud.firestore {
 
     match /teams/{teamId} {
       allow read: if isAdmin() ||
-        (isAuth() && request.auth.token.email_verified == true && (
-          resource.data.leaderId == request.auth.uid ||
-          request.auth.token.email in resource.data.memberEmails
+        (isAuth() && (
+          (resource.data.keys().hasAny(['leaderId']) && resource.data.leaderId == request.auth.uid) ||
+          (resource.data.keys().hasAny(['memberEmails']) && request.auth.token.email in resource.data.memberEmails)
         ));
       allow write: if false; // Admin SDK only
     }
@@ -90,7 +90,7 @@ service cloud.firestore {
 
     match /rounds/{roundId} {
       allow read: if isAdmin() ||
-        (isAuth() && resource.data.isVisible == true &&
+        (isAuth() && resource.data.keys().hasAny(['isVisible']) && resource.data.isVisible == true &&
          resource.data.status in ['Published', 'Active', 'Locked', 'Evaluation', 'Completed']);
       allow write: if false; // Admin SDK only
     }
@@ -102,7 +102,7 @@ service cloud.firestore {
 
     match /submissions/{submissionId} {
       allow read: if isAdmin() ||
-        (isAuth() && request.auth.token.email_verified == true && resource.data.submittedBy == request.auth.uid);
+        (isAuth() && resource.data.submittedBy == request.auth.uid);
       allow write: if false; // Admin SDK only
     }
 
@@ -149,12 +149,13 @@ service cloud.firestore {
 
     match /leaderboard/{roundId} {
       allow read: if isAdmin() ||
-        (isAuth() && resource.data.isPublished == true);
+        (isAuth() && resource.data.keys().hasAny(['isPublished']) && resource.data.isPublished == true);
       allow write: if false; // Admin SDK only
 
       match /standings/{teamId} {
         allow read: if isAdmin() ||
           (isAuth() &&
+           get(/databases/$(database)/documents/leaderboard/$(roundId)).data.keys().hasAny(['isPublished']) &&
            get(/databases/$(database)/documents/leaderboard/$(roundId)).data.isPublished == true);
         allow write: if false; // Admin SDK only
       }
@@ -164,7 +165,7 @@ service cloud.firestore {
     // All authenticated users can read visible announcements.
 
     match /announcements/{annId} {
-      allow read: if isAuth() && resource.data.isVisible == true;
+      allow read: if isAuth() && resource.data.keys().hasAny(['isVisible']) && resource.data.isVisible == true;
       allow read: if isAdmin(); // Admins see all including hidden
       allow write: if false; // Admin SDK only
     }
@@ -266,8 +267,8 @@ service cloud.firestore {
 
     match /tickets/{ticketId} {
       allow read: if isAdmin() ||
-        (isAuth() && request.auth.token.email_verified == true && resource.data.createdBy == request.auth.uid);
-      allow create: if isAuth() && request.auth.token.email_verified == true &&
+        (isAuth() && resource.data.keys().hasAny(['createdBy']) && resource.data.createdBy == request.auth.uid);
+      allow create: if isAuth() &&
         request.resource.data.createdBy == request.auth.uid &&
         request.resource.data.status == 'open' &&
         request.resource.data.message.size() > 0 &&

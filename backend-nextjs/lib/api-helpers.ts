@@ -15,7 +15,7 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { AppError, Errors } from './errors';
 import { getAdminAuth, getAdminDb } from './firebase-admin';
-import { allowedOrigins } from './env';
+import { isAllowedOrigin } from './env';
 import type { UserRole } from '@/types/auth';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -42,8 +42,16 @@ export async function withAuth(request: NextRequest): Promise<AuthenticatedToken
 
   const idToken = authHeader.slice(7);
 
+  let decoded: { uid: string; email?: string };
+
   try {
-    const decoded = await getAdminAuth().verifyIdToken(idToken, true); // checkRevoked=true
+    // E2E Simulation Bypass (Only allowed in non-production emulator)
+    if (idToken.startsWith('MOCK_TOKEN_') && process.env.FIRESTORE_EMULATOR_HOST && process.env.NODE_ENV !== 'production') {
+      const uid = idToken.replace('MOCK_TOKEN_', '');
+      decoded = { uid, email: `${uid}@mock.com` };
+    } else {
+      decoded = await getAdminAuth().verifyIdToken(idToken, true); // checkRevoked=true
+    }
 
     // Fetch role from Firestore — token custom claims are not set yet in this impl,
     // so role is always read from the Users doc server-side (see D-005).
@@ -152,8 +160,9 @@ export function apiError(err: unknown, origin?: string): NextResponse {
  * Call this on every response including error responses.
  */
 export function applyCorsHeaders(response: NextResponse, origin: string): NextResponse {
-  if (allowedOrigins.includes(origin) || allowedOrigins.includes('*')) {
+  if (isAllowedOrigin(origin)) {
     response.headers.set('Access-Control-Allow-Origin', origin);
+    response.headers.set('Vary', 'Origin');
   }
   response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PATCH, DELETE, OPTIONS');
   response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
@@ -167,6 +176,9 @@ export function applyCorsHeaders(response: NextResponse, origin: string): NextRe
  */
 export function handleOptions(request: NextRequest): NextResponse {
   const origin = request.headers.get('origin') ?? '';
+  if (!isAllowedOrigin(origin)) {
+    return new NextResponse(null, { status: 403 });
+  }
   const response = new NextResponse(null, { status: 204 });
   return applyCorsHeaders(response, origin);
 }

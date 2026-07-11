@@ -502,7 +502,8 @@ function loadActiveRounds() {
         
         renderActiveRound();
     }, (error) => {
-        console.error("Error listening to rounds:", error);
+        const roundsStatus = document.getElementById("roundsStatusMessage");
+        if (roundsStatus) roundsStatus.textContent = "Round data unavailable.";
     });
     roundsUnsubscribers.push(unsub);
 }
@@ -642,7 +643,8 @@ function listenToAnnouncements() {
         }
         updateUnreadBadge(newUnreadCount);
     }, (error) => {
-        console.error("Error listening to announcements:", error);
+        const announcementsStatus = document.getElementById("announcementsStatusMessage");
+        if (announcementsStatus) announcementsStatus.textContent = "Announcements unavailable.";
     });
 }
 
@@ -716,7 +718,8 @@ function loadLeaderboard() {
             leaderboardTableBody.appendChild(li);
         });
     }, (error) => {
-        console.error("Error listening to leaderboard:", error);
+        const leaderboardStatus = document.getElementById("leaderboardStatusMessage");
+        if (leaderboardStatus) leaderboardStatus.textContent = "Leaderboard unavailable.";
     });
 }
 

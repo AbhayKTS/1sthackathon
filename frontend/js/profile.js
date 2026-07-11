@@ -18,6 +18,7 @@ const saveBtn = document.getElementById("saveBtn");
 const formError = document.getElementById("formError");
 const formSuccess = document.getElementById("formSuccess");
 const userDisplayName = document.getElementById("userDisplayName");
+const discordLink = document.getElementById("discordLink");
 
 let currentUser = null;
 let currentToken = null;
@@ -41,6 +42,13 @@ auth.onAuthStateChanged(async (user) => {
 if (logoutBtn) {
     logoutBtn.addEventListener("click", () => {
         auth.signOut();
+    });
+}
+
+if (discordLink) {
+    discordLink.addEventListener("click", (event) => {
+        event.preventDefault();
+        alert("Discord integration pending");
     });
 }
 
@@ -109,24 +117,24 @@ function renderMembers() {
         
         div.innerHTML = `
             ${isLeader ? '<div class="absolute -top-2 left-4 bg-blood text-primary-foreground px-2 py-0.5 text-[9px] font-bold">LEADER</div>' : ''}
-            ${!isLeader && !isLocked() ? `<button type="button" class="absolute top-2 right-2 text-muted-foreground hover:text-strike-red cursor-pointer" onclick="removeMember(${index})">✕</button>` : ''}
+            ${!isLeader && !isLocked() ? `<button type="button" class="absolute top-2 right-2 text-muted-foreground hover:text-strike-red cursor-pointer" data-action="remove-member" data-member-index="${index}">✕</button>` : ''}
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
                 <div>
                     <label class="block text-muted-foreground mb-1 text-[10px] tracking-widest">NAME</label>
-                    <input type="text" value="${member.name || ''}" onchange="updateMember(${index}, 'name', this.value)" required ${isLocked() ? 'disabled' : ''} class="bg-input border border-border px-3 py-1.5 w-full text-foreground focus:border-blood focus:outline-none disabled:opacity-50">
+                    <input type="text" value="${member.name || ''}" data-member-index="${index}" data-member-field="name" required ${isLocked() ? 'disabled' : ''} class="bg-input border border-border px-3 py-1.5 w-full text-foreground focus:border-blood focus:outline-none disabled:opacity-50">
                 </div>
                 <div>
                     <label class="block text-muted-foreground mb-1 text-[10px] tracking-widest">EMAIL</label>
-                    <input type="email" value="${member.email || ''}" onchange="updateMember(${index}, 'email', this.value)" required ${isLocked() || isLeader ? 'disabled' : ''} class="bg-input border border-border px-3 py-1.5 w-full text-foreground focus:border-blood focus:outline-none disabled:opacity-50">
+                    <input type="email" value="${member.email || ''}" data-member-index="${index}" data-member-field="email" required ${isLocked() || isLeader ? 'disabled' : ''} class="bg-input border border-border px-3 py-1.5 w-full text-foreground focus:border-blood focus:outline-none disabled:opacity-50">
                 </div>
                 <div>
                     <label class="block text-muted-foreground mb-1 text-[10px] tracking-widest">PHONE (OPTIONAL)</label>
-                    <input type="text" value="${member.phone || ''}" onchange="updateMember(${index}, 'phone', this.value)" ${isLocked() ? 'disabled' : ''} class="bg-input border border-border px-3 py-1.5 w-full text-foreground focus:border-blood focus:outline-none disabled:opacity-50">
+                    <input type="text" value="${member.phone || ''}" data-member-index="${index}" data-member-field="phone" ${isLocked() ? 'disabled' : ''} class="bg-input border border-border px-3 py-1.5 w-full text-foreground focus:border-blood focus:outline-none disabled:opacity-50">
                 </div>
                 <div>
                     <label class="block text-muted-foreground mb-1 text-[10px] tracking-widest">ROLE</label>
-                    <input type="text" value="${member.role || ''}" onchange="updateMember(${index}, 'role', this.value)" required ${isLocked() ? 'disabled' : ''} class="bg-input border border-border px-3 py-1.5 w-full text-foreground focus:border-blood focus:outline-none disabled:opacity-50">
+                    <input type="text" value="${member.role || ''}" data-member-index="${index}" data-member-field="role" required ${isLocked() ? 'disabled' : ''} class="bg-input border border-border px-3 py-1.5 w-full text-foreground focus:border-blood focus:outline-none disabled:opacity-50">
                 </div>
             </div>
         `;
@@ -143,14 +151,31 @@ function renderMembers() {
     }
 }
 
-window.updateMember = function(index, field, value) {
-    membersList[index][field] = value;
-}
+if (membersContainer) {
+    membersContainer.addEventListener("input", (event) => {
+        const input = event.target;
+        if (!(input instanceof HTMLInputElement)) return;
 
-window.removeMember = function(index) {
-    if (isLocked() || index === 0) return;
-    membersList.splice(index, 1);
-    renderMembers();
+        const memberIndex = Number(input.dataset.memberIndex);
+        const memberField = input.dataset.memberField;
+        if (Number.isNaN(memberIndex) || !memberField || !membersList[memberIndex]) return;
+
+        membersList[memberIndex][memberField] = input.value;
+    });
+
+    membersContainer.addEventListener("click", (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLElement)) return;
+
+        const removeButton = target.closest("[data-action='remove-member']");
+        if (!removeButton) return;
+
+        const memberIndex = Number(removeButton.getAttribute("data-member-index"));
+        if (Number.isNaN(memberIndex) || isLocked() || memberIndex === 0) return;
+
+        membersList.splice(memberIndex, 1);
+        renderMembers();
+    });
 }
 
 function isLocked() {
