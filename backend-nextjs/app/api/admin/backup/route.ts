@@ -21,6 +21,48 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     const db = getAdminDb();
     
+    const { searchParams } = new URL(request.url);
+    const action = searchParams.get('action');
+
+    if (action === 'restore') {
+      const payload = await request.json();
+      if (!payload || typeof payload !== 'object') {
+        throw new Error('Invalid backup restore payload.');
+      }
+
+      const restoreBatch = db.batch();
+
+      if (Array.isArray(payload.users)) {
+        payload.users.forEach((item: any) => {
+          const { id, ...data } = item;
+          restoreBatch.set(db.collection('users').doc(id), data);
+        });
+      }
+      if (Array.isArray(payload.teams)) {
+        payload.teams.forEach((item: any) => {
+          const { id, ...data } = item;
+          restoreBatch.set(db.collection('teams').doc(id), data);
+        });
+      }
+      if (Array.isArray(payload.submissions)) {
+        payload.submissions.forEach((item: any) => {
+          const { id, ...data } = item;
+          restoreBatch.set(db.collection('submissions').doc(id), data);
+        });
+      }
+      if (Array.isArray(payload.settings)) {
+        payload.settings.forEach((item: any) => {
+          const { id, ...data } = item;
+          restoreBatch.set(db.collection('settings').doc(id), data);
+        });
+      }
+
+      await restoreBatch.commit();
+      
+      const response = apiSuccess({ message: 'Database successfully restored from backup.' });
+      return applyCorsHeaders(response, origin);
+    }
+    
     // 1. Fetch all collections for backup
     const usersSnap = await db.collection('users').get();
     const teamsSnap = await db.collection('teams').get();
