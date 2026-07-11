@@ -155,6 +155,8 @@ describe('Security Hardening Service Tests', () => {
 
       const { completeLeaderProfile } = await import('@/server/services/onboarding.service');
       const input = {
+        displayName: 'Leader Name',
+        role: 'participant_leader' as const,
         phone: '+919999999999',
         college: 'Stanford University',
         github: 'https://github.com/leader',
@@ -163,6 +165,45 @@ describe('Security Hardening Service Tests', () => {
       await expect(completeLeaderProfile('user-id-not-existing', input)).rejects.toThrowError(
         /Registrations and onboarding are currently paused/i
       );
+    });
+  });
+
+  describe('Timeline Automation Scheduler', () => {
+    it('auto activates and auto locks rounds on start/deadline times', async () => {
+      const roundId1 = 'round-start-test';
+      const roundId2 = 'round-deadline-test';
+
+      // 1. Seed Published round whose startsAt is in the past
+      await db.collection('rounds').doc(roundId1).set({
+        status: 'Published',
+        startsAt: new Date(Date.now() - 5000), // in the past
+        title: 'Start Round Test',
+      });
+
+      // 2. Seed Active round whose submissionDeadline is in the past
+      await db.collection('rounds').doc(roundId2).set({
+        status: 'Active',
+        submissionDeadline: new Date(Date.now() - 5000), // in the past
+        title: 'Deadline Round Test',
+      });
+
+      // Import handler
+      const { POST } = await import('@/app/api/internal/scheduler-worker/route');
+      const { NextRequest } = await import('next/server');
+      
+      const req = new NextRequest('http://localhost/api/internal/scheduler-worker', {
+        method: 'POST',
+      });
+
+      const res = await POST(req);
+      expect(res.status).toBe(200);
+
+      // Verify status changes in DB
+      const r1 = await db.collection('rounds').doc(roundId1).get();
+      expect(r1.data()?.status).toBe('Active');
+
+      const r2 = await db.collection('rounds').doc(roundId2).get();
+      expect(r2.data()?.status).toBe('Locked');
     });
   });
 });

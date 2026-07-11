@@ -122,6 +122,7 @@ onAuthStateChanged(auth, async (user) => {
             initSheetsSyncQueue();
             initActivityLogs();
             initSystemSettings();
+            initSystemHealth();
         });
 
     } catch (err) {
@@ -885,4 +886,205 @@ if (systemSettingsForm) {
             btn.textContent = "Save Platform Settings";
         }
     });
+}
+
+async function initSystemHealth() {
+    // 1. Fetch current platform settings and bind to checkbox inputs
+    try {
+        const response = await fetch(`${API_BASE}/admin/settings`, {
+            headers: { Authorization: `Bearer ${idToken}` }
+        });
+        const result = await response.json();
+        const settings = result.data?.settings ?? result.settings ?? {};
+
+        document.getElementById("toggleEmergencyMode").checked = !!settings.emergencyMode;
+        document.getElementById("toggleMaintenanceMode").checked = !!settings.maintenanceMode;
+        document.getElementById("toggleRegistrationsPaused").checked = !!settings.registrationsPaused;
+        document.getElementById("toggleSubmissionsPaused").checked = !!settings.submissionsPaused;
+        document.getElementById("toggleEmailsPaused").checked = !!settings.emailsPaused;
+        document.getElementById("toggleSheetsPaused").checked = !!settings.sheetsPaused;
+        document.getElementById("toggleAnnouncementsPaused").checked = !!settings.announcementsPaused;
+    } catch (e) {
+        console.error("Failed loading settings for emergency check:", e);
+    }
+
+    // 2. Fetch live metrics periodically
+    async function fetchMetrics() {
+        try {
+            const response = await fetch(`${API_BASE}/admin/health`, {
+                headers: { Authorization: `Bearer ${idToken}` }
+            });
+            if (!response.ok) throw new Error("Health check status failed.");
+            
+            const result = await response.json();
+            const data = result.data || {};
+
+            // Render general metrics
+            const firestoreLatency = document.getElementById("healthFirestoreLatency");
+            const firestoreStatus = document.getElementById("healthFirestoreStatus");
+            const activeUsers = document.getElementById("healthActiveUsers");
+
+            if (firestoreLatency) firestoreLatency.textContent = `${data.firestore?.latencyMs ?? "--"} ms`;
+            if (firestoreStatus) {
+                firestoreStatus.textContent = data.firestore?.status?.toUpperCase() ?? "UNKNOWN";
+                firestoreStatus.style.color = data.firestore?.status === "healthy" ? "#10b981" : "#ef4444";
+            }
+            if (activeUsers) activeUsers.textContent = data.activeUsers ?? "0";
+
+            // Render integrations status
+            const emailService = document.getElementById("healthEmailService");
+            const discordWebhook = document.getElementById("healthDiscordWebhook");
+            const whatsApp = document.getElementById("healthWhatsApp");
+
+            if (emailService) {
+                emailService.textContent = data.integrations?.emailService === "configured" ? "ACTIVE" : "MISSING";
+                emailService.style.color = data.integrations?.emailService === "configured" ? "#10b981" : "#f59e0b";
+            }
+            if (discordWebhook) {
+                discordWebhook.textContent = data.integrations?.discordWebhook === "configured" ? "ACTIVE" : "MISSING";
+                discordWebhook.style.color = data.integrations?.discordWebhook === "configured" ? "#10b981" : "#f59e0b";
+            }
+            if (whatsApp) {
+                whatsApp.textContent = data.integrations?.whatsApp === "configured" ? "ACTIVE" : "MISSING";
+                whatsApp.style.color = data.integrations?.whatsApp === "configured" ? "#10b981" : "#f59e0b";
+            }
+
+            // Render email queue metrics
+            const emailStatsBody = document.getElementById("emailQueueStatsBody");
+            if (emailStatsBody && data.queues?.mail) {
+                const mail = data.queues.mail;
+                emailStatsBody.innerHTML = `
+                    <div style="display: flex; justify-content: space-between;"><span>Queued / Pending</span><span class="role-tag">${mail.queued || 0}</span></div>
+                    <div style="display: flex; justify-content: space-between;"><span>Sending / Processing</span><span class="role-tag" style="background: rgba(59,130,246,0.2); color: #3b82f6;">${mail.sending || 0}</span></div>
+                    <div style="display: flex; justify-content: space-between;"><span>Sent Successfully</span><span class="role-tag badge-verified">${mail.sent || 0}</span></div>
+                    <div style="display: flex; justify-content: space-between;"><span>Retrying</span><span class="role-tag" style="background: rgba(245,158,11,0.2); color: #f59e0b;">${mail.retry || 0}</span></div>
+                    <div style="display: flex; justify-content: space-between;"><span>Failed (DLQ)</span><span class="role-tag" style="background: rgba(239,68,68,0.2); color: #ef4444;">${mail.failed || 0}</span></div>
+                `;
+            }
+
+            // Render sheets queue metrics
+            const sheetsStatsBody = document.getElementById("sheetsQueueStatsBody");
+            if (sheetsStatsBody && data.queues?.sheets) {
+                const sheets = data.queues.sheets;
+                sheetsStatsBody.innerHTML = `
+                    <div style="display: flex; justify-content: space-between;"><span>Pending</span><span class="role-tag">${sheets.pending || 0}</span></div>
+                    <div style="display: flex; justify-content: space-between;"><span>Syncing</span><span class="role-tag" style="background: rgba(59,130,246,0.2); color: #3b82f6;">${sheets.syncing || 0}</span></div>
+                    <div style="display: flex; justify-content: space-between;"><span>Synced</span><span class="role-tag badge-verified">${sheets.synced || 0}</span></div>
+                    <div style="display: flex; justify-content: space-between;"><span>Retrying</span><span class="role-tag" style="background: rgba(245,158,11,0.2); color: #f59e0b;">${sheets.retry || 0}</span></div>
+                    <div style="display: flex; justify-content: space-between;"><span>Failed (DLQ)</span><span class="role-tag" style="background: rgba(239,68,68,0.2); color: #ef4444;">${sheets.failed || 0}</span></div>
+                `;
+            }
+        } catch (e) {
+            console.error("Metrics fetch failed:", e);
+        }
+    }
+
+    fetchMetrics();
+    const intervalId = setInterval(fetchMetrics, 10000);
+    registerListener(() => clearInterval(intervalId));
+
+    // 3. Save Emergency Toggles
+    const saveEmergencyBtn = document.getElementById("saveEmergencyControlsBtn");
+    if (saveEmergencyBtn) {
+        saveEmergencyBtn.addEventListener("click", async () => {
+            saveEmergencyBtn.disabled = true;
+            saveEmergencyBtn.textContent = "SAVING...";
+
+            try {
+                const response = await fetch(`${API_BASE}/admin/settings`, {
+                    method: "PATCH",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${idToken}`
+                    },
+                    body: JSON.stringify({
+                        emergencyMode: document.getElementById("toggleEmergencyMode").checked,
+                        maintenanceMode: document.getElementById("toggleMaintenanceMode").checked,
+                        registrationsPaused: document.getElementById("toggleRegistrationsPaused").checked,
+                        submissionsPaused: document.getElementById("toggleSubmissionsPaused").checked,
+                        emailsPaused: document.getElementById("toggleEmailsPaused").checked,
+                        sheetsPaused: document.getElementById("toggleSheetsPaused").checked,
+                        announcementsPaused: document.getElementById("toggleAnnouncementsPaused").checked,
+                    })
+                });
+
+                if (!response.ok) throw new Error("Failed to save emergency settings.");
+                showToast("Global emergency controls updated successfully!", "success");
+            } catch (err) {
+                showToast(err.message, "error");
+            } finally {
+                saveEmergencyBtn.disabled = false;
+                saveEmergencyBtn.textContent = "Apply Global Controls";
+            }
+        });
+    }
+
+    // 4. Trigger database Backup
+    const backupBtn = document.getElementById("triggerDbBackupBtn");
+    const backupStatusText = document.getElementById("backupStatusText");
+    if (backupBtn) {
+        backupBtn.addEventListener("click", async () => {
+            backupBtn.disabled = true;
+            backupBtn.textContent = "BACKING UP...";
+            if (backupStatusText) backupStatusText.textContent = "Running backup tasks...";
+
+            try {
+                const response = await fetch(`${API_BASE}/admin/backup`, {
+                    method: "POST",
+                    headers: { Authorization: `Bearer ${idToken}` }
+                });
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.error?.message || "Backup failed.");
+
+                showToast("Database backup successfully written!", "success");
+                if (backupStatusText) {
+                    backupStatusText.textContent = `Success: Users (${result.data.exportedCount?.users}), Teams (${result.data.exportedCount?.teams}), Submissions (${result.data.exportedCount?.submissions}).`;
+                    backupStatusText.style.color = "#10b981";
+                }
+            } catch (err) {
+                showToast(err.message, "error");
+                if (backupStatusText) {
+                    backupStatusText.textContent = `Error: ${err.message}`;
+                    backupStatusText.style.color = "#ef4444";
+                }
+            } finally {
+                backupBtn.disabled = false;
+                backupBtn.textContent = "Trigger Database Backup";
+            }
+        });
+    }
+
+    // 5. Download Backup JSON Export
+    const downloadBackupBtn = document.getElementById("downloadBackupJsonBtn");
+    if (downloadBackupBtn) {
+        downloadBackupBtn.addEventListener("click", async () => {
+            downloadBackupBtn.disabled = true;
+            downloadBackupBtn.textContent = "EXPORTING...";
+
+            try {
+                const response = await fetch(`${API_BASE}/admin/backup`, {
+                    method: "POST",
+                    headers: { Authorization: `Bearer ${idToken}` }
+                });
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.error?.message || "Export failed.");
+
+                const blob = new Blob([JSON.stringify(result.data.backup, null, 2)], { type: "application/json" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = `revengershack_db_backup_${Date.now()}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                showToast("JSON export downloaded successfully!");
+            } catch (err) {
+                showToast(err.message, "error");
+            } finally {
+                downloadBackupBtn.disabled = false;
+                downloadBackupBtn.textContent = "Download Full JSON Export";
+            }
+        });
+    }
 }

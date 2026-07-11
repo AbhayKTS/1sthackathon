@@ -531,6 +531,7 @@
                 <button class="nav-item" onclick="switchTab('logs')">Activity Logs</button>
                 <button class="nav-item" onclick="switchTab('announcements')">Announcements</button>
                 <button class="nav-item" onclick="switchTab('settings')">Settings</button>
+                <button class="nav-item" onclick="switchTab('system-health')">System Health</button>
             </nav>
 
             <div class="sidebar-footer">
@@ -1011,6 +1012,128 @@
                 </div>
             </div>
 
+            <!-- TAB 15: System Health -->
+            <div id="panel-system-health" class="tab-panel">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; margin-bottom: 24px;">
+                    <!-- Health Status Cards -->
+                    <div class="glass-card">
+                        <div class="card-title-section">
+                            <span class="card-title">System Metrics</span>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 16px;">
+                            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border); padding-bottom: 8px;">
+                                <span style="color: var(--muted-foreground);">Firestore Status</span>
+                                <span id="healthFirestoreStatus" style="font-weight: bold; color: #10b981;">HEALTHY</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border); padding-bottom: 8px;">
+                                <span style="color: var(--muted-foreground);">Firestore Latency</span>
+                                <span id="healthFirestoreLatency" style="font-family: var(--font-mono); color: #fff;">-- ms</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border); padding-bottom: 8px;">
+                                <span style="color: var(--muted-foreground);">Active Users (15m)</span>
+                                <span id="healthActiveUsers" style="font-weight: bold; color: var(--primary);">--</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="glass-card">
+                        <div class="card-title-section">
+                            <span class="card-title">Integration Check</span>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 16px;">
+                            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border); padding-bottom: 8px;">
+                                <span style="color: var(--muted-foreground);">Email Service (Resend)</span>
+                                <span id="healthEmailService" style="font-weight: bold; color: #fff;">Checking...</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border); padding-bottom: 8px;">
+                                <span style="color: var(--muted-foreground);">Discord Webhook</span>
+                                <span id="healthDiscordWebhook" style="font-weight: bold; color: #fff;">Checking...</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border); padding-bottom: 8px;">
+                                <span style="color: var(--muted-foreground);">WhatsApp API</span>
+                                <span id="healthWhatsApp" style="font-weight: bold; color: #fff;">Checking...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; margin-bottom: 24px;">
+                    <!-- Queue Sizes -->
+                    <div class="glass-card">
+                        <div class="card-title-section">
+                            <span class="card-title">Email Queue Monitor</span>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 12px; color: #fff;" id="emailQueueStatsBody">
+                            Loading...
+                        </div>
+                    </div>
+
+                    <div class="glass-card">
+                        <div class="card-title-section">
+                            <span class="card-title">Sheets Sync Monitor</span>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 12px; color: #fff;" id="sheetsQueueStatsBody">
+                            Loading...
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; margin-bottom: 24px;">
+                    <!-- Emergency Controls -->
+                    <div class="glass-card">
+                        <div class="card-title-section">
+                            <span class="card-title">Emergency Pause Deck</span>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 16px;">
+                            <label style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+                                <span style="color: #fff; font-weight: 600;">Emergency Lock Mode (Global Pause)</span>
+                                <input type="checkbox" id="toggleEmergencyMode" style="width: 18px; height: 18px; cursor: pointer;">
+                            </label>
+                            <label style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+                                <span style="color: var(--muted-foreground);">Maintenance Mode</span>
+                                <input type="checkbox" id="toggleMaintenanceMode" style="width: 18px; height: 18px; cursor: pointer;">
+                            </label>
+                            <label style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+                                <span style="color: var(--muted-foreground);">Pause Team Registrations</span>
+                                <input type="checkbox" id="toggleRegistrationsPaused" style="width: 18px; height: 18px; cursor: pointer;">
+                            </label>
+                            <label style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+                                <span style="color: var(--muted-foreground);">Pause Deliverable Submissions</span>
+                                <input type="checkbox" id="toggleSubmissionsPaused" style="width: 18px; height: 18px; cursor: pointer;">
+                            </label>
+                            <label style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+                                <span style="color: var(--muted-foreground);">Pause Email Worker</span>
+                                <input type="checkbox" id="toggleEmailsPaused" style="width: 18px; height: 18px; cursor: pointer;">
+                            </label>
+                            <label style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+                                <span style="color: var(--muted-foreground);">Pause Google Sheets Sync</span>
+                                <input type="checkbox" id="toggleSheetsPaused" style="width: 18px; height: 18px; cursor: pointer;">
+                            </label>
+                            <label style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+                                <span style="color: var(--muted-foreground);">Pause Broadcast Announcements</span>
+                                <input type="checkbox" id="toggleAnnouncementsPaused" style="width: 18px; height: 18px; cursor: pointer;">
+                            </label>
+                            <button id="saveEmergencyControlsBtn" class="btn-primary" style="margin-top: 10px;">Apply Global Controls</button>
+                        </div>
+                    </div>
+
+                    <!-- Disaster Recovery -->
+                    <div class="glass-card">
+                        <div class="card-title-section">
+                            <span class="card-title">Disaster Recovery (Backups)</span>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 16px;">
+                            <p style="font-size: 11px; color: var(--muted-foreground); margin: 0; line-height: 1.5;">
+                                Initiate an on-demand database backup. This exports all users, teams, submissions, and settings, and clones submissions into the <code>backups_submissions</code> table.
+                            </p>
+                            <button id="triggerDbBackupBtn" class="btn-primary">Trigger Database Backup</button>
+                            <button id="downloadBackupJsonBtn" class="btn-outline" style="border-color: var(--primary); color: var(--primary);">Download Full JSON Export</button>
+                            <div id="backupStatusText" style="font-size: 11px; font-family: var(--font-mono); min-height: 16px; margin-top: 8px;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </main>
     </div>
 
@@ -1086,7 +1209,8 @@
                 'sheets-sync': ['SHEETS SYNC', 'Double-Write Google Sheets Queue Logs'],
                 'logs': ['ACTIVITY AUDIT LOGS', 'Internal System Log Feeds & Events'],
                 'announcements': ['ANNOUNCEMENTS', 'Broadcast Multi-channel Alerts & Broadcasts'],
-                'settings': ['SYSTEM SETTINGS', 'Global Platform Property Configurations']
+                'settings': ['SYSTEM SETTINGS', 'Global Platform Property Configurations'],
+                'system-health': ['SYSTEM HEALTH MONITOR', 'Real-time Queue Statuses & Emergency Control Deck']
             };
 
             if (titlesMap[tabId]) {
