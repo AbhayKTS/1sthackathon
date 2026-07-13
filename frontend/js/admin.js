@@ -647,13 +647,23 @@ if (activateRoundBtn) {
 
         activateRoundBtn.disabled = true;
         try {
+            const roundDoc = await getDoc(doc(db, "rounds", roundId));
+            if (!roundDoc.exists()) throw new Error("Round not found in database.");
+            const roundData = roundDoc.data();
+            const roundTitle = roundData.title || roundId;
+            const roundDesc = roundData.description || "";
+
             const response = await fetch(`${API_BASE}/admin/rounds/activate`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                     Authorization: `Bearer ${idToken}`
                 },
-                body: JSON.stringify({ roundId })
+                body: JSON.stringify({
+                    roundId,
+                    roundTitle,
+                    roundDesc
+                })
             });
 
             if (!response.ok) throw new Error("Activation failed.");
@@ -860,8 +870,46 @@ async function initMailQueue() {
 
 // ─── TAB 11: GOOGLE SHEETS SYNC ──────────────────────────────────────────────
 async function initSheetsSyncQueue() {
-    const tbody = document.getElementById("sheetsSyncTableBody");
-    tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--muted-foreground);">Synced and locked.</td></tr>';
+    try {
+        const response = await fetch(`${API_BASE}/admin/google-sheets/jobs?limit=30`, {
+            headers: { Authorization: `Bearer ${idToken}` }
+        });
+        const result = await response.json();
+        const tbody = document.getElementById("sheetsSyncTableBody");
+        tbody.innerHTML = "";
+
+        const jobs = result.data?.jobs ?? [];
+        if (jobs.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--muted-foreground);">Google Sheets sync queue empty.</td></tr>';
+            return;
+        }
+
+        jobs.forEach(job => {
+            const tr = document.createElement("tr");
+            const dateObj = job.lastAttemptAt || job.createdAt;
+            const time = dateObj ? new Date(dateObj.seconds * 1000).toLocaleString() : "";
+            
+            let badgeClass = "badge-amber";
+            let customStyle = "";
+            if (job.status === "synced") {
+                badgeClass = "badge-verified";
+            } else if (job.status === "failed") {
+                badgeClass = "badge-amber";
+                customStyle = "border-color: #ef4444; color: #ef4444;";
+            }
+
+            tr.innerHTML = `
+                <td><code style="font-size: 10px;">${sanitizeHTML(job.id)}</code></td>
+                <td>${sanitizeHTML(job.sheetName || "Sheet1")}</td>
+                <td><span class="role-tag ${badgeClass}" style="${customStyle}">${sanitizeHTML(job.status)}</span></td>
+                <td>${sanitizeHTML(String(job.attempts || 0))}</td>
+                <td style="color: var(--muted-foreground);">${time}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    } catch (e) {
+        console.error("Sheets sync queue load failed:", e);
+    }
 }
 
 // ─── TAB 12: SYSTEM ACTIVITY AUDIT LOGS ──────────────────────────────────────

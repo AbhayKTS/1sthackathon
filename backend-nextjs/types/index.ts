@@ -427,6 +427,7 @@ export type AuditAction =
   | 'team.member_added'
   | 'team.timeleap_eligible_set'
   | 'team.finalist_set'
+  | 'team.deleted'
   // Rounds
   | 'round.created'
   | 'round.updated'
