@@ -1,13 +1,8 @@
 /**
  * POST /api/internal/mail-worker
- * Processes the mail queue. Secured with CRON_SECRET header.
- *
- * Called by:
- *   - Vercel Cron (if on paid plan)
- *   - Manual trigger from admin panel "Process Queue" button
+ * Processes the mail queue. Secured with CRON_SECRET.
  *
  * Security: X-Cron-Secret header must match CRON_SECRET env var.
- * If CRON_SECRET is not set, only super_admin token auth is accepted.
  *
  * @route POST /api/internal/mail-worker
  */
@@ -17,6 +12,7 @@ import { apiSuccess, apiError, applyCorsHeaders, handleOptions } from '@/lib/api
 import { Errors } from '@/lib/errors';
 import { env } from '@/lib/env';
 import { processMailQueue } from '@/server/services/mail-queue.service';
+import { setWorkerStatus, setWorkerResult } from '@/server/services/worker-stats.service';
 
 export function OPTIONS(request: NextRequest): NextResponse {
   return handleOptions(request);
@@ -25,28 +21,30 @@ export function OPTIONS(request: NextRequest): NextResponse {
 export async function POST(request: NextRequest): Promise<NextResponse> {
   const origin = request.headers.get('origin') ?? '';
   try {
-    // Authenticate: either CRON_SECRET header OR a valid super_admin token
+    // 1. Authenticate using X-Cron-Secret header or Bearer Token
     const cronSecret = request.headers.get('X-Cron-Secret') ?? request.headers.get('x-cron-secret');
+    const authHeader = request.headers.get('Authorization');
+    const bearerToken = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
+    const secretToVerify = cronSecret || bearerToken;
 
-    if (env.CRON_SECRET) {
-      if (cronSecret !== env.CRON_SECRET) {
-        // Fall back to checking admin auth
-        const authHeader = request.headers.get('Authorization');
-        if (!authHeader?.startsWith('Bearer ')) {
-          throw Errors.unauthorized('Missing X-Cron-Secret header or Bearer token.');
-        }
-        // Verify token is super_admin
-        const { withAuth, requireRole } = await import('@/lib/api-helpers');
-        const token = await withAuth(request);
-        requireRole(token, ['super_admin']);
-      }
-    } else if (process.env.NODE_ENV === 'production') {
-      throw Errors.unauthorized('CRON_SECRET not configured. Cannot allow unauthenticated cron calls.');
+    if (!env.CRON_SECRET || secretToVerify !== env.CRON_SECRET) {
+      throw Errors.unauthorized('Invalid or missing CRON_SECRET.');
     }
 
-    const result = await processMailQueue();
-    const response = apiSuccess({ ok: true, result });
-    return applyCorsHeaders(response, origin);
+    // 2. Track worker execution state
+    await setWorkerStatus('mail', 'PROCESSING');
+
+    try {
+      const result = await processMailQueue();
+      await setWorkerResult('mail', result.processed, result.failed, null);
+
+      const response = apiSuccess({ ok: true, result });
+      return applyCorsHeaders(response, origin);
+    } catch (err: any) {
+      const errorMsg = err instanceof Error ? err.message : String(err);
+      await setWorkerResult('mail', 0, 1, errorMsg);
+      throw err;
+    }
   } catch (err) {
     return applyCorsHeaders(apiError(err, origin), origin);
   }

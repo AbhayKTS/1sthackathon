@@ -18,6 +18,7 @@ import {
   processSheetsQueue,
 } from '@/server/services/sheets-queue.service';
 import { writeAuditLog } from '@/server/services/audit.service';
+import { setWorkerStatus, setWorkerResult } from '@/server/services/worker-stats.service';
 
 export function OPTIONS(request: NextRequest): NextResponse {
   return handleOptions(request);
@@ -48,12 +49,18 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     // 3. Acquire synchronization lock
     await acquireSheetsSyncLock(token.uid);
+    await setWorkerStatus('sheets', 'PROCESSING');
 
     const startedAt = new Date();
     let res;
     try {
       // 4. Process the Google Sheets sync queue
       res = await processSheetsQueue();
+      await setWorkerResult('sheets', res.processed, res.failed, null);
+    } catch (err: any) {
+      const errorMsg = err instanceof Error ? err.message : String(err);
+      await setWorkerResult('sheets', 0, 1, errorMsg);
+      throw err;
     } finally {
       // 5. Release synchronization lock (always runs even if sync throws)
       await releaseSheetsSyncLock();

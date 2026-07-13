@@ -1,12 +1,1 @@
-{
-  "crons": [
-    {
-      "path": "/api/internal/mail-worker",
-      "schedule": "* * * * *"
-    },
-    {
-      "path": "/api/internal/scheduler-worker",
-      "schedule": "* * * * *"
-    }
-  ]
-}
+{}

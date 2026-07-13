@@ -1093,6 +1093,59 @@
                     </div>
                 </div>
 
+                <div class="glass-card" style="margin-bottom: 24px;">
+                    <div class="card-title-section" style="display: flex; justify-content: space-between; align-items: center;">
+                        <span class="card-title">Background Queue Workers Control Deck</span>
+                        <button type="button" id="btnRefreshWorkers" class="btn-outline" style="padding: 6px 12px; font-size: 10px;">Refresh Stats</button>
+                    </div>
+                    <div class="data-table-wrapper">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Worker Name</th>
+                                    <th>Status</th>
+                                    <th>Last Execution</th>
+                                    <th>Processed</th>
+                                    <th>Failed</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>Mail Worker</strong></td>
+                                    <td><span id="workerMailStatus" class="role-tag badge-verified">IDLE</span></td>
+                                    <td id="workerMailLastRun">Never</td>
+                                    <td id="workerMailProcessed">0</td>
+                                    <td id="workerMailFailed">0</td>
+                                    <td>
+                                        <button type="button" id="btnRunMailWorker" class="btn-primary" style="padding: 6px 12px; font-size: 10px;">Run Now</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Sheets Worker</strong></td>
+                                    <td><span id="workerSheetsStatus" class="role-tag badge-verified">IDLE</span></td>
+                                    <td id="workerSheetsLastRun">Never</td>
+                                    <td id="workerSheetsProcessed">0</td>
+                                    <td id="workerSheetsFailed">0</td>
+                                    <td>
+                                        <button type="button" id="btnRunSheetsWorker" class="btn-primary" style="padding: 6px 12px; font-size: 10px;">Run Now</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Scheduler Worker</strong></td>
+                                    <td><span id="workerSchedulerStatus" class="role-tag badge-verified">IDLE</span></td>
+                                    <td id="workerSchedulerLastRun">Never</td>
+                                    <td id="workerSchedulerProcessed">0</td>
+                                    <td id="workerSchedulerFailed">0</td>
+                                    <td>
+                                        <button type="button" id="btnRunSchedulerWorker" class="btn-primary" style="padding: 6px 12px; font-size: 10px;">Run Now</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; margin-bottom: 24px;">
                     <!-- Queue Sizes -->
                     <div class="glass-card">

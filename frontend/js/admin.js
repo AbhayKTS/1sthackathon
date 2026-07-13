@@ -55,6 +55,7 @@ let currentAdminRole = null;
 const roundCache = new Map();
 let activeListeners = [];
 let sheetsSyncListenersWired = false;
+let systemHealthWorkersListenersWired = false;
 
 function registerListener(unsub) {
     activeListeners.push(unsub);
@@ -1254,14 +1255,134 @@ async function initSystemHealth() {
                     <div style="display: flex; justify-content: space-between;"><span>Failed (DLQ)</span><span class="role-tag" style="background: rgba(239,68,68,0.2); color: #ef4444;">${sheets.failed || 0}</span></div>
                 `;
             }
+            
+            await fetchWorkerStats();
         } catch (e) {
             console.error("Metrics fetch failed:", e);
+        }
+    }
+
+    async function fetchWorkerStats() {
+        try {
+            const response = await fetch(`${API_BASE}/admin/workers/stats`, {
+                headers: { Authorization: `Bearer ${idToken}` }
+            });
+            if (!response.ok) throw new Error("Worker stats fetch failed.");
+            
+            const result = await response.json();
+            const data = result.data || {};
+            
+            const renderWorker = (workerId, domId) => {
+                const worker = data[workerId] || {};
+                const statusEl = document.getElementById(`worker${domId}Status`);
+                const lastRunEl = document.getElementById(`worker${domId}LastRun`);
+                const processedEl = document.getElementById(`worker${domId}Processed`);
+                const failedEl = document.getElementById(`worker${domId}Failed`);
+
+                if (statusEl) {
+                    statusEl.textContent = worker.status || "IDLE";
+                    statusEl.className = `role-tag ${worker.status === "PROCESSING" ? "badge-amber" : worker.status === "PAUSED" ? "badge-amber" : "badge-verified"}`;
+                }
+                if (lastRunEl) {
+                    lastRunEl.textContent = worker.lastRun ? new Date(typeof worker.lastRun.seconds === 'number' ? worker.lastRun.seconds * 1000 : worker.lastRun).toLocaleString() : "Never";
+                }
+                if (processedEl) processedEl.textContent = worker.processed || 0;
+                if (failedEl) failedEl.textContent = worker.failed || 0;
+            };
+
+            renderWorker('mail', 'Mail');
+            renderWorker('sheets', 'Sheets');
+            renderWorker('scheduler', 'Scheduler');
+        } catch (e) {
+            console.error("Worker stats fetch failed:", e);
+        }
+    }
+
+    async function runWorker(workerId, runUrl, btnElement) {
+        if (currentAdminRole !== "super_admin") {
+            showToast("Only Super Admins can manually run workers.", "error");
+            return;
+        }
+        
+        btnElement.disabled = true;
+        btnElement.textContent = "RUNNING...";
+        
+        try {
+            const response = await fetch(`${API_BASE}${runUrl}`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${idToken}`
+                },
+                body: JSON.stringify({ force: false })
+            });
+            
+            if (workerId === 'sheets' && response.status === 409) {
+                if (confirm("Synchronization already in progress. Would you like to force sync?")) {
+                    btnElement.disabled = true;
+                    btnElement.textContent = "FORCING...";
+                    const forceResponse = await fetch(`${API_BASE}${runUrl}`, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            Authorization: `Bearer ${idToken}`
+                        },
+                        body: JSON.stringify({ force: true })
+                    });
+                    if (!forceResponse.ok) throw new Error("Force run failed.");
+                    showToast("Worker forced successfully!");
+                }
+                return;
+            }
+            
+            if (!response.ok) throw new Error("Worker run failed.");
+            
+            const result = await response.json();
+            const data = result.data || {};
+            
+            if (workerId === 'mail') {
+                showToast(`Mail Worker ran successfully. Processed: ${data.processed || 0}, Sent: ${data.sent || 0}, Failed: ${data.failed || 0}`);
+            } else if (workerId === 'scheduler') {
+                showToast(`Scheduler Worker ran successfully. Processed: ${data.processed || 0}, Activated: ${data.activated || 0}, Locked: ${data.locked || 0}`);
+            } else if (workerId === 'sheets') {
+                showToast(`Sheets Worker ran successfully. Processed: ${data.processed || 0}, Synced: ${data.synced || 0}, Failed: ${data.failed || 0}`);
+            } else {
+                showToast("Worker completed successfully!");
+            }
+            
+            await fetchWorkerStats();
+        } catch (err) {
+            showToast(err.message, "error");
+        } finally {
+            btnElement.disabled = false;
+            btnElement.textContent = "Run Now";
         }
     }
 
     fetchMetrics();
     const intervalId = setInterval(fetchMetrics, 10000);
     registerListener(() => clearInterval(intervalId));
+
+    if (!systemHealthWorkersListenersWired) {
+        const btnMail = document.getElementById("btnRunMailWorker");
+        if (btnMail) btnMail.addEventListener("click", () => runWorker('mail', '/admin/workers/mail/run', btnMail));
+
+        const btnSheets = document.getElementById("btnRunSheetsWorker");
+        if (btnSheets) btnSheets.addEventListener("click", () => runWorker('sheets', '/admin/google-sheets/sync', btnSheets));
+
+        const btnScheduler = document.getElementById("btnRunSchedulerWorker");
+        if (btnScheduler) btnScheduler.addEventListener("click", () => runWorker('scheduler', '/admin/workers/scheduler/run', btnScheduler));
+
+        const btnRefresh = document.getElementById("btnRefreshWorkers");
+        if (btnRefresh) {
+            btnRefresh.addEventListener("click", async () => {
+                await fetchWorkerStats();
+                showToast("Worker stats refreshed successfully.");
+            });
+        }
+        
+        systemHealthWorkersListenersWired = true;
+    }
 
     // 3. Save Emergency Toggles
     const saveEmergencyBtn = document.getElementById("saveEmergencyControlsBtn");
