@@ -34,12 +34,18 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       throw Errors.validation('Invalid JSON payload.');
     });
 
-    const { displayName, role: teamRole, phone, college, github } = body;
+    const { displayName, role: teamRole, phone, college, github, whatsapp, course, gradYear, linkedin } = body;
 
     if (!displayName?.trim()) throw Errors.validation('displayName is required.');
     if (!teamRole?.trim()) throw Errors.validation('role (team role, e.g. "Developer") is required.');
     if (!phone?.trim()) throw Errors.validation('phone is required.');
     if (!college?.trim()) throw Errors.validation('college is required.');
+    if (!whatsapp?.trim()) throw Errors.validation('whatsapp number is required.');
+    if (!course?.trim()) throw Errors.validation('course/branch is required.');
+    if (!gradYear) throw Errors.validation('graduation year is required.');
+
+    const parsedGradYear = Number(gradYear);
+    if (isNaN(parsedGradYear)) throw Errors.validation('graduation year must be a valid number.');
 
     const input = {
       displayName: displayName.trim(),
@@ -47,6 +53,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       phone: phone.trim(),
       college: college.trim(),
       github: github?.trim() ?? null,
+      whatsapp: whatsapp.trim(),
+      course: course.trim(),
+      gradYear: parsedGradYear,
+      linkedin: linkedin?.trim() ?? null,
     };
 
     if (token.role === 'participant_leader') {

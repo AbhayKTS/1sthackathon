@@ -44,6 +44,10 @@ const memberSchema = z.object({
   role: z.string().min(1, 'Member role is required'),
   college: z.string().min(1, 'Member college is required'),
   github: z.string().nullable().optional().default(null),
+  whatsapp: z.string().min(1, 'Member whatsapp is required'),
+  course: z.string().min(1, 'Member course/branch is required'),
+  gradYear: z.number().int().min(2000, 'Invalid graduation year'),
+  linkedin: z.string().nullable().optional().default(null),
 });
 
 const submitSchema = z.object({
@@ -57,6 +61,9 @@ const submitSchema = z.object({
   leaderPhone: z.string().min(1, 'Leader phone is required'),
   leaderGithub: z.string().nullable().optional().default(null),
   leaderLinkedin: z.string().nullable().optional().default(null),
+  leaderWhatsapp: z.string().min(1, 'Leader whatsapp is required'),
+  leaderCourse: z.string().min(1, 'Leader course/branch is required'),
+  leaderGradYear: z.number().int().min(2000, 'Invalid graduation year'),
   track: z.string().min(1, 'Track selection is required'),
   problemStatement: z.string().min(10, 'Problem statement must be at least 10 characters'),
   isCustomPS: z.boolean().default(false),

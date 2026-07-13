@@ -19,6 +19,10 @@ export interface TeamMember {
   role: string;
   college: string;  // Per-member college (NOT copied from leader)
   github: string | null;
+  whatsapp: string;
+  course: string;
+  gradYear: number;
+  linkedin: string | null;
 }
 
 export interface TeamProfileInput {
@@ -32,6 +36,9 @@ export interface TeamProfileInput {
   leaderPhone: string;
   leaderGithub: string | null;
   leaderLinkedin: string | null;
+  leaderWhatsapp: string;
+  leaderCourse: string;
+  leaderGradYear: number;
   track: string;
   problemStatement: string;
   isCustomPS: boolean;

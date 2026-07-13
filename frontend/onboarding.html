@@ -141,6 +141,28 @@
                         <span class="phone-prefix">+91</span>
                         <input type="text" id="leaderPhone" placeholder="10-DIGIT PHONE *" required maxlength="10" pattern="\d{10}" class="bg-input border border-border px-3 py-3 font-mono text-sm focus:outline-none focus:border-blood w-full" style="font-family: 'JetBrains Mono', monospace;">
                     </div>
+                    <div class="phone-wrapper">
+                        <span class="phone-prefix">+91</span>
+                        <input type="text" id="leaderWhatsapp" placeholder="10-DIGIT WHATSAPP *" required maxlength="10" pattern="\d{10}" class="bg-input border border-border px-3 py-3 font-mono text-sm focus:outline-none focus:border-blood w-full" style="font-family: 'JetBrains Mono', monospace;">
+                    </div>
+                    <input type="text" id="leaderCourse" placeholder="COURSE / BRANCH (e.g. B.Tech CSE) *" required class="bg-input border border-border px-4 py-3 font-mono text-sm focus:outline-none focus:border-blood w-full" style="font-family: 'JetBrains Mono', monospace;">
+                    <select id="leaderGradYear" required class="bg-input border border-border px-4 py-3 font-mono text-sm focus:outline-none focus:border-blood w-full" style="font-family: 'JetBrains Mono', monospace;">
+                        <option value="" disabled selected>GRADUATION YEAR *</option>
+                    </select>
+                    <select id="leaderRole" required class="bg-input border border-border px-4 py-3 font-mono text-sm focus:outline-none focus:border-blood w-full" style="font-family: 'JetBrains Mono', monospace;">
+                        <option value="" disabled selected>ROLE *</option>
+                        <option value="Team Lead">Team Lead</option>
+                        <option value="Backend Developer">Backend Developer</option>
+                        <option value="Frontend Developer">Frontend Developer</option>
+                        <option value="Full Stack">Full Stack</option>
+                        <option value="AI/ML">AI/ML</option>
+                        <option value="UI/UX">UI/UX</option>
+                        <option value="Cloud">Cloud</option>
+                        <option value="DevOps">DevOps</option>
+                        <option value="Researcher">Researcher</option>
+                        <option value="Presenter">Presenter</option>
+                        <option value="Other">Other</option>
+                    </select>
                     <input type="text" id="leaderGithub" placeholder="GITHUB USERNAME (optional)" class="bg-input border border-border px-4 py-3 font-mono text-sm focus:outline-none focus:border-blood w-full" style="font-family: 'JetBrains Mono', monospace;">
                     <input type="text" id="leaderLinkedin" placeholder="LINKEDIN URL (optional)" class="bg-input border border-border px-4 py-3 font-mono text-sm focus:outline-none focus:border-blood w-full" style="font-family: 'JetBrains Mono', monospace;">
                 </div>
@@ -164,9 +186,30 @@
                                 <span class="phone-prefix" style="font-size:10px;">+91</span>
                                 <input type="text" name="m_phone" placeholder="10-DIGIT PHONE *" required maxlength="10" pattern="\d{10}" class="bg-input border border-border px-2 py-2 font-mono text-xs focus:outline-none focus:border-blood w-full" style="font-family: 'JetBrains Mono', monospace;">
                             </div>
-                            <input type="text" name="m_role" placeholder="ROLE (e.g. Developer) *" required class="bg-input border border-border px-3 py-2 font-mono text-xs focus:outline-none focus:border-blood w-full" style="font-family: 'JetBrains Mono', monospace;">
+                            <div class="phone-wrapper">
+                                <span class="phone-prefix" style="font-size:10px;">+91</span>
+                                <input type="text" name="m_whatsapp" placeholder="10-DIGIT WHATSAPP *" required maxlength="10" pattern="\d{10}" class="bg-input border border-border px-2 py-2 font-mono text-xs focus:outline-none focus:border-blood w-full" style="font-family: 'JetBrains Mono', monospace;">
+                            </div>
+                            <input type="text" name="m_course" placeholder="COURSE / BRANCH *" required class="bg-input border border-border px-3 py-2 font-mono text-xs focus:outline-none focus:border-blood w-full" style="font-family: 'JetBrains Mono', monospace;">
+                            <select name="m_gradYear" required class="bg-input border border-border px-3 py-2 font-mono text-xs focus:outline-none focus:border-blood w-full" style="font-family: 'JetBrains Mono', monospace;">
+                                <option value="" disabled selected>GRADUATION YEAR *</option>
+                            </select>
+                            <select name="m_role" required class="bg-input border border-border px-3 py-2 font-mono text-xs focus:outline-none focus:border-blood w-full" style="font-family: 'JetBrains Mono', monospace;">
+                                <option value="" disabled selected>ROLE *</option>
+                                <option value="Backend Developer">Backend Developer</option>
+                                <option value="Frontend Developer">Frontend Developer</option>
+                                <option value="Full Stack">Full Stack</option>
+                                <option value="AI/ML">AI/ML</option>
+                                <option value="UI/UX">UI/UX</option>
+                                <option value="Cloud">Cloud</option>
+                                <option value="DevOps">DevOps</option>
+                                <option value="Researcher">Researcher</option>
+                                <option value="Presenter">Presenter</option>
+                                <option value="Other">Other</option>
+                            </select>
                             <input type="text" name="m_college" placeholder="COLLEGE *" required class="bg-input border border-border px-3 py-2 font-mono text-xs focus:outline-none focus:border-blood w-full" style="font-family: 'JetBrains Mono', monospace;">
                             <input type="text" name="m_github" placeholder="GITHUB (optional)" class="bg-input border border-border px-3 py-2 font-mono text-xs focus:outline-none focus:border-blood w-full" style="font-family: 'JetBrains Mono', monospace;">
+                            <input type="text" name="m_linkedin" placeholder="LINKEDIN URL (optional)" class="bg-input border border-border px-3 py-2 font-mono text-xs focus:outline-none focus:border-blood w-full" style="font-family: 'JetBrains Mono', monospace;">
                         </div>
                     </div>
                 </div>

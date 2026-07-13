@@ -156,10 +156,14 @@ describe('Security Hardening Service Tests', () => {
       const { completeLeaderProfile } = await import('@/server/services/onboarding.service');
       const input = {
         displayName: 'Leader Name',
-        role: 'participant_leader' as const,
+        role: 'participant_leader',
         phone: '+919999999999',
         college: 'Stanford University',
         github: 'https://github.com/leader',
+        whatsapp: '+919999999999',
+        course: 'Computer Science',
+        gradYear: 2026,
+        linkedin: 'https://linkedin.com/in/leader',
       };
 
       await expect(completeLeaderProfile('user-id-not-existing', input)).rejects.toThrowError(

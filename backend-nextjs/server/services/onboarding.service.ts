@@ -33,6 +33,10 @@ export interface OnboardingProfileInput {
   phone: string;       // Will be normalised to +91XXXXXXXXXX
   college: string;
   github: string | null;
+  whatsapp: string;    // Will be normalised to +91XXXXXXXXXX
+  course: string;
+  gradYear: number;    // e.g., 2026
+  linkedin: string | null;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -85,6 +89,7 @@ export async function completeLeaderProfile(
 
   // 1. Validate phone
   const normalisedPhone = normalisePhone(input.phone, 'Mobile number');
+  const normalisedWhatsapp = normalisePhone(input.whatsapp, 'WhatsApp number');
 
   // 2. Load user doc
   const userRef = db.collection('users').doc(uid);
@@ -129,6 +134,10 @@ export async function completeLeaderProfile(
       phone: normalisedPhone,
       college: input.college.trim(),
       github: input.github?.trim() || null,
+      whatsapp: normalisedWhatsapp,
+      course: input.course.trim(),
+      gradYear: input.gradYear,
+      linkedin: input.linkedin?.trim() || null,
       onboardingStatus: 'complete',
       updatedAt: FieldValue.serverTimestamp(),
     });
@@ -146,6 +155,10 @@ export async function completeLeaderProfile(
       role: m.role,
       college: m.college,
       github: null,
+      whatsapp: '',
+      course: '',
+      gradYear: 0,
+      linkedin: null,
       onboardingComplete: false,
       joinedAt: null,
     }));
@@ -164,6 +177,10 @@ export async function completeLeaderProfile(
       leaderPhone: normalisedPhone,
       leaderGithub: input.github?.trim() || null,
       leaderCollege: input.college.trim(),
+      leaderWhatsapp: normalisedWhatsapp,
+      leaderCourse: input.course.trim(),
+      leaderGradYear: input.gradYear,
+      leaderLinkedin: input.linkedin?.trim() || null,
       members: membersArray,
       memberEmails: membersArray.map((m) => m.email),
       status: isSolo ? 'Verified' : 'Draft',
@@ -279,6 +296,7 @@ export async function completeMemberProfile(
   await assertRegistrationsNotPaused(db);
 
   const normalisedPhone = normalisePhone(input.phone, 'Mobile number');
+  const normalisedWhatsapp = normalisePhone(input.whatsapp, 'WhatsApp number');
 
   const userRef = db.collection('users').doc(uid);
   const userSnap = await userRef.get();
@@ -316,6 +334,10 @@ export async function completeMemberProfile(
         role: input.role.trim(),
         college: input.college.trim(),
         github: input.github?.trim() || null,
+        whatsapp: normalisedWhatsapp,
+        course: input.course.trim(),
+        gradYear: input.gradYear,
+        linkedin: input.linkedin?.trim() || null,
         onboardingComplete: true,
         joinedAt: new Date(),
       };
@@ -333,6 +355,10 @@ export async function completeMemberProfile(
       phone: normalisedPhone,
       college: input.college.trim(),
       github: input.github?.trim() || null,
+      whatsapp: normalisedWhatsapp,
+      course: input.course.trim(),
+      gradYear: input.gradYear,
+      linkedin: input.linkedin?.trim() || null,
       onboardingStatus: 'complete',
       teamId: teamDoc.id,
       updatedAt: FieldValue.serverTimestamp(),
@@ -409,6 +435,7 @@ export async function updateMemberProfile(
   }
 
   const normalisedPhone = input.phone ? normalisePhone(input.phone, 'Mobile number') : undefined;
+  const normalisedWhatsapp = input.whatsapp ? normalisePhone(input.whatsapp, 'WhatsApp number') : undefined;
 
   // Update user doc
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -418,6 +445,10 @@ export async function updateMemberProfile(
   if (input.college) userUpdate.college = input.college.trim();
   if (input.github !== undefined) userUpdate.github = input.github?.trim() || null;
   if (input.role) userUpdate.role = input.role.trim();  // role in context of team, not system role
+  if (normalisedWhatsapp) userUpdate.whatsapp = normalisedWhatsapp;
+  if (input.course) userUpdate.course = input.course.trim();
+  if (input.gradYear) userUpdate.gradYear = input.gradYear;
+  if (input.linkedin !== undefined) userUpdate.linkedin = input.linkedin?.trim() || null;
 
   await userRef.update(userUpdate);
 
@@ -443,6 +474,10 @@ export async function updateMemberProfile(
         if (normalisedPhone) leaderUpdate.leaderPhone = normalisedPhone;
         if (input.college) leaderUpdate.leaderCollege = input.college.trim();
         if (input.github !== undefined) leaderUpdate.leaderGithub = input.github?.trim() || null;
+        if (normalisedWhatsapp) leaderUpdate.leaderWhatsapp = normalisedWhatsapp;
+        if (input.course) leaderUpdate.leaderCourse = input.course.trim();
+        if (input.gradYear) leaderUpdate.leaderGradYear = input.gradYear;
+        if (input.linkedin !== undefined) leaderUpdate.leaderLinkedin = input.linkedin?.trim() || null;
         await teamRef.update(leaderUpdate);
       } else {
         // Update member entry in the array
@@ -455,6 +490,10 @@ export async function updateMemberProfile(
               ...(input.role && { role: input.role.trim() }),
               ...(input.college && { college: input.college.trim() }),
               ...(input.github !== undefined && { github: input.github?.trim() || null }),
+              ...(normalisedWhatsapp && { whatsapp: normalisedWhatsapp }),
+              ...(input.course && { course: input.course.trim() }),
+              ...(input.gradYear && { gradYear: input.gradYear }),
+              ...(input.linkedin !== undefined && { linkedin: input.linkedin?.trim() || null }),
             };
           }
           return m;

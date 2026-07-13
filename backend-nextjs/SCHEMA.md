@@ -36,6 +36,11 @@ Document ID: Firebase Auth UID
   teamId:         string | null;   // Firestore ID of the Teams doc, null until assigned
   invitedTeamId:  string | null;   // Firestore ID of the InvitedTeams doc they came from
   displayName:    string | null;   // Optional display name set during verification
+  phone:          string | null;   // Normalised mobile number
+  whatsapp:       string | null;   // Normalised WhatsApp number
+  course:         string | null;   // Course/Branch (e.g. B.Tech CSE)
+  gradYear:       number | null;   // Graduation Year
+  linkedin:       string | null;   // LinkedIn URL
   createdAt:      Timestamp;
   updatedAt:      Timestamp;
   lastLoginAt:    Timestamp | null;
@@ -138,6 +143,9 @@ Document ID: auto-ID
   leaderName:   string;
   leaderEmail:  string;
   leaderPhone:  string;
+  leaderWhatsapp: string;
+  leaderCourse: string;
+  leaderGradYear: number;
   leaderGithub: string | null;
   leaderLinkedin: string | null;
 
@@ -147,6 +155,10 @@ Document ID: auto-ID
     name:       string;
     email:      string;
     phone:      string;
+    whatsapp:   string;
+    course:     string;
+    gradYear:   number;
+    role:       string;
     college:    string;
     github:     string | null;
     linkedin:   string | null;
