@@ -51,6 +51,10 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       leaderName: inviteData['leaderName'] || '',
       leaderPhone: inviteData['leaderPhone'] || '',
       college: inviteData['college'] || '',
+      track: inviteData['track'] || inviteData['domain'] || '',
+      problemStatement: inviteData['problemStatement'] || '',
+      isCustomPS: inviteData['isCustomPS'] || false,
+      members: inviteData['members'] || [],
     };
 
     const response = apiSuccess({ prefill }, 200);

@@ -1,8 +1,10 @@
-import { auth, API_BASE, onAuthStateChanged } from "./firebase-init.js";
+import { auth, API_BASE, onAuthStateChanged, db, doc, getDoc } from "./firebase-init.js";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
-const MAX_MEMBERS = 4; // leader + 3 others = 4 total
-const MIN_MEMBERS = 2;
+// The leader is now excluded from the members array in the UI.
+// The roster displays only non-leader member slots.
+const MAX_MEMBERS = 3; 
+const MIN_MEMBERS = 1;
 
 // ─── DOM Refs ─────────────────────────────────────────────────────────────────
 const form             = document.getElementById("onboardingForm");
@@ -46,28 +48,20 @@ if (notesJson) {
 }
 
 // ─── Phone helpers ────────────────────────────────────────────────────────────
-
-/**
- * Enforce that a phone input only accepts digits and stays ≤10 chars.
- * The +91 prefix is displayed in the sibling .phone-prefix span — never in the input.
- */
 function attachPhoneGuard(input) {
+    if (!input) return;
     input.addEventListener("input", () => {
-        // Strip any non-digit characters the user may have typed
         let val = input.value.replace(/\D/g, "");
-        // Also strip +91 / 91 prefix if accidentally pasted
         if (val.startsWith("91") && val.length > 10) val = val.slice(2);
         input.value = val.slice(0, 10);
     });
     input.addEventListener("paste", (e) => {
         e.preventDefault();
         let pasted = (e.clipboardData || window.clipboardData).getData("text");
-        // Strip spaces, dashes, country code prefix
         pasted = pasted.replace(/[\s\-\(\)\.]/g, "").replace(/^\+?91/, "").replace(/\D/g, "");
         input.value = pasted.slice(0, 10);
     });
     input.addEventListener("keydown", (e) => {
-        // Allow: backspace, delete, arrows, tab
         const allowed = ["Backspace","Delete","ArrowLeft","ArrowRight","Tab","Home","End"];
         if (!allowed.includes(e.key) && !/^\d$/.test(e.key)) {
             e.preventDefault();
@@ -75,7 +69,6 @@ function attachPhoneGuard(input) {
     });
 }
 
-/** Validate that a phone field contains exactly 10 digits */
 function validatePhone(digits, label) {
     if (!/^\d{10}$/.test(digits)) {
         return `${label}: must be exactly 10 digits (got "${digits}")`;
@@ -83,8 +76,16 @@ function validatePhone(digits, label) {
     return null;
 }
 
-// ─── Member count state ───────────────────────────────────────────────────────
-let memberCount = 2; // starts with leader + 1 required member
+function sanitizeHTML(str) {
+    if (!str) return "";
+    return str.replace(/[&<>'"]/g, 
+        tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+    );
+}
+
+// ─── State ────────────────────────────────────────────────────────────────────
+let currentUserRole = null;
+let currentPrefillData = null;
 
 // ─── Auth state ───────────────────────────────────────────────────────────────
 onAuthStateChanged(auth, async (user) => {
@@ -93,29 +94,36 @@ onAuthStateChanged(auth, async (user) => {
         return;
     }
 
-    // Pre-fill leader email (read-only)
-    const leaderEmailInput = document.querySelector(
-        "#membersContainer .member-row:first-child input[name='m_email']"
-    );
-    if (leaderEmailInput) {
-        leaderEmailInput.value = user.email;
-        leaderEmailInput.readOnly = true;
-        leaderEmailInput.style.opacity = "0.7";
-    }
+    try {
+        const userDocRef = doc(db, "users", user.uid);
+        const userDocSnap = await getDoc(userDocRef);
+        if (!userDocSnap.exists()) {
+            signOut(auth);
+            window.location.href = "/login.html";
+            return;
+        }
 
-    // Set leader role locked
-    const leaderRoleInput = document.querySelector(
-        "#membersContainer .member-row:first-child input[name='m_role']"
-    );
-    if (leaderRoleInput) {
-        leaderRoleInput.value = "Leader";
-        leaderRoleInput.readOnly = true;
-        leaderRoleInput.style.opacity = "0.7";
-        leaderRoleInput.style.cursor = "not-allowed";
-    }
+        const userData = userDocSnap.data();
+        currentUserRole = userData.role;
 
-    // Attach phone guards to existing rows
-    document.querySelectorAll("input[name='m_phone']").forEach(attachPhoneGuard);
+        if (currentUserRole === "participant_leader") {
+            // Setup Leader view
+            setupLeaderUI(user, userData);
+        } else if (currentUserRole === "participant_member") {
+            // Setup Member view
+            setupMemberUI(user, userData);
+        } else {
+            // Admin role or invalid participant role
+            signOut(auth);
+            window.location.href = "/login.html";
+        }
+    } catch (err) {
+        console.error("Auth validation failed:", err);
+    }
+});
+
+// ─── Setup UI for Leader ──────────────────────────────────────────────────────
+async function setupLeaderUI(user, userData) {
     attachPhoneGuard(document.getElementById("leaderPhone"));
 
     // Fetch prefill data
@@ -126,206 +134,217 @@ onAuthStateChanged(auth, async (user) => {
         });
         if (res.ok) {
             const data = await res.json();
-            const prefill = data?.data?.prefill;
-            if (prefill) {
-                const set = (id, val) => {
-                    const el = document.getElementById(id);
-                    if (el && !el.value && val) el.value = val;
-                };
-                const setInput = (selector, val) => {
-                    const el = document.querySelector(selector);
-                    if (el && !el.value && val) el.value = val;
-                };
-                set("teamName", prefill.teamName);
-                set("college", prefill.college);
-                set("leaderName", prefill.leaderName);
-                set("leaderPhone", prefill.leaderPhone?.replace(/^\+91/, ""));
-                setInput("#membersContainer .member-row:first-child input[name='m_name']", prefill.leaderName);
-                // Pre-select phone digits for leader member row too
-                const leaderPhoneRow = document.querySelector(
-                    "#membersContainer .member-row:first-child input[name='m_phone']"
-                );
-                if (leaderPhoneRow && !leaderPhoneRow.value && prefill.leaderPhone) {
-                    leaderPhoneRow.value = prefill.leaderPhone.replace(/^\+91/, "").slice(0, 10);
+            currentPrefillData = data?.data?.prefill;
+            if (currentPrefillData) {
+                // Prefill team inputs
+                document.getElementById("teamName").value = currentPrefillData.teamName || "";
+                document.getElementById("teamName").disabled = true;
+                document.getElementById("teamName").style.opacity = "0.7";
+
+                document.getElementById("college").value = currentPrefillData.college || "";
+                document.getElementById("college").disabled = true;
+                document.getElementById("college").style.opacity = "0.7";
+
+                document.getElementById("leaderName").value = currentPrefillData.leaderName || userData.displayName || "";
+                document.getElementById("leaderPhone").value = (currentPrefillData.leaderPhone || userData.phone || "").replace(/^\+91/, "");
+
+                if (currentPrefillData.track && trackSelect) {
+                    trackSelect.value = currentPrefillData.track;
+                    trackSelect.disabled = true;
+                    trackSelect.style.opacity = "0.7";
                 }
-                // Pre-fill existing team data if re-editing
-                if (prefill.track && trackSelect) {
-                    trackSelect.value = prefill.track;
-                }
-                if (prefill.problemStatement) {
+                if (currentPrefillData.problemStatement) {
                     const psEl = document.getElementById("problemStatement");
-                    if (psEl && !psEl.value) psEl.value = prefill.problemStatement;
+                    if (psEl) {
+                        psEl.value = currentPrefillData.problemStatement;
+                        psEl.disabled = true;
+                        psEl.style.opacity = "0.7";
+                    }
                 }
-                if (prefill.isCustomPS !== undefined) {
+                if (currentPrefillData.isCustomPS !== undefined) {
                     const cb = document.getElementById("isCustomPS");
-                    if (cb) cb.checked = !!prefill.isCustomPS;
+                    if (cb) {
+                        cb.checked = !!currentPrefillData.isCustomPS;
+                        cb.disabled = true;
+                        cb.style.opacity = "0.7";
+                    }
                 }
+
+                // Render pre-populated members list as read-only Roster
+                const members = currentPrefillData.members || [];
+                membersContainer.innerHTML = "";
+                
+                if (members.length === 0) {
+                    membersContainer.innerHTML = `<div class="font-mono text-xs text-muted-foreground" style="font-family: 'JetBrains Mono', monospace; padding: 12px; text-align: center;">No additional members imported. Solo Registration.</div>`;
+                } else {
+                    members.forEach((m, idx) => {
+                        const row = document.createElement("div");
+                        row.className = "member-row bg-black/40 p-4 border border-border/50 relative mt-4";
+                        
+                        const badge = document.createElement("div");
+                        badge.className = "absolute -top-2 -left-2 bg-card text-muted-foreground font-mono text-[10px] px-2 py-0.5 border border-border";
+                        badge.style.fontFamily = "'JetBrains Mono', monospace";
+                        badge.textContent = `MEMBER ${idx + 1}`;
+                        row.appendChild(badge);
+                        
+                        const grid = document.createElement("div");
+                        grid.className = "member-row-grid";
+                        grid.innerHTML = `
+                            <div class="space-y-1"><label class="text-[9px] text-muted-foreground font-mono">NAME</label><input type="text" readonly value="${sanitizeHTML(m.name)}" class="bg-input border border-border px-3 py-2 font-mono text-xs focus:outline-none w-full opacity-70 cursor-not-allowed"></div>
+                            <div class="space-y-1"><label class="text-[9px] text-muted-foreground font-mono">EMAIL</label><input type="email" readonly value="${sanitizeHTML(m.email)}" class="bg-input border border-border px-3 py-2 font-mono text-xs focus:outline-none w-full opacity-70 cursor-not-allowed"></div>
+                            <div class="space-y-1"><label class="text-[9px] text-muted-foreground font-mono">PHONE</label><input type="text" readonly value="${sanitizeHTML(m.phone || 'Pending registration')}" class="bg-input border border-border px-3 py-2 font-mono text-xs focus:outline-none w-full opacity-70 cursor-not-allowed"></div>
+                            <div class="space-y-1"><label class="text-[9px] text-muted-foreground font-mono">ROLE</label><input type="text" readonly value="${sanitizeHTML(m.role || 'Member')}" class="bg-input border border-border px-3 py-2 font-mono text-xs focus:outline-none w-full opacity-70 cursor-not-allowed"></div>
+                            <div class="space-y-1"><label class="text-[9px] text-muted-foreground font-mono">COLLEGE</label><input type="text" readonly value="${sanitizeHTML(m.college)}" class="bg-input border border-border px-3 py-2 font-mono text-xs focus:outline-none w-full opacity-70 cursor-not-allowed"></div>
+                            <div class="space-y-1"><label class="text-[9px] text-muted-foreground font-mono">GITHUB</label><input type="text" readonly value="${sanitizeHTML(m.github || 'N/A')}" class="bg-input border border-border px-3 py-2 font-mono text-xs focus:outline-none w-full opacity-70 cursor-not-allowed"></div>
+                        `;
+                        row.appendChild(grid);
+                        membersContainer.appendChild(row);
+                    });
+                }
+
+                // Hide roster creation triggers (roster is locked/imported)
+                if (addMemberBtn) addMemberBtn.style.display = "none";
             }
         }
     } catch (err) {
         console.warn("Could not fetch prefill data:", err);
     }
-});
+}
 
-// ─── Add Member ───────────────────────────────────────────────────────────────
-addMemberBtn.addEventListener("click", () => {
-    if (memberCount >= MAX_MEMBERS) {
-        errorEl.textContent = `Maximum ${MAX_MEMBERS} members allowed (including you as leader).`;
-        return;
-    }
-    memberCount++;
-    errorEl.textContent = "";
-
-    const row = document.createElement("div");
-    row.className = "member-row bg-black/40 p-4 border border-border/50 relative mt-4";
-
-    const badge = document.createElement("div");
-    badge.className = "absolute -top-2 -left-2 bg-card text-muted-foreground font-mono text-[10px] px-2 py-0.5 border border-border";
-    badge.style.fontFamily = "'JetBrains Mono', monospace";
-    badge.textContent = `MEMBER ${memberCount}`;
-    row.appendChild(badge);
-
-    const removeBtn = document.createElement("button");
-    removeBtn.type = "button";
-    removeBtn.className = "absolute -top-2 -right-2 text-white font-mono text-[10px] px-2 py-0.5 cursor-pointer";
-    removeBtn.style.cssText = "font-family:'JetBrains Mono',monospace;background:var(--strike-red,#dc2626);";
-    removeBtn.textContent = "×";
-    removeBtn.onclick = () => {
-        row.remove();
-        memberCount--;
-        // Re-number badges
-        document.querySelectorAll(".member-row:not(:first-child) .absolute.-top-2.-left-2").forEach((b, i) => {
-            if (!b.textContent.includes("LEADER")) b.textContent = `MEMBER ${i + 2}`;
-        });
+// ─── Setup UI for Member ──────────────────────────────────────────────────────
+function setupMemberUI(user, userData) {
+    // Hide sections that are Team/Leader level
+    const hideSection = (selector) => {
+        const sections = document.querySelectorAll(selector);
+        sections.forEach(s => s.style.display = "none");
     };
-    row.appendChild(removeBtn);
 
-    const grid = document.createElement("div");
-    grid.className = "member-row-grid";
-    grid.innerHTML = `
-        <input type="text" name="m_name" placeholder="FULL NAME *" required class="bg-input border border-border px-3 py-2 font-mono text-xs focus:outline-none focus:border-blood w-full" style="font-family:'JetBrains Mono',monospace;">
-        <input type="email" name="m_email" placeholder="EMAIL *" required class="bg-input border border-border px-3 py-2 font-mono text-xs focus:outline-none focus:border-blood w-full" style="font-family:'JetBrains Mono',monospace;">
-        <div class="phone-wrapper">
-            <span class="phone-prefix" style="font-size:10px;">+91</span>
-            <input type="text" name="m_phone" placeholder="10-DIGIT PHONE *" required maxlength="10" pattern="\\d{10}" class="bg-input border border-border px-2 py-2 font-mono text-xs focus:outline-none focus:border-blood w-full" style="font-family:'JetBrains Mono',monospace;">
-        </div>
-        <input type="text" name="m_role" placeholder="ROLE (e.g. Developer) *" required class="bg-input border border-border px-3 py-2 font-mono text-xs focus:outline-none focus:border-blood w-full" style="font-family:'JetBrains Mono',monospace;">
-        <input type="text" name="m_college" placeholder="COLLEGE *" required class="bg-input border border-border px-3 py-2 font-mono text-xs focus:outline-none focus:border-blood w-full" style="font-family:'JetBrains Mono',monospace;">
-        <input type="text" name="m_github" placeholder="GITHUB (optional)" class="bg-input border border-border px-3 py-2 font-mono text-xs focus:outline-none focus:border-blood w-full" style="font-family:'JetBrains Mono',monospace;">
-    `;
-    row.appendChild(grid);
-    membersContainer.appendChild(row);
+    // Hide Track & Mission, Team Details, Roster
+    hideSection("form > div:nth-of-type(1)"); // Track & Mission
+    hideSection("form > div:nth-of-type(2)"); // Team Details
+    hideSection("form > div:nth-of-type(4)"); // Roster (excluding you)
 
-    // Attach phone guard to newly created phone input
-    attachPhoneGuard(row.querySelector("input[name='m_phone']"));
-});
+    // Re-purpose the Leader Profile section as "Member Profile"
+    const leaderHeader = document.querySelector("form > div:nth-of-type(3) h2");
+    if (leaderHeader) {
+        leaderHeader.textContent = "COMPLETE YOUR PROFILE";
+    }
+
+    const leaderGrid = document.querySelector("form > div:nth-of-type(3) .grid");
+    if (leaderGrid) {
+        // Adjust Name input
+        const nameInput = document.getElementById("leaderName");
+        if (nameInput) {
+            nameInput.placeholder = "YOUR FULL NAME *";
+            nameInput.value = userData.displayName || "";
+        }
+
+        // Adjust Phone input
+        const phoneInput = document.getElementById("leaderPhone");
+        if (phoneInput) {
+            phoneInput.placeholder = "YOUR 10-DIGIT PHONE *";
+            phoneInput.value = (userData.phone || "").replace(/^\+91/, "");
+            attachPhoneGuard(phoneInput);
+        }
+
+        // Adjust Github input
+        const githubInput = document.getElementById("leaderGithub");
+        if (githubInput) {
+            githubInput.placeholder = "YOUR GITHUB USERNAME (optional)";
+            githubInput.value = userData.github || "";
+        }
+
+        // Add Role input field (required for member completion payload)
+        if (!document.getElementById("memberRole")) {
+            const roleInput = document.createElement("input");
+            roleInput.type = "text";
+            roleInput.id = "memberRole";
+            roleInput.placeholder = "YOUR ROLE (e.g. Developer, Designer) *";
+            roleInput.required = true;
+            roleInput.className = "bg-input border border-border px-4 py-3 font-mono text-sm focus:outline-none focus:border-blood w-full";
+            roleInput.style.fontFamily = "'JetBrains Mono', monospace";
+            roleInput.value = userData.roleInTeam || "";
+            leaderGrid.appendChild(roleInput);
+        }
+
+        // Add College input field (required for member completion payload)
+        if (!document.getElementById("memberCollege")) {
+            const collegeInput = document.createElement("input");
+            collegeInput.type = "text";
+            collegeInput.id = "memberCollege";
+            collegeInput.placeholder = "YOUR COLLEGE / UNIVERSITY *";
+            collegeInput.required = true;
+            collegeInput.className = "bg-input border border-border px-4 py-3 font-mono text-sm focus:outline-none focus:border-blood w-full";
+            collegeInput.style.fontFamily = "'JetBrains Mono', monospace";
+            collegeInput.value = userData.college || "";
+            leaderGrid.appendChild(collegeInput);
+        }
+
+        // Hide unused LinkedIn field
+        const linkedinInput = document.getElementById("leaderLinkedin");
+        if (linkedinInput) linkedinInput.style.display = "none";
+    }
+}
 
 // ─── Form Submit ──────────────────────────────────────────────────────────────
 form.addEventListener("submit", async (e) => {
     e.preventDefault();
     errorEl.textContent = "";
 
-    // ── Gather field values ──
-    const teamName        = document.getElementById("teamName").value.trim();
-    const college         = document.getElementById("college").value.trim();
-    const department      = document.getElementById("department").value.trim();
-    const year            = document.getElementById("year").value.trim();
-    const state           = document.getElementById("state").value.trim();
-    const city            = document.getElementById("city").value.trim();
-    const leaderName      = document.getElementById("leaderName").value.trim();
-    const leaderPhoneRaw  = document.getElementById("leaderPhone").value.trim();
-    const leaderGithub    = document.getElementById("leaderGithub").value.trim() || null;
-    const leaderLinkedin  = document.getElementById("leaderLinkedin").value.trim() || null;
-    const track           = document.getElementById("trackSelect").value;
-    const problemStatement= document.getElementById("problemStatement").value.trim();
-    const isCustomPS      = document.getElementById("isCustomPS").checked;
-
-    // ── Client-side validation ──
-    if (!track) { errorEl.textContent = "Please select a track."; return; }
-    if (!problemStatement || problemStatement.length < 10) {
-        errorEl.textContent = "Please enter a problem statement (minimum 10 characters).";
+    const user = auth.currentUser;
+    if (!user) {
+        errorEl.textContent = "Not authenticated.";
         return;
     }
 
-    const leaderPhoneErr = validatePhone(leaderPhoneRaw, "Leader phone");
-    if (leaderPhoneErr) { errorEl.textContent = leaderPhoneErr; return; }
-
-    // ── Gather members ──
-    const memberRows = document.querySelectorAll(".member-row");
-    if (memberRows.length < MIN_MEMBERS || memberRows.length > MAX_MEMBERS) {
-        errorEl.textContent = `You must have between ${MIN_MEMBERS} and ${MAX_MEMBERS} members (including yourself).`;
-        return;
-    }
-
-    const members = [];
-    const emailsSeen = new Set();
-    const phonesSeen = new Set();
-    let validationError = null;
-
-    memberRows.forEach((row, i) => {
-        if (validationError) return;
-
-        const name    = row.querySelector('input[name="m_name"]').value.trim();
-        const email   = row.querySelector('input[name="m_email"]').value.trim().toLowerCase();
-        const phone   = row.querySelector('input[name="m_phone"]').value.trim();
-        const role    = row.querySelector('input[name="m_role"]').value.trim();
-        const memberCollege = row.querySelector('input[name="m_college"]').value.trim();
-        const github  = row.querySelector('input[name="m_github"]')?.value.trim() || null;
-
-        const label = i === 0 ? "Leader phone" : `Member ${i + 1} phone`;
-        const phoneErr = validatePhone(phone, label);
-        if (phoneErr) { validationError = phoneErr; return; }
-
-        if (emailsSeen.has(email)) {
-            validationError = `Duplicate email: "${email}" — each member must have a unique email.`;
-            return;
-        }
-        emailsSeen.add(email);
-
-        if (phonesSeen.has(phone)) {
-            validationError = `Duplicate phone detected — each member must have a unique phone number.`;
-            return;
-        }
-        phonesSeen.add(phone);
-
-        if (!name || !email || !memberCollege) {
-            validationError = `Please fill in all required fields for ${i === 0 ? "the leader" : `member ${i + 1}`}.`;
-            return;
-        }
-
-        members.push({ name, email, phone, role, college: memberCollege, github });
-    });
-
-    if (validationError) { errorEl.textContent = validationError; return; }
-
-    // ── Submit ──
     submitBtn.disabled = true;
     submitBtn.textContent = "TRANSMITTING...";
 
     try {
-        const user = auth.currentUser;
-        if (!user) throw new Error("Not authenticated");
-
         const token = await user.getIdToken();
+        let payload = {};
 
-        const payload = {
-            teamName,
-            college,
-            department,
-            year,
-            state,
-            city,
-            leaderName,
-            leaderPhone: leaderPhoneRaw,  // server normalises to +91
-            leaderGithub,
-            leaderLinkedin,
-            track,
-            problemStatement,
-            isCustomPS,
-            members,
-        };
+        if (currentUserRole === "participant_leader") {
+            const leaderName      = document.getElementById("leaderName").value.trim();
+            const leaderPhoneRaw  = document.getElementById("leaderPhone").value.trim();
+            const leaderGithub    = document.getElementById("leaderGithub").value.trim() || null;
+            const college         = currentPrefillData?.college || document.getElementById("college").value.trim();
 
-        const res = await fetch(`${API_BASE}/team/submit`, {
+            if (!leaderName) throw new Error("Leader full name is required.");
+            const phoneErr = validatePhone(leaderPhoneRaw, "Leader phone");
+            if (phoneErr) throw new Error(phoneErr);
+            if (!college) throw new Error("College is required.");
+
+            payload = {
+                displayName: leaderName,
+                role: "Leader",
+                phone: leaderPhoneRaw,
+                college: college,
+                github: leaderGithub,
+            };
+        } else if (currentUserRole === "participant_member") {
+            const name        = document.getElementById("leaderName").value.trim();
+            const phoneRaw    = document.getElementById("leaderPhone").value.trim();
+            const github      = document.getElementById("leaderGithub").value.trim() || null;
+            const roleInTeam  = document.getElementById("memberRole").value.trim();
+            const college     = document.getElementById("memberCollege").value.trim();
+
+            if (!name) throw new Error("Full name is required.");
+            const phoneErr = validatePhone(phoneRaw, "Phone number");
+            if (phoneErr) throw new Error(phoneErr);
+            if (!roleInTeam) throw new Error("Role in team is required.");
+            if (!college) throw new Error("College is required.");
+
+            payload = {
+                displayName: name,
+                role: roleInTeam,
+                phone: phoneRaw,
+                college: college,
+                github: github,
+            };
+        }
+
+        const res = await fetch(`${API_BASE}/onboarding/complete`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -335,11 +354,11 @@ form.addEventListener("submit", async (e) => {
         });
 
         const data = await res.json();
-
         if (!res.ok) {
-            throw new Error(data.error?.message || "Failed to submit profile");
+            throw new Error(data.error?.message || "Failed to submit onboarding profile.");
         }
 
+        // Successfully completed onboarding
         window.location.href = "/dashboard.html";
     } catch (error) {
         console.error("Submission error:", error);

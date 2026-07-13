@@ -149,30 +149,14 @@
             <!-- ── ROSTER ─────────────────────────────────────────── -->
             <div class="space-y-4 border-l-2 border-blood pl-4">
                 <div class="flex items-center justify-between">
-                    <h2 class="font-impact text-2xl tracking-widest text-blood" style="font-family: 'Bebas Neue', sans-serif;">ROSTER <span class="text-sm font-mono text-muted-foreground">(incl. you)</span></h2>
+                    <h2 class="font-impact text-2xl tracking-widest text-blood" style="font-family: 'Bebas Neue', sans-serif;">ROSTER <span class="text-sm font-mono text-muted-foreground">(excluding you)</span></h2>
                     <button type="button" id="addMemberBtn" class="font-mono text-xs text-muted-foreground hover:text-white transition-colors" style="font-family: 'JetBrains Mono', monospace;">+ ADD MEMBER</button>
                 </div>
                 
                 <div id="membersContainer" class="space-y-4">
-                    <!-- Leader row (auto-filled from auth) -->
+                    <!-- Member 1 (required) -->
                     <div class="member-row bg-black/40 p-4 border border-border/50 relative">
-                        <div class="absolute -top-2 -left-2 bg-blood text-white font-mono text-[10px] px-2 py-0.5" style="font-family: 'JetBrains Mono', monospace;">LEADER</div>
-                        <div class="member-row-grid">
-                            <input type="text" name="m_name" placeholder="FULL NAME *" required class="bg-input border border-border px-3 py-2 font-mono text-xs focus:outline-none focus:border-blood w-full" style="font-family: 'JetBrains Mono', monospace;">
-                            <input type="email" name="m_email" placeholder="EMAIL *" required class="bg-input border border-border px-3 py-2 font-mono text-xs focus:outline-none focus:border-blood w-full" style="font-family: 'JetBrains Mono', monospace;">
-                            <div class="phone-wrapper">
-                                <span class="phone-prefix" style="font-size:10px;">+91</span>
-                                <input type="text" name="m_phone" placeholder="10-DIGIT PHONE *" required maxlength="10" pattern="\d{10}" class="bg-input border border-border px-2 py-2 font-mono text-xs focus:outline-none focus:border-blood w-full" style="font-family: 'JetBrains Mono', monospace;">
-                            </div>
-                            <input type="text" name="m_role" placeholder="Leader" readonly class="bg-input border border-border px-3 py-2 font-mono text-xs focus:outline-none w-full opacity-70 cursor-not-allowed" style="font-family: 'JetBrains Mono', monospace;" value="Leader">
-                            <input type="text" name="m_college" placeholder="COLLEGE *" required class="bg-input border border-border px-3 py-2 font-mono text-xs focus:outline-none focus:border-blood w-full" style="font-family: 'JetBrains Mono', monospace;">
-                            <input type="text" name="m_github" placeholder="GITHUB (optional)" class="bg-input border border-border px-3 py-2 font-mono text-xs focus:outline-none focus:border-blood w-full" style="font-family: 'JetBrains Mono', monospace;">
-                        </div>
-                    </div>
-
-                    <!-- Member 2 (required) -->
-                    <div class="member-row bg-black/40 p-4 border border-border/50 relative">
-                        <div class="absolute -top-2 -left-2 bg-card text-muted-foreground font-mono text-[10px] px-2 py-0.5 border border-border" style="font-family: 'JetBrains Mono', monospace;">MEMBER 2</div>
+                        <div class="absolute -top-2 -left-2 bg-card text-muted-foreground font-mono text-[10px] px-2 py-0.5 border border-border" style="font-family: 'JetBrains Mono', monospace;">MEMBER 1</div>
                         <div class="member-row-grid">
                             <input type="text" name="m_name" placeholder="FULL NAME *" required class="bg-input border border-border px-3 py-2 font-mono text-xs focus:outline-none focus:border-blood w-full" style="font-family: 'JetBrains Mono', monospace;">
                             <input type="email" name="m_email" placeholder="EMAIL *" required class="bg-input border border-border px-3 py-2 font-mono text-xs focus:outline-none focus:border-blood w-full" style="font-family: 'JetBrains Mono', monospace;">
