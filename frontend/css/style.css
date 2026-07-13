@@ -4094,6 +4094,16 @@ footer .container {
     margin-bottom: 40px;
 }
 
+.sponsor-boxes-wrapper {
+    display: flex;
+    flex-direction: row;
+    gap: 30px;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+}
+
 .sponsor-tier:hover {
     transform: translateY(-5px);
 }

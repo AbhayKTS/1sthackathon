@@ -472,10 +472,16 @@ function initTeamsRealtime() {
                 const teamId = e.target.getAttribute("data-id");
                 if (confirm("Are you sure you want to permanently delete this team?")) {
                     try {
-                        await deleteDoc(doc(db, "teams", teamId));
+                        const response = await fetch(`${API_BASE}/admin/team/${teamId}`, {
+                            method: "DELETE",
+                            headers: {
+                                Authorization: `Bearer ${idToken}`
+                            }
+                        });
+                        if (!response.ok) throw new Error("Failed to delete team.");
                         showToast("Team deleted successfully.");
                     } catch (err) {
-                        showToast("Failed to delete team.", "error");
+                        showToast(err.message, "error");
                     }
                 }
             });
@@ -585,7 +591,7 @@ editTeamForm.addEventListener("submit", async (e) => {
 
     try {
         const response = await fetch(`${API_BASE}/admin/edit-team`, {
-            method: "POST",
+            method: "PATCH",
             headers: {
                 "Content-Type": "application/json",
                 Authorization: `Bearer ${idToken}`
