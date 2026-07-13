@@ -9,19 +9,26 @@ document.addEventListener('DOMContentLoaded', () => {
     const scrollContainer = document.querySelector('.scroll-container');
 
     if (scrollWrapper && scrollContainer) {
+        let isTicking = false;
         window.addEventListener('scroll', () => {
-            const containerOffsetTop = scrollContainer.offsetTop;
-            const containerHeight = scrollContainer.offsetHeight;
-            const viewportHeight = window.innerHeight;
+            if (!isTicking) {
+                window.requestAnimationFrame(() => {
+                    const containerOffsetTop = scrollContainer.offsetTop;
+                    const containerHeight = scrollContainer.offsetHeight;
+                    const viewportHeight = window.innerHeight;
 
-            let scrollTop = window.scrollY - containerOffsetTop;
-            if (scrollTop < 0) scrollTop = 0;
-            if (scrollTop > containerHeight - viewportHeight) scrollTop = containerHeight - viewportHeight;
+                    let scrollTop = window.scrollY - containerOffsetTop;
+                    if (scrollTop < 0) scrollTop = 0;
+                    if (scrollTop > containerHeight - viewportHeight) scrollTop = containerHeight - viewportHeight;
 
-            const scrollPercentage = scrollTop / (containerHeight - viewportHeight);
-            const totalMove = scrollWrapper.offsetWidth - window.innerWidth;
-            scrollWrapper.style.transform = `translateX(-${scrollPercentage * totalMove}px)`;
-        });
+                    const scrollPercentage = scrollTop / (containerHeight - viewportHeight);
+                    const totalMove = scrollWrapper.offsetWidth - window.innerWidth;
+                    scrollWrapper.style.transform = `translateX(-${scrollPercentage * totalMove}px)`;
+                    isTicking = false;
+                });
+                isTicking = true;
+            }
+        }, { passive: true });
     }
 
     const navbar = document.getElementById('navbar');
@@ -147,20 +154,7 @@ document.addEventListener('DOMContentLoaded', () => {
         particlesContainer.appendChild(frag);
     }
 
-    // Lazy-play mission video only when visible
-    const missionVideo = document.querySelector('[data-autoplay-on-visible]');
-    if (missionVideo) {
-        const videoObserver = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.play().catch(() => {});
-                } else {
-                    entry.target.pause();
-                }
-            });
-        }, { threshold: 0.1 });
-        videoObserver.observe(missionVideo);
-    }
+    // Lazy-play video logic moved to atmosphere.js for all videos
 
     // Background Parallax / Tilt
     const hero = document.getElementById('hero');

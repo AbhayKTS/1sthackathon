@@ -420,13 +420,19 @@ const AudioEngine = (() => {
    9. AUTO-PLAY SECTION VIDEO ON SCROLL (lazy playback)
    ============================================================ */
 (function initLazyVideo() {
-    const videos = document.querySelectorAll('video[data-autoplay-on-visible]');
+    const videos = document.querySelectorAll('video');
     if (!videos.length) return;
     const obs = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
-            if (entry.isIntersecting) entry.target.play().catch(() => {});
-            else entry.target.pause();
+            if (entry.isIntersecting) {
+                entry.target.play().catch(() => {});
+            } else {
+                entry.target.pause();
+            }
         });
-    }, { threshold: 0.2 });
-    videos.forEach(v => obs.observe(v));
+    }, { threshold: 0.1 });
+    videos.forEach(v => {
+        v.removeAttribute('autoplay');
+        obs.observe(v);
+    });
 })();

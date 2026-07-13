@@ -10,8 +10,9 @@
     <link rel="stylesheet" href="css/style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Creepster&display=swap" as="style">
     <link href="https://fonts.googleapis.com/css2?family=Creepster&display=swap" rel="stylesheet">
-    <link rel="icon" type="image/png" href="/assets/images/image.png">
+    <link rel="icon" type="image/png" href="/assets/images/image.webp">
 </head>
 
 <body>
@@ -50,7 +51,7 @@
 
     <header class="hero" id="hero">
         <div class="live-bg-container">
-            <video autoplay muted loop playsinline class="live-bg-video" fetchpriority="high">
+            <video autoplay muted loop playsinline class="live-bg-video" fetchpriority="high" poster="assets/images/tokyo_street_background.webp">
                 <source src="assets/videos/bg.mp4" type="video/mp4">
             </video>
             <div class="live-bg-overlay"></div>
@@ -125,7 +126,7 @@
 
     <section class="mission" id="mission">
         <div class="mission-video-bg">
-            <video muted loop playsinline data-autoplay-on-visible>
+            <video muted loop playsinline data-autoplay-on-visible preload="none" poster="assets/images/mission-poster.webp">
                 <source src="assets/videos/tokyo_revengers_about_bg.mp4" type="video/mp4">
             </video>
             <div class="video-overlay"></div>
@@ -178,8 +179,8 @@
                 <!-- TRACK 1: WEB3/BLOCKCHAIN -->
                 <div class="track-card track-web3">
                     <div class="track-image">
-                        <img src="assets/images/○♤TAKEMICHI HANAGAKI♤○.jpg" alt="Takemichi" class="normal-img" loading="lazy">
-                        <img src="assets/images/download (13).jpg" alt="Takemichi" class="hover-img" loading="lazy">
+                        <img src="assets/images/○♤TAKEMICHI HANAGAKI♤○.webp" alt="Takemichi" class="normal-img" loading="lazy">
+                        <img src="assets/images/download (13).webp" alt="Takemichi" class="hover-img" loading="lazy">
                     </div>
                     <div class="track-content">
                         <h3>WEB3 / BLOCKCHAIN</h3>
@@ -190,8 +191,8 @@
                 <!-- TRACK 2: AI/ML -->
                 <div class="track-card track-aiml">
                     <div class="track-image">
-                        <img src="assets/images/download (9).jpg" alt="Kisaki" class="normal-img" loading="lazy">
-                        <img src="assets/images/download (14).jpg" alt="Kisaki" class="hover-img" loading="lazy">
+                        <img src="assets/images/download (9).webp" alt="Kisaki" class="normal-img" loading="lazy">
+                        <img src="assets/images/download (14).webp" alt="Kisaki" class="hover-img" loading="lazy">
                     </div>
                     <div class="track-content">
                         <h3>AI / ML</h3>
@@ -202,8 +203,8 @@
                 <!-- TRACK 3: CYBERSECURITY -->
                 <div class="track-card track-cyber">
                     <div class="track-image">
-                        <img src="assets/images/download (10).jpg" alt="Kakucho" class="normal-img" loading="lazy">
-                        <img src="assets/images/「 asanφ 」-  kakucho.jpg" alt="Kakucho" class="hover-img" loading="lazy">
+                        <img src="assets/images/download (10).webp" alt="Kakucho" class="normal-img" loading="lazy">
+                        <img src="assets/images/「 asanφ 」-  kakucho.webp" alt="Kakucho" class="hover-img" loading="lazy">
                     </div>
                     <div class="track-content">
                         <h3>CYBERSECURITY</h3>
@@ -214,8 +215,8 @@
                 <!-- TRACK 4: CLOUD/DEVOPS -->
                 <div class="track-card track-cloud">
                     <div class="track-image">
-                        <img src="assets/images/download (11).jpg" alt="Smiley" class="normal-img" loading="lazy">
-                        <img src="assets/images/download (12).jpg" alt="Smiley" class="hover-img" loading="lazy">
+                        <img src="assets/images/download (11).webp" alt="Smiley" class="normal-img" loading="lazy">
+                        <img src="assets/images/download (12).webp" alt="Smiley" class="hover-img" loading="lazy">
                     </div>
                     <div class="track-content">
                         <h3>CLOUD / DEVOPS</h3>
@@ -226,8 +227,8 @@
                 <!-- TRACK 5: OPEN INNOVATION -->
                 <div class="track-card track-openinnovation">
                     <div class="track-image">
-                        <img src="assets/images/download (16).jpg" alt="Baji" class="normal-img" loading="lazy">
-                        <img src="assets/images/download (15).jpg" alt="Baji" class="hover-img" loading="lazy">
+                        <img src="assets/images/download (16).webp" alt="Baji" class="normal-img" loading="lazy">
+                        <img src="assets/images/download (15).webp" alt="Baji" class="hover-img" loading="lazy">
                     </div>
                     <div class="track-content">
                         <h3>OPEN INNOVATION</h3>
@@ -241,7 +242,7 @@
     <!-- ===== MAP TIMELINE SECTION ===== -->
     <section class="map-timeline" id="schedule">
         <div class="map-bg">
-            <img src="assets/images/round3img.png" alt="Tokyo Revengers Map" class="map-img" loading="lazy">
+            <img src="assets/images/round3img.webp" alt="Tokyo Revengers Map" class="map-img" loading="lazy">
             <div class="map-dark-overlay"></div>
         </div>
 
@@ -299,7 +300,7 @@
 
         <!-- Pulsing background Toman Manji watermark behind header -->
         <div class="hud-watermark-container" aria-hidden="true">
-            <img src="assets/images/manji-emblem.png" alt="Watermark" class="hud-watermark-emblem" loading="lazy">
+            <img src="assets/images/manji-emblem.webp" alt="Watermark" class="hud-watermark-emblem" loading="lazy">
         </div>
 
         <!-- Distressed Center Title Overlay -->
@@ -341,7 +342,7 @@
                         class="hud-status-val text-blink">ACTIVE</span></div>
             </div>
             <div class="hud-emblem-container">
-                <img src="assets/images/manji-emblem.png" class="hud-manji-emblem" alt="Toman Emblem" loading="lazy">
+                <img src="assets/images/manji-emblem.webp" class="hud-manji-emblem" alt="Toman Emblem" loading="lazy">
             </div>
         </div>
 
@@ -349,7 +350,7 @@
         <div class="hud-status-panel hud-status-right" aria-hidden="true">
             <div class="hud-skull-container">
                 <div class="hud-octagon-border">
-                    <img src="assets/images/download__23_-removebg-preview.png" alt="Skull" class="hud-skull" loading="lazy">
+                    <img src="assets/images/download__23_-removebg-preview.webp" alt="Skull" class="hud-skull" loading="lazy">
                 </div>
             </div>
             <div class="hud-protocol-content">
@@ -563,8 +564,8 @@
                 <div class="sponsor-tier platinum-tier">
                     <h3 class="tier-name">TITLE</h3>
                     <div class="sponsor-box" style="background: #ffffff !important;">
-                        <img src="assets/sponsers/chain-removebg-preview_rotated.png" class="box-chain chain-top-left" alt="">
-                        <img src="assets/sponsers/chain-removebg-preview.png" class="box-chain chain-top-right" alt="">
+                        <img loading="lazy" src="assets/sponsers/chain-removebg-preview_rotated.webp" class="box-chain chain-top-left" alt="">
+                        <img loading="lazy" src="assets/sponsers/chain-removebg-preview.webp" class="box-chain chain-top-right" alt="">
                         <span class="tba-text dark-text">OPEN</span>
                     </div>
                 </div>
@@ -573,8 +574,8 @@
                 <div class="sponsor-tier gold-tier">
                     <h3 class="tier-name">GOLD</h3>
                     <div class="sponsor-box" style="background: #ffffff !important;">
-                        <img src="assets/sponsers/chain-removebg-preview_rotated.png" class="box-chain chain-top-left" alt="">
-                        <img src="assets/sponsers/chain-removebg-preview.png" class="box-chain chain-top-right" alt="">
+                        <img loading="lazy" src="assets/sponsers/chain-removebg-preview_rotated.webp" class="box-chain chain-top-left" alt="">
+                        <img loading="lazy" src="assets/sponsers/chain-removebg-preview.webp" class="box-chain chain-top-right" alt="">
                         <span class="tba-text dark-text">OPEN</span>
                     </div>
                 </div>
@@ -583,10 +584,10 @@
                 <div class="sponsor-tier silver-tier">
                     <h3 class="tier-name">SILVER</h3>
                     <div class="sponsor-box" style="background: #ffffff !important;">
-                        <img src="assets/sponsers/chain-removebg-preview_rotated.png" class="box-chain chain-top-left" alt="">
-                        <img src="assets/sponsers/chain-removebg-preview.png" class="box-chain chain-top-right" alt="">
+                        <img loading="lazy" src="assets/sponsers/chain-removebg-preview_rotated.webp" class="box-chain chain-top-left" alt="">
+                        <img loading="lazy" src="assets/sponsers/chain-removebg-preview.webp" class="box-chain chain-top-right" alt="">
                         <a href="https://codecrafters.io/" target="_blank">
-                            <img src="assets/sponsers/codecrafters/Lockup-Stacked-Dark.svg" alt="CodeCrafters">
+                            <img loading="lazy" src="assets/sponsers/codecrafters/Lockup-Stacked-Dark.svg" alt="CodeCrafters">
                         </a>
                     </div>
                 </div>
@@ -596,17 +597,17 @@
                     <h3 class="tier-name">BRONZE</h3>
                     <div class="sponsor-boxes-wrapper">
                         <div class="sponsor-box" style="background: #ffffff !important;">
-                            <img src="assets/sponsers/chain-removebg-preview_rotated.png" class="box-chain chain-top-left" alt="">
-                            <img src="assets/sponsers/chain-removebg-preview.png" class="box-chain chain-top-right" alt="">
+                            <img loading="lazy" src="assets/sponsers/chain-removebg-preview_rotated.webp" class="box-chain chain-top-left" alt="">
+                            <img loading="lazy" src="assets/sponsers/chain-removebg-preview.webp" class="box-chain chain-top-right" alt="">
                             <a href="https://gen.xyz/" target="_blank">
-                                <img src="assets/sponsers/xyz-logos-2019/xyz-logo-color.svg" alt="XYZ">
+                                <img loading="lazy" src="assets/sponsers/xyz-logos-2019/xyz-logo-color.svg" alt="XYZ">
                             </a>
                         </div>
                         <div class="sponsor-box" style="background: #ffffff !important;">
-                            <img src="assets/sponsers/chain-removebg-preview_rotated.png" class="box-chain chain-top-left" alt="">
-                            <img src="assets/sponsers/chain-removebg-preview.png" class="box-chain chain-top-right" alt="">
+                            <img loading="lazy" src="assets/sponsers/chain-removebg-preview_rotated.webp" class="box-chain chain-top-left" alt="">
+                            <img loading="lazy" src="assets/sponsers/chain-removebg-preview.webp" class="box-chain chain-top-right" alt="">
                             <a href="https://interviewbuddy.in/" target="_blank">
-                                <img src="assets/sponsers/InterviewBuddy/Logo with White background (1).png" alt="InterviewBuddy" style="transform: scale(1.3);">
+                                <img loading="lazy" src="assets/sponsers/InterviewBuddy/Logo with White background (1).webp" alt="InterviewBuddy" style="transform: scale(1.3);">
                             </a>
                         </div>
                     </div>
@@ -616,10 +617,10 @@
                 <div class="sponsor-tier community-tier">
                     <h3 class="tier-name">COMMUNITY PARTNER</h3>
                     <div class="sponsor-box" style="background: #ffffff !important;">
-                        <img src="assets/sponsers/chain-removebg-preview_rotated.png" class="box-chain chain-top-left" alt="">
-                        <img src="assets/sponsers/chain-removebg-preview.png" class="box-chain chain-top-right" alt="">
+                        <img loading="lazy" src="assets/sponsers/chain-removebg-preview_rotated.webp" class="box-chain chain-top-left" alt="">
+                        <img loading="lazy" src="assets/sponsers/chain-removebg-preview.webp" class="box-chain chain-top-right" alt="">
                         <a href="https://asca.navan.ai" target="_blank">
-                            <img src="assets/sponsers/navanai/New Logo 2024 navan ai.png" alt="Navan AI">
+                            <img loading="lazy" src="assets/sponsers/navanai/New Logo 2024 navan ai.webp" alt="Navan AI">
                         </a>
                     </div>
                 </div>
@@ -652,8 +653,8 @@
                     <div class="team-card theme-org">
                         <div class="team-image-container">
 
-                            <img src="assets/images/Passport Size Photo (1).jpeg" alt="Abhay Kumar" class="normal-img" loading="lazy">
-                            <img src="assets/images/Generated Image June 26, 2026 - 2_49AM.jpg" alt="Abhay Kumar Hover"
+                            <img src="assets/images/Passport Size Photo (1).webp" alt="Abhay Kumar" class="normal-img" loading="lazy">
+                            <img src="assets/images/Generated Image June 26, 2026 - 2_49AM.webp" alt="Abhay Kumar Hover"
                                 class="hover-img" style="transform: scale(1.5); transform-origin: top center;" loading="lazy">
                         </div>
                         <div class="team-content">
@@ -675,8 +676,8 @@
                     <div class="team-card theme-tech">
                         <div class="team-image-container">
 
-                            <img src="assets/images/ansh 2.png" alt="Ansh Yadav" class="normal-img" loading="lazy">
-                            <img src="assets/images/ansh 2 aa.png" alt="Ansh Yadav Hover" class="hover-img" loading="lazy">
+                            <img src="assets/images/ansh 2.webp" alt="Ansh Yadav" class="normal-img" loading="lazy">
+                            <img src="assets/images/ansh 2 aa.webp" alt="Ansh Yadav Hover" class="hover-img" loading="lazy">
                         </div>
                         <div class="team-content">
                             <h3 class="team-name">Ansh Yadav</h3>
@@ -697,8 +698,8 @@
                     <div class="team-card theme-opr">
                         <div class="team-image-container">
 
-                            <img src="assets/images/braju.png" alt="Brajesh Sinsinwar" class="normal-img" loading="lazy">
-                            <img src="assets/images/braju2.png" alt="Brajesh Sinsinwar Hover" class="hover-img" loading="lazy">
+                            <img src="assets/images/braju.webp" alt="Brajesh Sinsinwar" class="normal-img" loading="lazy">
+                            <img src="assets/images/braju2.webp" alt="Brajesh Sinsinwar Hover" class="hover-img" loading="lazy">
                         </div>
                         <div class="team-content">
                             <h3 class="team-name">Brajesh Sinsinwar</h3>
@@ -719,9 +720,9 @@
                     <div class="team-card theme-opr">
                         <div class="team-image-container">
 
-                            <img src="assets/images/sachin1.png" alt="Sachin Chauhan" class="normal-img"
+                            <img src="assets/images/sachin1.webp" alt="Sachin Chauhan" class="normal-img"
                                 style="transform: scale(1.7); transform-origin: top center;" loading="lazy">
-                            <img src="assets/images/sachin2.png" alt="Sachin Chauhan Hover" class="hover-img"
+                            <img src="assets/images/sachin2.webp" alt="Sachin Chauhan Hover" class="hover-img"
                                 style="transform: scale(1.7); transform-origin: top center;" loading="lazy">
                         </div>
                         <div class="team-content">
@@ -742,9 +743,9 @@
                     <div class="team-card theme-content">
                         <div class="team-image-container">
 
-                            <img src="assets/images/piyush.png" alt="Piyush Tomar" class="normal-img"
+                            <img src="assets/images/piyush.webp" alt="Piyush Tomar" class="normal-img"
                                 style="transform: scale(1.7); transform-origin: top center;" loading="lazy">
-                            <img src="assets/images/piyushh2.png" alt="Piyush Tomar Hover" class="hover-img"
+                            <img src="assets/images/piyushh2.webp" alt="Piyush Tomar Hover" class="hover-img"
                                 style="transform: scale(1.7); transform-origin: top center;" loading="lazy">
                         </div>
                         <div class="team-content">
@@ -766,8 +767,8 @@
                     <div class="team-card theme-content">
                         <div class="team-image-container">
 
-                            <img src="assets/images/ayush.png" alt="Ayush Gigras" class="normal-img" loading="lazy">
-                            <img src="assets/images/ayush2.png" alt="Ayush Gigras Hover" class="hover-img" loading="lazy">
+                            <img src="assets/images/ayush.webp" alt="Ayush Gigras" class="normal-img" loading="lazy">
+                            <img src="assets/images/ayush2.webp" alt="Ayush Gigras Hover" class="hover-img" loading="lazy">
                         </div>
                         <div class="team-content">
                             <h3 class="team-name">Ayush Gigras</h3>
@@ -787,8 +788,8 @@
                     <div class="team-card theme-content">
                         <div class="team-image-container">
 
-                            <img src="assets/images/adarsh.png" alt="Adarsh Katara" class="normal-img" loading="lazy">
-                            <img src="assets/images/adarsh2.png" alt="Adarsh Katara Hover" class="hover-img" loading="lazy">
+                            <img src="assets/images/adarsh.webp" alt="Adarsh Katara" class="normal-img" loading="lazy">
+                            <img src="assets/images/adarsh2.webp" alt="Adarsh Katara Hover" class="hover-img" loading="lazy">
                         </div>
                         <div class="team-content">
                             <h3 class="team-name">Adarsh Katara</h3>
@@ -808,8 +809,8 @@
                     <div class="team-card theme-org">
                         <div class="team-image-container">
 
-                            <img src="assets/images/Passport Size Photo (1).jpeg" alt="Abhay Kumar" class="normal-img" loading="lazy">
-                            <img src="assets/images/Generated Image June 26, 2026 - 2_49AM.jpg" alt="Abhay Kumar Hover"
+                            <img src="assets/images/Passport Size Photo (1).webp" alt="Abhay Kumar" class="normal-img" loading="lazy">
+                            <img src="assets/images/Generated Image June 26, 2026 - 2_49AM.webp" alt="Abhay Kumar Hover"
                                 class="hover-img" style="transform: scale(1.5); transform-origin: top center;" loading="lazy">
                         </div>
                         <div class="team-content">
@@ -831,8 +832,8 @@
                     <div class="team-card theme-tech">
                         <div class="team-image-container">
 
-                            <img src="assets/images/ansh 2.png" alt="Ansh Yadav" class="normal-img">
-                            <img src="assets/images/ansh 2 aa.png" alt="Ansh Yadav Hover" class="hover-img">
+                            <img loading="lazy" src="assets/images/ansh 2.webp" alt="Ansh Yadav" class="normal-img">
+                            <img loading="lazy" src="assets/images/ansh 2 aa.webp" alt="Ansh Yadav Hover" class="hover-img">
                         </div>
                         <div class="team-content">
                             <h3 class="team-name">Ansh Yadav</h3>
@@ -853,8 +854,8 @@
                     <div class="team-card theme-opr">
                         <div class="team-image-container">
 
-                            <img src="assets/images/braju.png" alt="Brajesh Sinsinwar" class="normal-img">
-                            <img src="assets/images/braju2.png" alt="Brajesh Sinsinwar Hover" class="hover-img">
+                            <img loading="lazy" src="assets/images/braju.webp" alt="Brajesh Sinsinwar" class="normal-img">
+                            <img loading="lazy" src="assets/images/braju2.webp" alt="Brajesh Sinsinwar Hover" class="hover-img">
                         </div>
                         <div class="team-content">
                             <h3 class="team-name">Brajesh Sinsinwar</h3>
@@ -875,9 +876,9 @@
                     <div class="team-card theme-opr">
                         <div class="team-image-container">
 
-                            <img src="assets/images/sachin1.png" alt="Sachin Chauhan" class="normal-img"
+                            <img loading="lazy" src="assets/images/sachin1.webp" alt="Sachin Chauhan" class="normal-img"
                                 style="transform: scale(1.7); transform-origin: top center;">
-                            <img src="assets/images/sachin2.png" alt="Sachin Chauhan Hover" class="hover-img"
+                            <img loading="lazy" src="assets/images/sachin2.webp" alt="Sachin Chauhan Hover" class="hover-img"
                                 style="transform: scale(1.7); transform-origin: top center;">
                         </div>
                         <div class="team-content">
@@ -898,9 +899,9 @@
                     <div class="team-card theme-content">
                         <div class="team-image-container">
 
-                            <img src="assets/images/piyush.png" alt="Piyush Tomar" class="normal-img"
+                            <img loading="lazy" src="assets/images/piyush.webp" alt="Piyush Tomar" class="normal-img"
                                 style="transform: scale(1.7); transform-origin: top center;">
-                            <img src="assets/images/piyushh2.png" alt="Piyush Tomar Hover" class="hover-img"
+                            <img loading="lazy" src="assets/images/piyushh2.webp" alt="Piyush Tomar Hover" class="hover-img"
                                 style="transform: scale(1.7); transform-origin: top center;">
                         </div>
                         <div class="team-content">
@@ -922,8 +923,8 @@
                     <div class="team-card theme-content">
                         <div class="team-image-container">
 
-                            <img src="assets/images/ayush.png" alt="Ayush Gigras" class="normal-img">
-                            <img src="assets/images/ayush2.png" alt="Ayush Gigras Hover" class="hover-img">
+                            <img loading="lazy" src="assets/images/ayush.webp" alt="Ayush Gigras" class="normal-img">
+                            <img loading="lazy" src="assets/images/ayush2.webp" alt="Ayush Gigras Hover" class="hover-img">
                         </div>
                         <div class="team-content">
                             <h3 class="team-name">Ayush Gigras</h3>
@@ -943,8 +944,8 @@
                     <div class="team-card theme-content">
                         <div class="team-image-container">
 
-                            <img src="assets/images/adarsh.png" alt="Adarsh Katara" class="normal-img">
-                            <img src="assets/images/adarsh2.png" alt="Adarsh Katara Hover" class="hover-img">
+                            <img loading="lazy" src="assets/images/adarsh.webp" alt="Adarsh Katara" class="normal-img">
+                            <img loading="lazy" src="assets/images/adarsh2.webp" alt="Adarsh Katara Hover" class="hover-img">
                         </div>
                         <div class="team-content">
                             <h3 class="team-name">Adarsh Katara</h3>
@@ -1064,7 +1065,7 @@
             <!-- CENTER: BRAND + TAGLINE + SOCIALS + SHORTS -->
             <div class="rh-footer-center">
                 <div class="rh-footer-brand">
-                    <img src="assets/images/image.png" alt="RevengersHack Logo" class="rh-footer-logo">
+                    <img loading="lazy" src="assets/images/image.webp" alt="RevengersHack Logo" class="rh-footer-logo">
                     REVENGERSHACK
                 </div>
                 <div class="rh-footer-tagline">REWRITE THE TIMELINE</div>

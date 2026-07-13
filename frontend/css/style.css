@@ -5537,4 +5537,5 @@ footer a:hover {
     animation: rhWaveBar 0.6s ease-in-out infinite;
 }
 .sound-waveform-bar:nth-child(2) { animation-delay: 0.15s; }
-.sound-waveform-bar:nth-child(3) { animation-delay: 0.3s; }
+.sound-waveform-bar:nth-child(3) { animation-delay: 0.3s; }
+.particle, .rain-drop, .fog-container, .smoke-container { will-change: transform, opacity; }
