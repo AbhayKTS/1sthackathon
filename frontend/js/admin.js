@@ -54,6 +54,7 @@ let idToken = null;
 let currentAdminRole = null;
 const roundCache = new Map();
 let activeListeners = [];
+let sheetsSyncListenersWired = false;
 
 function registerListener(unsub) {
     activeListeners.push(unsub);
@@ -869,8 +870,102 @@ async function initMailQueue() {
 }
 
 // ─── TAB 11: GOOGLE SHEETS SYNC ──────────────────────────────────────────────
+// ─── TAB 11: GOOGLE SHEETS SYNC ──────────────────────────────────────────────
+async function runSyncProcess(force = false) {
+    const btnSync = document.getElementById("btnSyncNow");
+    const btnRetry = document.getElementById("btnRetryFailed");
+    const btnRefresh = document.getElementById("btnRefreshQueue");
+    const spinner = document.getElementById("syncSpinner");
+    const statusEl = document.getElementById("sheetsSyncStatus");
+    
+    if (btnSync) btnSync.disabled = true;
+    if (btnRetry) btnRetry.disabled = true;
+    if (btnRefresh) btnRefresh.disabled = true;
+    if (spinner) spinner.style.display = "inline-block";
+    if (statusEl) {
+        statusEl.textContent = "SYNCING";
+        statusEl.style.color = "var(--warning)";
+    }
+    
+    try {
+        const response = await fetch(`${API_BASE}/admin/google-sheets/sync`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${idToken}`
+            },
+            body: JSON.stringify({ force })
+        });
+        
+        if (response.status === 409) {
+            if (confirm("Synchronization already in progress. Would you like to force sync?")) {
+                await runSyncProcess(true);
+            }
+            return;
+        }
+        
+        if (!response.ok) throw new Error("Sync failed.");
+        
+        const result = await response.json();
+        const syncData = result.data ?? {};
+        
+        let msg = "";
+        if (syncData.synced > 0) {
+            msg += `${syncData.synced} Jobs Synced Successfully. `;
+        }
+        if (syncData.failed > 0) {
+            msg += `${syncData.failed} Failed. `;
+        }
+        if (syncData.processed === 0) {
+            msg = "Queue is up to date.";
+        }
+        showToast(msg || "Sync complete!");
+        
+        await initSheetsSyncQueue();
+    } catch (err) {
+        showToast(err.message, "error");
+    } finally {
+        if (btnSync) btnSync.disabled = false;
+        if (btnRetry) btnRetry.disabled = false;
+        if (btnRefresh) btnRefresh.disabled = false;
+        if (spinner) spinner.style.display = "none";
+    }
+}
+
 async function initSheetsSyncQueue() {
     try {
+        // 1. Fetch Stats metrics
+        const statsResponse = await fetch(`${API_BASE}/admin/google-sheets/stats`, {
+            headers: { Authorization: `Bearer ${idToken}` }
+        });
+        if (statsResponse.ok) {
+            const statsResult = await statsResponse.json();
+            const stats = statsResult.data ?? {};
+
+            document.getElementById("sheetsStatPending").textContent = stats.pending ?? 0;
+            document.getElementById("sheetsStatRetry").textContent = stats.retry ?? 0;
+            document.getElementById("sheetsStatFailed").textContent = stats.failed ?? 0;
+            document.getElementById("sheetsStatSynced").textContent = stats.synced ?? 0;
+
+            const statusEl = document.getElementById("sheetsSyncStatus");
+            if (statusEl) {
+                statusEl.textContent = stats.status ?? "IDLE";
+                if (stats.status === "SYNCING") {
+                    statusEl.style.color = "var(--warning)";
+                } else if (stats.status === "PAUSED") {
+                    statusEl.style.color = "#ef4444";
+                } else {
+                    statusEl.style.color = "var(--success)";
+                }
+            }
+
+            const timeEl = document.getElementById("sheetsLastSyncTime");
+            if (timeEl) {
+                timeEl.textContent = stats.lastSync ? new Date(stats.lastSync).toLocaleString() : "Never";
+            }
+        }
+
+        // 2. Fetch Sync logs
         const response = await fetch(`${API_BASE}/admin/google-sheets/jobs?limit=30`, {
             headers: { Authorization: `Bearer ${idToken}` }
         });
@@ -881,32 +976,76 @@ async function initSheetsSyncQueue() {
         const jobs = result.data?.jobs ?? [];
         if (jobs.length === 0) {
             tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--muted-foreground);">Google Sheets sync queue empty.</td></tr>';
-            return;
+        } else {
+            jobs.forEach(job => {
+                const tr = document.createElement("tr");
+                const dateObj = job.lastAttemptAt || job.createdAt;
+                const time = dateObj ? new Date(dateObj.seconds * 1000).toLocaleString() : "";
+                
+                let badgeClass = "badge-amber";
+                let customStyle = "";
+                if (job.status === "synced") {
+                    badgeClass = "badge-verified";
+                } else if (job.status === "failed") {
+                    badgeClass = "badge-amber";
+                    customStyle = "border-color: #ef4444; color: #ef4444;";
+                }
+
+                tr.innerHTML = `
+                    <td><code style="font-size: 10px;">${sanitizeHTML(job.id)}</code></td>
+                    <td>${sanitizeHTML(job.sheetName || "Sheet1")}</td>
+                    <td><span class="role-tag ${badgeClass}" style="${customStyle}">${sanitizeHTML(job.status)}</span></td>
+                    <td>${sanitizeHTML(String(job.attempts || 0))}</td>
+                    <td style="color: var(--muted-foreground);">${time}</td>
+                `;
+                tbody.appendChild(tr);
+            });
         }
 
-        jobs.forEach(job => {
-            const tr = document.createElement("tr");
-            const dateObj = job.lastAttemptAt || job.createdAt;
-            const time = dateObj ? new Date(dateObj.seconds * 1000).toLocaleString() : "";
-            
-            let badgeClass = "badge-amber";
-            let customStyle = "";
-            if (job.status === "synced") {
-                badgeClass = "badge-verified";
-            } else if (job.status === "failed") {
-                badgeClass = "badge-amber";
-                customStyle = "border-color: #ef4444; color: #ef4444;";
+        // 3. Wire up control button click listeners once
+        if (!sheetsSyncListenersWired) {
+            const btnRefresh = document.getElementById("btnRefreshQueue");
+            if (btnRefresh) {
+                btnRefresh.addEventListener("click", async () => {
+                    await initSheetsSyncQueue();
+                    showToast("Queue refreshed successfully.");
+                });
             }
 
-            tr.innerHTML = `
-                <td><code style="font-size: 10px;">${sanitizeHTML(job.id)}</code></td>
-                <td>${sanitizeHTML(job.sheetName || "Sheet1")}</td>
-                <td><span class="role-tag ${badgeClass}" style="${customStyle}">${sanitizeHTML(job.status)}</span></td>
-                <td>${sanitizeHTML(String(job.attempts || 0))}</td>
-                <td style="color: var(--muted-foreground);">${time}</td>
-            `;
-            tbody.appendChild(tr);
-        });
+            const btnRetry = document.getElementById("btnRetryFailed");
+            if (btnRetry) {
+                btnRetry.addEventListener("click", async () => {
+                    btnRetry.disabled = true;
+                    try {
+                        const res = await fetch(`${API_BASE}/admin/google-sheets/retry-failed`, {
+                            method: "POST",
+                            headers: { Authorization: `Bearer ${idToken}` }
+                        });
+                        if (!res.ok) throw new Error("Failed to retry failed jobs.");
+                        const data = await res.json();
+                        showToast(`${data.data?.updatedCount ?? 0} Failed Jobs Reset to Pending.`);
+                        await initSheetsSyncQueue();
+                    } catch (err) {
+                        showToast(err.message, "error");
+                    } finally {
+                        btnRetry.disabled = false;
+                    }
+                });
+            }
+
+            const btnSync = document.getElementById("btnSyncNow");
+            if (btnSync) {
+                btnSync.addEventListener("click", async () => {
+                    if (currentAdminRole !== "super_admin") {
+                        showToast("Only Super Admins can manually trigger sync.", "error");
+                        return;
+                    }
+                    await runSyncProcess(false);
+                });
+            }
+
+            sheetsSyncListenersWired = true;
+        }
     } catch (e) {
         console.error("Sheets sync queue load failed:", e);
     }

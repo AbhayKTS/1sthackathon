@@ -69,6 +69,40 @@ export interface SheetsProcessResult {
   retried: number;
 }
 
+export async function isSheetsSyncLocked(): Promise<boolean> {
+  const db = getAdminDb();
+  const lockSnap = await db.collection('settings').doc('sheets-sync-lock').get();
+  if (lockSnap.exists) {
+    const data = lockSnap.data()!;
+    if (data.locked === true) {
+      const lockedAt = data.lockedAt;
+      const diffMs = Date.now() - (lockedAt?.toMillis() || 0);
+      // 5 minutes lock expiration
+      if (diffMs < 5 * 60 * 1000) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+export async function acquireSheetsSyncLock(uid: string): Promise<void> {
+  const db = getAdminDb();
+  await db.collection('settings').doc('sheets-sync-lock').set({
+    locked: true,
+    lockedAt: FieldValue.serverTimestamp(),
+    lockedBy: uid,
+  });
+}
+
+export async function releaseSheetsSyncLock(): Promise<void> {
+  const db = getAdminDb();
+  await db.collection('settings').doc('sheets-sync-lock').update({
+    locked: false,
+    releasedAt: FieldValue.serverTimestamp(),
+  });
+}
+
 /**
  * Processes pending Google Sheets sync jobs.
  * Called by POST /api/internal/sheets-worker.

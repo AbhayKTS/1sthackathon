@@ -498,6 +498,9 @@
                 grid-template-columns: 1fr;
             }
         }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
@@ -919,6 +922,38 @@
 
             <!-- TAB 11: Google Sheets Sync -->
             <div id="panel-sheets-sync" class="tab-panel">
+                <div class="metrics-grid" style="margin-bottom: 24px;">
+                    <div class="metric-box">
+                        <div class="metric-title" style="color: var(--accent);">Pending Jobs</div>
+                        <div class="metric-value" id="sheetsStatPending">0</div>
+                    </div>
+                    <div class="metric-box">
+                        <div class="metric-title" style="color: var(--warning);">Retry Jobs</div>
+                        <div class="metric-value" id="sheetsStatRetry">0</div>
+                    </div>
+                    <div class="metric-box">
+                        <div class="metric-title" style="color: #ef4444;">Failed Jobs</div>
+                        <div class="metric-value" id="sheetsStatFailed">0</div>
+                    </div>
+                    <div class="metric-box">
+                        <div class="metric-title" style="color: var(--success);">Synced Jobs</div>
+                        <div class="metric-value" id="sheetsStatSynced">0</div>
+                    </div>
+                </div>
+
+                <div class="glass-card" style="margin-bottom: 24px; padding: 20px; display: flex; flex-direction: row; gap: 24px; align-items: center; justify-content: space-between; flex-wrap: wrap;">
+                    <div style="font-family: var(--font-mono); font-size: 12px; color: var(--muted-foreground); line-height: 1.6; display: flex; gap: 24px;">
+                        <div>Sync Status: <span id="sheetsSyncStatus" style="font-weight: bold; color: var(--success);">IDLE</span></div>
+                        <div>Last Sync Time: <span id="sheetsLastSyncTime" style="color: #fff;">Never</span></div>
+                    </div>
+                    <div style="display: flex; gap: 12px; align-items: center;">
+                        <span id="syncSpinner" class="spinner" style="display: none; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.1); border-top-color: var(--accent); border-radius: 50%; animation: spin 1s linear infinite; margin-right: 8px;"></span>
+                        <button type="button" id="btnRefreshQueue" class="btn-outline" style="padding: 10px 20px; font-weight: 600;">Refresh Queue</button>
+                        <button type="button" id="btnRetryFailed" class="btn-outline" style="padding: 10px 20px; font-weight: 600; border-color: #ef4444; color: #ef4444;">Retry Failed</button>
+                        <button type="button" id="btnSyncNow" class="btn-primary" style="padding: 10px 20px; font-weight: 600;">Sync Now</button>
+                    </div>
+                </div>
+
                 <div class="glass-card">
                     <div class="card-title-section">
                         <span class="card-title">Google Sheets Queue Sync Logs</span>

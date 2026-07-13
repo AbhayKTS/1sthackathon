@@ -9,7 +9,7 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { apiSuccess, apiError, applyCorsHeaders, handleOptions } from '@/lib/api-helpers';
 import { Errors } from '@/lib/errors';
 import { env } from '@/lib/env';
-import { processSheetsQueue } from '@/server/services/sheets-queue.service';
+import { isSheetsSyncLocked, processSheetsQueue } from '@/server/services/sheets-queue.service';
 
 export function OPTIONS(request: NextRequest): NextResponse {
   return handleOptions(request);
@@ -20,18 +20,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
     const cronSecret = request.headers.get('X-Cron-Secret') ?? request.headers.get('x-cron-secret');
 
-    if (env.CRON_SECRET) {
-      if (cronSecret !== env.CRON_SECRET) {
-        const authHeader = request.headers.get('Authorization');
-        if (!authHeader?.startsWith('Bearer ')) {
-          throw Errors.unauthorized('Missing X-Cron-Secret header or Bearer token.');
-        }
-        const { withAuth, requireRole } = await import('@/lib/api-helpers');
-        const token = await withAuth(request);
-        requireRole(token, ['super_admin']);
-      }
-    } else if (process.env.NODE_ENV === 'production') {
-      throw Errors.unauthorized('CRON_SECRET not configured.');
+    if (!env.CRON_SECRET || cronSecret !== env.CRON_SECRET) {
+      throw Errors.unauthorized('Invalid or missing X-Cron-Secret.');
+    }
+
+    if (await isSheetsSyncLocked()) {
+      const response = apiSuccess({ ok: false, message: 'Synchronization in progress.' });
+      return applyCorsHeaders(response, origin);
     }
 
     const result = await processSheetsQueue();

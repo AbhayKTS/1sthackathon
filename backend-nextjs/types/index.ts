@@ -456,6 +456,7 @@ export type AuditAction =
   | 'admin.role_changed'
   | 'admin.permission_changed'
   | 'admin.score_permission_changed' // legacy
+  | 'sheets.sync'
   // Tickets
   | 'ticket.created'
   | 'ticket.replied'
