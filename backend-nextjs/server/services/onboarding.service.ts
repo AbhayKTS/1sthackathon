@@ -127,7 +127,6 @@ export async function completeLeaderProfile(
 
   const isFirstSubmission = teamSnap.empty;
   let teamId = '';
-  let isSolo = false;
 
   await db.runTransaction(async (tx) => {
     // Update Users doc
@@ -165,8 +164,6 @@ export async function completeLeaderProfile(
       joinedAt: null,
     }));
 
-    isSolo = membersArray.length === 0;
-
     const teamData = {
       teamName: inviteData['teamName'] as string,
       invitedTeamId,
@@ -185,8 +182,8 @@ export async function completeLeaderProfile(
       leaderLinkedin: input.linkedin?.trim() || null,
       members: membersArray,
       memberEmails: membersArray.map((m) => m.email),
-      status: isSolo ? 'Verified' : 'Draft',
-      registrationLocked: isSolo,
+      status: 'Draft',
+      registrationLocked: false,
       adminNotes: null,
       isTimeLeapEligible: false,
       isTimeLeapQualified: false,
@@ -200,8 +197,8 @@ export async function completeLeaderProfile(
       tx.set(teamRef, {
         ...teamData,
         createdAt: FieldValue.serverTimestamp(),
-        verifiedAt: isSolo ? FieldValue.serverTimestamp() : null,
-        registrationLockedAt: isSolo ? FieldValue.serverTimestamp() : null,
+        verifiedAt: null,
+        registrationLockedAt: null,
       });
 
       // Link user to team
@@ -210,29 +207,16 @@ export async function completeLeaderProfile(
       // Update existing team doc
       const existingTeamRef = teamSnap.docs[0]!.ref;
       teamId = existingTeamRef.id;
-      // Preserve verifiedAt and registrationLockedAt if already set
-      const updateData = {
-        ...teamData,
-        ...(isSolo && {
-          verifiedAt: FieldValue.serverTimestamp(),
-          registrationLockedAt: FieldValue.serverTimestamp(),
-        }),
-      };
-      tx.update(existingTeamRef, updateData);
+      tx.update(existingTeamRef, teamData);
     }
 
     // Update invited team status
     tx.update(inviteRef, {
-      status: (isSolo ? 'Verified' : 'LeaderRegistered') as InvitedTeamStatus,
+      status: 'LeaderRegistered' as InvitedTeamStatus,
       leaderRegisteredAt: FieldValue.serverTimestamp(),
-      ...(isSolo && { allMembersRegisteredAt: FieldValue.serverTimestamp() }),
       updatedAt: FieldValue.serverTimestamp(),
     });
   });
-
-  if (isSolo && teamId) {
-    await triggerOnboardingSync(teamId);
-  }
 
   // 5. Audit log
   await writeAuditLog({
