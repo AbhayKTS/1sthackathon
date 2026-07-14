@@ -41,6 +41,8 @@ Document ID: Firebase Auth UID
   course:         string | null;   // Course/Branch (e.g. B.Tech CSE)
   gradYear:       number | null;   // Graduation Year
   linkedin:       string | null;   // LinkedIn URL
+  github:         string | null;   // GitHub Username
+  roleInTeam:     string | null;   // Technical role in team (e.g. Backend Developer)
   createdAt:      Timestamp;
   updatedAt:      Timestamp;
   lastLoginAt:    Timestamp | null;
@@ -133,7 +135,6 @@ Document ID: auto-ID
 
   // Team info
   college:      string;
-  department:   string;
   year:         string;           // e.g., "3rd Year"
   state:        string;
   city:         string;

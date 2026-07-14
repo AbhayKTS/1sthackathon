@@ -139,6 +139,7 @@ export async function completeLeaderProfile(
       course: input.course.trim(),
       gradYear: input.gradYear,
       linkedin: input.linkedin?.trim() || null,
+      roleInTeam: 'Team Lead',
       onboardingStatus: 'complete',
       updatedAt: FieldValue.serverTimestamp(),
     });
@@ -351,6 +352,7 @@ export async function completeMemberProfile(
       course: input.course.trim(),
       gradYear: input.gradYear,
       linkedin: input.linkedin?.trim() || null,
+      roleInTeam: input.role.trim(),
       onboardingStatus: 'complete',
       teamId: teamDoc.id,
       updatedAt: FieldValue.serverTimestamp(),
@@ -437,7 +439,7 @@ export async function updateMemberProfile(
   if (normalisedPhone) userUpdate.phone = normalisedPhone;
   if (input.college) userUpdate.college = input.college.trim();
   if (input.github !== undefined) userUpdate.github = input.github?.trim() || null;
-  if (input.role) userUpdate.role = input.role.trim();  // role in context of team, not system role
+  if (input.role) userUpdate.roleInTeam = input.role.trim();  // role in context of team, not system role
   if (normalisedWhatsapp) userUpdate.whatsapp = normalisedWhatsapp;
   if (input.course) userUpdate.course = input.course.trim();
   if (input.gradYear) userUpdate.gradYear = input.gradYear;

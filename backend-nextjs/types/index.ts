@@ -34,8 +34,13 @@ export interface UserDoc {
   invitedTeamId: string | null;
   displayName: string | null;
   phone: string | null;
+  whatsapp: string | null;
   college: string | null;
+  course: string | null;
+  gradYear: number | null;
+  linkedin: string | null;
   github: string | null;
+  roleInTeam: string | null;
   onboardingStatus: 'pending' | 'complete';
   canEditScores: boolean;
   isActive: boolean;
