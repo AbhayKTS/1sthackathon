@@ -1069,22 +1069,51 @@
 
             <!-- TAB 13: Announcements -->
             <div id="panel-announcements" class="tab-panel">
-                <div class="glass-card" style="max-width: 680px;">
-                    <div class="card-title-section">
-                        <span class="card-title">Transmute System Broadcasts</span>
+                <div class="layout-columns">
+                    <div class="glass-card">
+                        <div class="card-title-section" style="display: flex; justify-content: space-between; align-items: center;">
+                            <span class="card-title">Announcements Directory</span>
+                            <button type="button" id="btnRefreshAnnouncements" class="btn-outline" style="padding: 6px 12px; font-size: 10px;">Refresh</button>
+                        </div>
+                        <div class="data-table-wrapper">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Title</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="announcementsTableBody">
+                                    <tr><td colspan="4" style="text-align: center; color: var(--muted-foreground);">Loading announcements...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
-                    <form id="announcementForm" class="dash-form">
-                        <div class="form-group">
-                            <label class="form-label">Broadcast Title</label>
-                            <input type="text" id="annTitle" class="form-input" required placeholder="ALERT">
+
+                    <div class="glass-card">
+                        <div class="card-title-section">
+                            <span class="card-title" id="annFormTitle">Transmute System Broadcasts</span>
                         </div>
-                        <div class="form-group">
-                            <label class="form-label">Broadcast Message Details</label>
-                            <textarea id="annMessage" class="form-textarea" required rows="5" placeholder="Transmit details..." style="resize: none;"></textarea>
-                        </div>
-                        <button type="submit" class="btn-primary" id="annSubmitBtn">Transmit Stream</button>
-                        <div id="annStatus" style="font-size: 11px; font-family: var(--font-mono); min-height: 16px; margin-top: 8px;"></div>
-                    </form>
+                        <form id="announcementForm" class="dash-form">
+                            <input type="hidden" id="annFormId" value="">
+                            <div class="form-group">
+                                <label class="form-label" for="annTitle">Broadcast Title</label>
+                                <input type="text" id="annTitle" class="form-input" required placeholder="ALERT">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="annMessage">Broadcast Message Details</label>
+                                <textarea id="annMessage" class="form-textarea" required rows="5" placeholder="Transmit details..." style="resize: none;"></textarea>
+                            </div>
+                            
+                            <div style="display: flex; gap: 8px; margin-top: 20px;">
+                                <button type="submit" class="btn-primary" id="annSubmitBtn" style="flex: 1;">Transmit Stream</button>
+                                <button type="button" id="btnCancelAnnEdit" class="btn-outline hidden" style="flex: 1;">Cancel</button>
+                            </div>
+                            <div id="annStatus" style="font-size: 11px; font-family: var(--font-mono); min-height: 16px; margin-top: 8px;"></div>
+                        </form>
+                    </div>
                 </div>
             </div>
 

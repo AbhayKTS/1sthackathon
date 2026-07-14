@@ -22,7 +22,7 @@ import { getAdminDb } from '@/lib/firebase-admin';
 import { Errors } from '@/lib/errors';
 import { writeAuditLog } from './audit.service';
 import { createMailJobs } from './mail-queue.service';
-import { getPortalBaseUrl } from '@/lib/env';
+import { env, getPortalBaseUrl } from '@/lib/env';
 import type { UserRole, InvitedTeamStatus } from '@/types/index';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -126,6 +126,8 @@ export async function completeLeaderProfile(
     .get();
 
   const isFirstSubmission = teamSnap.empty;
+  let teamId = '';
+  let isSolo = false;
 
   await db.runTransaction(async (tx) => {
     // Update Users doc
@@ -163,7 +165,7 @@ export async function completeLeaderProfile(
       joinedAt: null,
     }));
 
-    const isSolo = membersArray.length === 0;
+    isSolo = membersArray.length === 0;
 
     const teamData = {
       teamName: inviteData['teamName'] as string,
@@ -194,6 +196,7 @@ export async function completeLeaderProfile(
 
     if (isFirstSubmission) {
       const teamRef = db.collection('teams').doc();
+      teamId = teamRef.id;
       tx.set(teamRef, {
         ...teamData,
         createdAt: FieldValue.serverTimestamp(),
@@ -206,6 +209,7 @@ export async function completeLeaderProfile(
     } else {
       // Update existing team doc
       const existingTeamRef = teamSnap.docs[0]!.ref;
+      teamId = existingTeamRef.id;
       // Preserve verifiedAt and registrationLockedAt if already set
       const updateData = {
         ...teamData,
@@ -225,6 +229,10 @@ export async function completeLeaderProfile(
       updatedAt: FieldValue.serverTimestamp(),
     });
   });
+
+  if (isSolo && teamId) {
+    await triggerOnboardingSync(teamId);
+  }
 
   // 5. Audit log
   await writeAuditLog({
@@ -409,6 +417,7 @@ export async function completeMemberProfile(
       metadata: { lockedBy: 'auto_all_members_complete' },
       ip: null,
     });
+    await triggerOnboardingSync(teamDoc.id);
   }
 }
 
@@ -512,4 +521,98 @@ export async function updateMemberProfile(
     metadata: { updatedFields: Object.keys(input) },
     ip: null,
   });
+}
+
+export async function triggerOnboardingSync(teamId: string): Promise<void> {
+  const db = getAdminDb();
+  const teamRef = db.collection('teams').doc(teamId);
+
+  try {
+    await db.runTransaction(async (tx) => {
+      const snap = await tx.get(teamRef);
+      if (!snap.exists) return;
+
+      const teamData = snap.data()!;
+      if (teamData.onboardingSheetSynced === true) {
+        return; // Already synced
+      }
+
+      if (teamData.registrationLocked !== true) {
+        return; // Not locked
+      }
+
+      // Mark as synced inside transaction
+      tx.update(teamRef, {
+        onboardingSheetSynced: true,
+        updatedAt: FieldValue.serverTimestamp(),
+      });
+
+      // Prepare sheet data
+      const members = (teamData.members as any[]) || [];
+      
+      const getMemberFields = (index: number) => {
+        const m = members[index] || {};
+        return {
+          [`member${index + 2}Name`]: m.name || '',
+          [`member${index + 2}Email`]: m.email || '',
+          [`member${index + 2}Whatsapp`]: m.whatsapp || '',
+          [`member${index + 2}College`]: m.college || '',
+          [`member${index + 2}Course`]: m.course || '',
+          [`member${index + 2}GradYear`]: m.gradYear || '',
+          [`member${index + 2}Role`]: m.role || '',
+          [`member${index + 2}Github`]: m.github || '',
+          [`member${index + 2}Linkedin`]: m.linkedin || '',
+        };
+      };
+
+      const m2 = getMemberFields(0);
+      const m3 = getMemberFields(1);
+      const m4 = getMemberFields(2);
+
+      let lockedAtStr = '';
+      if (teamData.registrationLockedAt) {
+        const lockedAt = teamData.registrationLockedAt;
+        lockedAtStr = typeof lockedAt.toDate === 'function'
+          ? lockedAt.toDate().toISOString()
+          : new Date(lockedAt.seconds ? lockedAt.seconds * 1000 : lockedAt).toISOString();
+      } else {
+        lockedAtStr = new Date().toISOString();
+      }
+
+      const sheetData = {
+        leaderName: teamData.leaderName || '',
+        leaderEmail: teamData.leaderEmail || '',
+        leaderWhatsapp: teamData.leaderWhatsapp || '',
+        leaderCollege: teamData.leaderCollege || '',
+        leaderCourse: teamData.leaderCourse || '',
+        leaderGradYear: teamData.leaderGradYear || '',
+        leaderGithub: teamData.leaderGithub || '',
+        leaderLinkedin: teamData.leaderLinkedin || '',
+        ...m2,
+        ...m3,
+        ...m4,
+        teamStatus: teamData.status || 'Verified',
+        registrationLockedAt: lockedAtStr,
+      };
+
+      const sheetId = env.GOOGLE_SHEET_ONBOARDING_ID;
+      if (sheetId) {
+        const { createSyncJob } = await import('./sheets-queue.service');
+        await createSyncJob({
+          sheetId,
+          sheetName: 'Sheet1',
+          teamId,
+          teamName: teamData.teamName || 'Unknown Team',
+          roundId: 'onboarding',
+          data: sheetData,
+          createdBy: teamData.leaderId || 'system',
+        });
+        console.log(`[onboarding.service] Queued onboarding sync job for team ${teamId}`);
+      } else {
+        console.warn(`[onboarding.service] GOOGLE_SHEET_ONBOARDING_ID is not configured.`);
+      }
+    });
+  } catch (err) {
+    console.error(`[onboarding.service] Failed to trigger onboarding sync:`, err);
+  }
 }

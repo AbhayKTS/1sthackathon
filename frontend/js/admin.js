@@ -219,6 +219,7 @@ onAuthStateChanged(auth, async (user) => {
         startStartupTask("sheets sync", initSheetsSyncQueue);
         startStartupTask("activity logs", initActivityLogs);
         startStartupTask("system settings", initSystemSettings);
+        startStartupTask("announcements tab", initAnnouncementsTab);
         startStartupTask("system health", initSystemHealth);
 
     } catch (err) {
@@ -294,7 +295,8 @@ function initDashboardRealtime() {
 
         if (activeRound) {
             const data = activeRound.data();
-            const dl = data.deadline ? new Date(data.deadline.seconds * 1000).toLocaleString() : "No deadline set";
+            const deadlineObj = data.submissionDeadline || data.deadline;
+            const dl = deadlineObj ? new Date(deadlineObj.seconds * 1000).toLocaleString() : "No deadline set";
             statusBox.innerHTML = `
                 <div style="font-weight: 600; color: #fff; margin-bottom: 4px;">ACTIVE ROUND: ${sanitizeHTML(data.title)}</div>
                 <div>Status: ${sanitizeHTML(data.status)}</div>
@@ -680,8 +682,9 @@ async function fetchAndRenderRounds() {
 
             // Format deadline date for datetime-local value (YYYY-MM-DDTHH:MM)
             let deadlineVal = "";
-            if (r.deadline) {
-                const date = new Date(typeof r.deadline.seconds === 'number' ? r.deadline.seconds * 1000 : r.deadline);
+            const deadlineField = r.submissionDeadline || r.deadline;
+            if (deadlineField) {
+                const date = new Date(typeof deadlineField.seconds === 'number' ? deadlineField.seconds * 1000 : deadlineField);
                 // Adjust to local timezone
                 const tzOffset = date.getTimezoneOffset() * 60000;
                 const localISOTime = new Date(date.getTime() - tzOffset).toISOString().slice(0, 16);
@@ -784,7 +787,7 @@ async function fetchAndRenderRounds() {
                             "Content-Type": "application/json",
                             Authorization: `Bearer ${idToken}`
                         },
-                        body: JSON.stringify({ roundId: r.id, deadline: timeDate.toISOString() })
+                        body: JSON.stringify({ roundId: r.id, submissionDeadline: timeDate.toISOString() })
                     });
                     if (!response.ok) throw new Error("Failed to save deadline.");
                     showToast(`Deadline for ${r.title} saved successfully!`);
@@ -1173,37 +1176,166 @@ async function initActivityLogs() {
 }
 
 // ─── TAB 13: ANNOUNCEMENT BROADCAST ──────────────────────────────────────────
-const announcementForm = document.getElementById("announcementForm");
-if (announcementForm) {
-    announcementForm.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        const btn = document.getElementById("annSubmitBtn");
-        btn.disabled = true;
-        btn.textContent = "TRANSMITTING...";
+// ─── TAB 13: ANNOUNCEMENT BROADCAST ──────────────────────────────────────────
+let currentEditingAnnouncement = null;
 
-        try {
-            const response = await fetch(`${API_BASE}/admin/announcement`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${idToken}`
-                },
-                body: JSON.stringify({
-                    title: document.getElementById("annTitle").value,
-                    message: document.getElementById("annMessage").value
-                })
+function startEditingAnnouncement(ann) {
+    currentEditingAnnouncement = ann;
+    
+    const formTitle = document.getElementById("annFormTitle");
+    const formId = document.getElementById("annFormId");
+    const titleInput = document.getElementById("annTitle");
+    const messageInput = document.getElementById("annMessage");
+    const submitBtn = document.getElementById("annSubmitBtn");
+    const cancelBtn = document.getElementById("btnCancelAnnEdit");
+
+    if (formTitle) formTitle.textContent = `Edit Announcement`;
+    if (formId) formId.value = ann.id;
+    if (titleInput) titleInput.value = ann.title || "";
+    if (messageInput) messageInput.value = ann.message || "";
+    if (submitBtn) submitBtn.textContent = "Save Changes";
+    if (cancelBtn) cancelBtn.classList.remove("hidden");
+}
+
+function cancelEditingAnnouncement() {
+    currentEditingAnnouncement = null;
+    
+    const formTitle = document.getElementById("annFormTitle");
+    const formId = document.getElementById("annFormId");
+    const titleInput = document.getElementById("annTitle");
+    const messageInput = document.getElementById("annMessage");
+    const submitBtn = document.getElementById("annSubmitBtn");
+    const cancelBtn = document.getElementById("btnCancelAnnEdit");
+
+    if (formTitle) formTitle.textContent = "Transmute System Broadcasts";
+    if (formId) formId.value = "";
+    if (titleInput) titleInput.value = "";
+    if (messageInput) messageInput.value = "";
+    if (submitBtn) submitBtn.textContent = "Transmit Stream";
+    if (cancelBtn) cancelBtn.classList.add("hidden");
+}
+
+async function initAnnouncementsTab() {
+    const form = document.getElementById("announcementForm");
+    if (form) {
+        form.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById("annSubmitBtn");
+            if (!btn) return;
+            btn.disabled = true;
+            const originalText = btn.textContent;
+            btn.textContent = "Processing...";
+
+            const title = document.getElementById("annTitle").value;
+            const message = document.getElementById("annMessage").value;
+
+            try {
+                if (currentEditingAnnouncement) {
+                    const annId = document.getElementById("annFormId").value;
+                    const response = await fetch(`${API_BASE}/admin/announcement/${annId}`, {
+                        method: "PATCH",
+                        headers: {
+                            "Content-Type": "application/json",
+                            Authorization: `Bearer ${idToken}`
+                        },
+                        body: JSON.stringify({ title, message })
+                    });
+                    if (!response.ok) throw new Error("Failed to edit announcement.");
+                    showToast("Announcement updated successfully!");
+                    cancelEditingAnnouncement();
+                } else {
+                    const response = await fetch(`${API_BASE}/admin/announcement`, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            Authorization: `Bearer ${idToken}`
+                        },
+                        body: JSON.stringify({ title, message })
+                    });
+                    if (!response.ok) throw new Error("Broadcast failed.");
+                    showToast("Broadcast stream transmitted!");
+                    form.reset();
+                }
+            } catch (err) {
+                showToast(err.message, "error");
+            } finally {
+                btn.disabled = false;
+                btn.textContent = originalText;
+            }
+        });
+    }
+
+    const btnCancel = document.getElementById("btnCancelAnnEdit");
+    if (btnCancel) {
+        btnCancel.addEventListener("click", () => {
+            cancelEditingAnnouncement();
+        });
+    }
+
+    const btnRefresh = document.getElementById("btnRefreshAnnouncements");
+    if (btnRefresh) {
+        btnRefresh.addEventListener("click", () => {
+            showToast("Directory synced in real-time.");
+        });
+    }
+
+    registerListener(onSnapshot(query(collection(db, "announcements"), orderBy("timestamp", "desc")), (snap) => {
+        const tbody = document.getElementById("announcementsTableBody");
+        if (!tbody) return;
+        tbody.innerHTML = "";
+
+        if (snap.empty) {
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--muted-foreground);">No announcements.</td></tr>';
+            return;
+        }
+
+        snap.docs.forEach(docSnap => {
+            const data = docSnap.data();
+            const annId = docSnap.id;
+            const isDeleted = data.isVisible === false;
+            const statusText = isDeleted ? "Hidden (Deleted)" : "Visible";
+            const statusClass = isDeleted ? "badge-gray" : "badge-verified";
+            const date = data.timestamp ? new Date(data.timestamp.seconds * 1000).toLocaleDateString() : "Just now";
+
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td>${sanitizeHTML(date)}</td>
+                <td><strong>${sanitizeHTML(data.title)}</strong></td>
+                <td><span class="role-tag ${statusClass}">${sanitizeHTML(statusText)}</span></td>
+                <td>
+                    <div style="display: flex; gap: 8px;">
+                        <button type="button" class="btn-outline btn-edit-ann" style="padding: 4px 8px; font-size: 10px;">Edit</button>
+                        ${!isDeleted ? `<button type="button" class="btn-outline btn-delete-ann" style="padding: 4px 8px; font-size: 10px; border-color: #ef4444; color: #ef4444;">Delete</button>` : ''}
+                    </div>
+                </td>
+            `;
+
+            tr.querySelector(".btn-edit-ann").addEventListener("click", () => {
+                startEditingAnnouncement({ id: annId, ...data });
             });
 
-            if (!response.ok) throw new Error("Broadcast failed.");
-            showToast("Broadcast stream transmitted!");
-            announcementForm.reset();
-        } catch (err) {
-            showToast(err.message, "error");
-        } finally {
-            btn.disabled = false;
-            btn.textContent = "Transmit Stream";
-        }
-    });
+            const delBtn = tr.querySelector(".btn-delete-ann");
+            if (delBtn) {
+                delBtn.addEventListener("click", async () => {
+                    if (!confirm("Are you sure you want to delete/hide this announcement?")) return;
+                    delBtn.disabled = true;
+                    try {
+                        const res = await fetch(`${API_BASE}/admin/announcement/${annId}`, {
+                            method: "DELETE",
+                            headers: { Authorization: `Bearer ${idToken}` }
+                        });
+                        if (!res.ok) throw new Error("Delete failed.");
+                        showToast("Announcement soft-deleted.");
+                    } catch (err) {
+                        showToast(err.message, "error");
+                        delBtn.disabled = false;
+                    }
+                });
+            }
+
+            tbody.appendChild(tr);
+        });
+    }));
 }
 
 // ─── TAB 14: PLATFORM SETTINGS ────────────────────────────────────────────────

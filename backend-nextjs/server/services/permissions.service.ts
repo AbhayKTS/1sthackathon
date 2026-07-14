@@ -146,6 +146,16 @@ export async function updatePermissions(
   const update: any = { updatedAt: FieldValue.serverTimestamp() };
 
   if (input.role !== undefined) {
+    if (input.role === 'super_admin') {
+      const targetUserSnap = await db.collection('users').doc(targetUserId).get();
+      if (!targetUserSnap.exists) {
+        throw Errors.notFound('Target user document not found.');
+      }
+      const targetEmail = (targetUserSnap.data()?.email as string || '').toLowerCase().trim();
+      if (targetEmail !== 'team@revengershack.tech') {
+        throw Errors.validation('Only team@revengershack.tech is allowed to hold the super_admin role.');
+      }
+    }
     update.role = input.role;
     // Apply role defaults first, then override with explicit flags
     const roleDefaults = DEFAULT_PERMISSIONS[input.role];
@@ -280,6 +290,10 @@ export async function createAdminUser(
   const { getAdminAuth } = await import('@/lib/firebase-admin');
 
   const normalizedEmail = input.email.toLowerCase().trim();
+
+  if (input.role === 'super_admin' && normalizedEmail !== 'team@revengershack.tech') {
+    throw Errors.validation('Only team@revengershack.tech is allowed to hold the super_admin role.');
+  }
 
   // Create Firebase Auth user if not exists
   let uid: string;

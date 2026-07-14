@@ -32,7 +32,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const origin = request.headers.get('origin') ?? '';
 
   try {
-    // Only super_admin can create new admins
+    // Only super_admin can create new admins.
+    // Note: By system policy, only team@revengershack.tech is allowed to hold the 'super_admin' role itself.
+    // Other administrators invited or created via this route are assigned the 'admin' role.
     const token = await withAuth(request);
     requireRole(token, ['super_admin']);
 

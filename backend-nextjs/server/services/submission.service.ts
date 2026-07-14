@@ -142,13 +142,20 @@ export async function submitPayload(userUid: string, input: SubmitPayloadInput):
   let sheetSyncData: Record<string, string | number> | null = null;
   const sheetId = roundData['googleSheetId'] ?? null;
 
+  const submittedAtIso = new Date().toISOString();
+
   switch (submissionType) {
     case 'ppt_link': {
       if (!input.pptLink?.trim()) {
         throw Errors.validation('A PPT link (Canva / Google Slides) is required for this round.');
       }
       submissionDoc.pptLink = input.pptLink.trim();
-      sheetSyncData = { pptLink: input.pptLink.trim() };
+      sheetSyncData = {
+        teamId: input.teamId,
+        roundId: input.roundId,
+        submittedAt: submittedAtIso,
+        pptLink: input.pptLink.trim(),
+      };
       break;
     }
 
@@ -160,7 +167,12 @@ export async function submitPayload(userUid: string, input: SubmitPayloadInput):
       }
       submissionDoc.prototypeLink = input.prototypeLink?.trim() ?? null;
       submissionDoc.hasNoPrototype = !!input.hasNoPrototype;
-      sheetSyncData = { prototypeLink: input.prototypeLink?.trim() ?? '(no prototype)' };
+      sheetSyncData = {
+        teamId: input.teamId,
+        roundId: input.roundId,
+        submittedAt: submittedAtIso,
+        prototypeLink: input.prototypeLink?.trim() ?? '(no prototype)',
+      };
       break;
     }
 
@@ -171,13 +183,15 @@ export async function submitPayload(userUid: string, input: SubmitPayloadInput):
     }
 
     default: {
-      // 'github_link' and legacy 'general'
       if (!input.githubLink?.trim()) {
         throw Errors.validation('A GitHub link is required for this round.');
       }
       submissionDoc.githubLink = input.githubLink.trim();
       submissionDoc.demoLink = input.demoLink?.trim() ?? null;
       sheetSyncData = {
+        teamId: input.teamId,
+        roundId: input.roundId,
+        submittedAt: submittedAtIso,
         githubLink: input.githubLink.trim(),
         demoLink: input.demoLink?.trim() ?? '',
       };

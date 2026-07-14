@@ -49,6 +49,7 @@ const envSchema = z.object({
   GOOGLE_SERVICE_ACCOUNT_JSON: z.string().optional(),
   GOOGLE_SHEET_PPT_ID: z.string().optional(),
   GOOGLE_SHEET_PROTO_ID: z.string().optional(),
+  GOOGLE_SHEET_ONBOARDING_ID: z.string().optional(),
 
   // Internal Cron Secret — protects /api/internal/* endpoints
   // Set this to a long random string (e.g., openssl rand -hex 32)

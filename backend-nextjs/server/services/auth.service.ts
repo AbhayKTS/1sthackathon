@@ -455,6 +455,10 @@ export async function verifyOtpAndCreateSession(
   } else if (isMember) {
     role = 'participant_member';
   }
+  
+  if (role === 'super_admin' && normalizedEmail !== 'team@revengershack.tech') {
+    role = 'admin';
+  }
 
   const userRef = db.collection('users').doc(uid);
   const userDocSnap = await userRef.get();

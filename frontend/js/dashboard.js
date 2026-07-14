@@ -66,6 +66,7 @@ let activeRoundId = null;
 let roundsUnsubscribers = [];
 let announcementsUnsubscriber = null;
 let leaderboardUnsubscriber = null;
+let leaderboardDocUnsub = null;
 let notificationsUnsubscriber = null;
 let teamSubmissionUnsubscriber = null;
 let countdownInterval = null;
@@ -80,6 +81,10 @@ function cleanupListeners() {
     if (leaderboardUnsubscriber) {
         leaderboardUnsubscriber();
         leaderboardUnsubscriber = null;
+    }
+    if (leaderboardDocUnsub) {
+        leaderboardDocUnsub();
+        leaderboardDocUnsub = null;
     }
     if (notificationsUnsubscriber) {
         notificationsUnsubscriber();
@@ -666,6 +671,11 @@ async function loadLeaderboard() {
         leaderboardUnsubscriber();
         leaderboardUnsubscriber = null;
     }
+    if (leaderboardDocUnsub) {
+        leaderboardDocUnsub();
+        leaderboardDocUnsub = null;
+    }
+    activeRoundId = null;
     
     const leaderboardTableBody = document.getElementById("leaderboardTableBody");
     if (!leaderboardTableBody) return;
@@ -676,77 +686,96 @@ async function loadLeaderboard() {
             const rounds = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             const activeRound = rounds.find(r => r.status === "Active" || r.isActive);
             if (!activeRound) {
+                if (leaderboardDocUnsub) {
+                    leaderboardDocUnsub();
+                    leaderboardDocUnsub = null;
+                }
+                activeRoundId = null;
                 leaderboardTableBody.innerHTML = `<li class="p-6 text-center text-sm text-muted-foreground">No active round.</li>`;
                 return;
             }
 
             const roundId = activeRound.roundId || activeRound.id;
-            const idToken = await auth.currentUser.getIdToken();
 
-            // Fetch the published leaderboard standings for the active round
-            const lbResponse = await fetch(`${API_BASE}/leaderboard/${roundId}`, {
-                headers: {
-                    Authorization: `Bearer ${idToken}`
-                }
-            });
-            if (!lbResponse.ok) throw new Error("Failed to fetch leaderboard.");
-            const lbResult = await lbResponse.json();
-            const lbData = lbResult.data ?? {};
-
-            if (!lbData.isPublished) {
-                leaderboardTableBody.innerHTML = `<li class="p-6 text-center text-sm text-muted-foreground">Leaderboard not published.</li>`;
+            if (activeRoundId === roundId && leaderboardDocUnsub) {
                 return;
             }
+            activeRoundId = roundId;
 
-            const standings = lbData.standings ?? [];
-            if (standings.length === 0) {
-                leaderboardTableBody.innerHTML = `<li class="p-6 text-center text-sm text-muted-foreground">No standings recorded yet.</li>`;
-                return;
+            if (leaderboardDocUnsub) {
+                leaderboardDocUnsub();
+                leaderboardDocUnsub = null;
             }
 
-            // Sort by rank ascending
-            standings.sort((a, b) => (a.rank ?? 9999) - (b.rank ?? 9999));
+            const lbDocRef = doc(db, "leaderboard", roundId);
+            leaderboardDocUnsub = onSnapshot(lbDocRef, async (lbSnap) => {
+                try {
+                    const idToken = await auth.currentUser.getIdToken();
 
-            leaderboardTableBody.innerHTML = "";
-            standings.forEach((team) => {
-                const li = document.createElement("li");
-                const rank = team.rank ?? 99;
-                
-                let rankColor = "text-muted-foreground";
-                let borderColor = "border-l-transparent";
-                
-                if (rank === 1) {
-                    rankColor = "text-[color:var(--color-gold)]";
-                    borderColor = "border-l-[color:var(--color-gold)]";
-                } else if (rank === 2) {
-                    rankColor = "text-[color:var(--color-silver)]";
-                    borderColor = "border-l-[color:var(--color-silver)]";
-                } else if (rank === 3) {
-                    rankColor = "text-[color:var(--color-bronze)]";
-                    borderColor = "border-l-[color:var(--color-bronze)]";
+                    const lbResponse = await fetch(`${API_BASE}/leaderboard/${roundId}`, {
+                        headers: {
+                            Authorization: `Bearer ${idToken}`
+                        }
+                    });
+                    if (!lbResponse.ok) throw new Error("Failed to fetch leaderboard.");
+                    const lbResult = await lbResponse.json();
+                    const lbData = lbResult.data ?? {};
+
+                    if (!lbData.isPublished) {
+                        leaderboardTableBody.innerHTML = `<li class="p-6 text-center text-sm text-muted-foreground">Leaderboard not published.</li>`;
+                        return;
+                    }
+
+                    const standings = lbData.standings ?? [];
+                    if (standings.length === 0) {
+                        leaderboardTableBody.innerHTML = `<li class="p-6 text-center text-sm text-muted-foreground">No standings recorded yet.</li>`;
+                        return;
+                    }
+
+                    standings.sort((a, b) => (a.rank ?? 9999) - (b.rank ?? 9999));
+
+                    leaderboardTableBody.innerHTML = "";
+                    standings.forEach((team) => {
+                        const li = document.createElement("li");
+                        const rank = team.rank ?? 99;
+                        
+                        let rankColor = "text-muted-foreground";
+                        let borderColor = "border-l-transparent";
+                        
+                        if (rank === 1) {
+                            rankColor = "text-[color:var(--color-gold)]";
+                            borderColor = "border-l-[color:var(--color-gold)]";
+                        } else if (rank === 2) {
+                            rankColor = "text-[color:var(--color-silver)]";
+                            borderColor = "border-l-[color:var(--color-silver)]";
+                        } else if (rank === 3) {
+                            rankColor = "text-[color:var(--color-bronze)]";
+                            borderColor = "border-l-[color:var(--color-bronze)]";
+                        }
+                        
+                        li.className = `grid grid-cols-[80px_1fr_120px] items-center gap-4 border-b border-border border-l-2 ${borderColor} px-6 py-4 transition-colors last:border-b-0 hover:bg-surface-2`;
+                        
+                        const rankStr = String(rank).padStart(2, '0');
+                        const scoreVal = typeof team.score === 'number' ? team.score : 0;
+                        
+                        li.innerHTML = `
+                            <span class="font-mono text-sm font-bold tabular-nums ${rankColor}">${rankStr}</span>
+                            <span class="text-sm font-semibold text-foreground truncate">${sanitizeHTML(team.teamName || "Unnamed Team")}</span>
+                            <span class="text-right font-mono text-sm font-semibold text-accent tabular-nums">${scoreVal.toLocaleString()}</span>
+                        `;
+                        leaderboardTableBody.appendChild(li);
+                    });
+
+                    const leaderboardStatus = document.getElementById("leaderboardStatusMessage");
+                    if (leaderboardStatus) leaderboardStatus.textContent = "";
+
+                } catch (error) {
+                    console.error("Error loading leaderboard standings:", error);
+                    leaderboardTableBody.innerHTML = `<li class="p-6 text-center text-sm text-muted-foreground">Failed to load leaderboard.</li>`;
                 }
-                
-                li.className = `grid grid-cols-[80px_1fr_120px] items-center gap-4 border-b border-border border-l-2 ${borderColor} px-6 py-4 transition-colors last:border-b-0 hover:bg-surface-2`;
-                
-                const rankStr = String(rank).padStart(2, '0');
-                const scoreVal = typeof team.score === 'number' ? team.score : 0;
-                
-                li.innerHTML = `
-                    <span class="font-mono text-sm font-bold tabular-nums ${rankColor}">${rankStr}</span>
-                    <span class="text-sm font-semibold text-foreground truncate">${sanitizeHTML(team.teamName || "Unnamed Team")}</span>
-                    <span class="text-right font-mono text-sm font-semibold text-accent tabular-nums">${scoreVal.toLocaleString()}</span>
-                `;
-                leaderboardTableBody.appendChild(li);
             });
-
-            const leaderboardStatus = document.getElementById("leaderboardStatusMessage");
-            if (leaderboardStatus) leaderboardStatus.textContent = "";
-
         } catch (error) {
-            console.error("Error loading leaderboard:", error);
-            const leaderboardStatus = document.getElementById("leaderboardStatusMessage");
-            if (leaderboardStatus) leaderboardStatus.textContent = "Leaderboard unavailable.";
-            leaderboardTableBody.innerHTML = `<li class="p-6 text-center text-sm text-muted-foreground">Failed to load leaderboard.</li>`;
+            console.error("Error in rounds listener:", error);
         }
     });
 }
