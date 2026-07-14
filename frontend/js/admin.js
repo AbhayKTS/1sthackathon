@@ -94,11 +94,16 @@ const tabTitles = {
     announcements: ["ANNOUNCEMENTS", "Broadcast Multi-channel Alerts & Broadcasts"],
     settings: ["SYSTEM SETTINGS", "Global Platform Property Configurations"],
     "system-health": ["SYSTEM HEALTH MONITOR", "Real-time Queue Statuses & Emergency Control Deck"],
+    "admin-accounts": ["ADMIN & STAFF ACCOUNTS", "Manage Administrators, Judges, and Mentors Permissions"],
 };
 
 let tabControlsWired = false;
 
 function switchTab(tabId, sourceElement) {
+    if (tabId === "admin-accounts" && currentAdminRole !== "super_admin") {
+        return;
+    }
+
     document.querySelectorAll(".nav-item").forEach((item) => {
         item.classList.remove("active");
     });
@@ -196,6 +201,7 @@ onAuthStateChanged(auth, async (user) => {
         roleBadgeDisplay.textContent = currentAdminRole === "super_admin" ? "SUPER ADMIN" : "ADMINISTRATOR";
         if (currentAdminRole === "super_admin") {
             document.body.classList.add("is-superadmin");
+            startStartupTask("admin accounts tab", initAdminAccounts);
         }
 
         wireTabControls();
@@ -1585,4 +1591,353 @@ async function initSystemHealth() {
             }
         });
     }
+}
+
+// ─── TAB: ADMIN ACCOUNTS ──────────────────────────────────────────────────────
+const ROLE_DEFAULTS = {
+    admin: {
+        canEditScores: false,
+        canPublishScores: false,
+        canManageRounds: true,
+        canManageTeams: true,
+        canSendEmails: true,
+        canViewLogs: true
+    },
+    judge: {
+        canEditScores: true,
+        canPublishScores: false,
+        canManageRounds: false,
+        canManageTeams: false,
+        canSendEmails: false,
+        canViewLogs: false
+    },
+    mentor: {
+        canEditScores: false,
+        canPublishScores: false,
+        canManageRounds: false,
+        canManageTeams: false,
+        canSendEmails: false,
+        canViewLogs: false
+    },
+    volunteer: {
+        canEditScores: false,
+        canPublishScores: false,
+        canManageRounds: false,
+        canManageTeams: false,
+        canSendEmails: false,
+        canViewLogs: false
+    }
+};
+
+let currentEditingAdmin = null;
+
+function applyRoleDefaults(role) {
+    const defaults = ROLE_DEFAULTS[role];
+    if (defaults) {
+        const editScores = document.getElementById("permEditScores");
+        const publishScores = document.getElementById("permPublishScores");
+        const manageRounds = document.getElementById("permManageRounds");
+        const manageTeams = document.getElementById("permManageTeams");
+        const sendEmails = document.getElementById("permSendEmails");
+        const viewLogs = document.getElementById("permViewLogs");
+
+        if (editScores) editScores.checked = defaults.canEditScores;
+        if (publishScores) publishScores.checked = defaults.canPublishScores;
+        if (manageRounds) manageRounds.checked = defaults.canManageRounds;
+        if (manageTeams) manageTeams.checked = defaults.canManageTeams;
+        if (sendEmails) sendEmails.checked = defaults.canSendEmails;
+        if (viewLogs) viewLogs.checked = defaults.canViewLogs;
+    }
+}
+
+function startEditingAdmin(user) {
+    currentEditingAdmin = user;
+    
+    const formTitle = document.getElementById("adminFormTitle");
+    const formUserId = document.getElementById("adminFormUserId");
+    const nameInput = document.getElementById("adminFormName");
+    const emailInput = document.getElementById("adminFormEmail");
+    const roleSelect = document.getElementById("adminFormRole");
+    const submitBtn = document.getElementById("btnSubmitAdminForm");
+    const cancelBtn = document.getElementById("btnCancelAdminEdit");
+
+    if (formTitle) formTitle.textContent = `Edit Account: ${user.displayName || user.email}`;
+    if (formUserId) formUserId.value = user.uid;
+    
+    if (nameInput) {
+        nameInput.value = user.displayName || "";
+        nameInput.disabled = true;
+    }
+    if (emailInput) {
+        emailInput.value = user.email || "";
+        emailInput.disabled = true;
+    }
+    if (roleSelect) {
+        roleSelect.value = user.role;
+    }
+    
+    const editScores = document.getElementById("permEditScores");
+    const publishScores = document.getElementById("permPublishScores");
+    const manageRounds = document.getElementById("permManageRounds");
+    const manageTeams = document.getElementById("permManageTeams");
+    const sendEmails = document.getElementById("permSendEmails");
+    const viewLogs = document.getElementById("permViewLogs");
+
+    if (editScores) editScores.checked = !!user.canEditScores;
+    if (publishScores) publishScores.checked = !!user.canPublishScores;
+    if (manageRounds) manageRounds.checked = !!user.canManageRounds;
+    if (manageTeams) manageTeams.checked = !!user.canManageTeams;
+    if (sendEmails) sendEmails.checked = !!user.canSendEmails;
+    if (viewLogs) viewLogs.checked = !!user.canViewLogs;
+    
+    if (submitBtn) submitBtn.textContent = "Save Changes";
+    if (cancelBtn) cancelBtn.classList.remove("hidden");
+}
+
+function cancelEditingAdmin() {
+    currentEditingAdmin = null;
+    
+    const formTitle = document.getElementById("adminFormTitle");
+    const formUserId = document.getElementById("adminFormUserId");
+    const nameInput = document.getElementById("adminFormName");
+    const emailInput = document.getElementById("adminFormEmail");
+    const roleSelect = document.getElementById("adminFormRole");
+    const submitBtn = document.getElementById("btnSubmitAdminForm");
+    const cancelBtn = document.getElementById("btnCancelAdminEdit");
+
+    if (formTitle) formTitle.textContent = "Create New Account";
+    if (formUserId) formUserId.value = "";
+    
+    if (nameInput) {
+        nameInput.value = "";
+        nameInput.disabled = false;
+    }
+    if (emailInput) {
+        emailInput.value = "";
+        emailInput.disabled = false;
+    }
+    
+    if (roleSelect) {
+        roleSelect.selectedIndex = 0;
+        applyRoleDefaults(roleSelect.value);
+    }
+    
+    if (submitBtn) submitBtn.textContent = "Create & Invite";
+    if (cancelBtn) cancelBtn.classList.add("hidden");
+}
+
+async function fetchAndRenderAdminAccounts() {
+    const tbody = document.getElementById("adminAccountsTableBody");
+    if (!tbody) return;
+
+    try {
+        const response = await fetch(`${API_BASE}/admin/permissions?limit=100`, {
+            headers: { Authorization: `Bearer ${idToken}` }
+        });
+        if (!response.ok) throw new Error("Failed to fetch admin directory.");
+        const result = await response.json();
+        const users = result.data?.users ?? [];
+
+        tbody.innerHTML = "";
+        
+        const adminRoles = ["super_admin", "admin", "judge", "mentor", "volunteer"];
+        const adminUsers = users.filter(u => adminRoles.includes(u.role));
+
+        if (adminUsers.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--muted-foreground);">No admin accounts found.</td></tr>';
+            return;
+        }
+
+        adminUsers.forEach(u => {
+            const tr = document.createElement("tr");
+            const statusText = u.isActive !== false ? "Active" : "Disabled";
+            const statusClass = u.isActive !== false ? "badge-verified" : "badge-gray";
+            const roleClass = u.role === "super_admin" ? "badge-verified" : "badge-gray";
+
+            tr.innerHTML = `
+                <td><strong>${sanitizeHTML(u.displayName || "No Name")}</strong></td>
+                <td>${sanitizeHTML(u.email)}</td>
+                <td><span class="role-tag ${roleClass}">${sanitizeHTML(u.role)}</span></td>
+                <td><span class="role-tag ${statusClass}">${statusText}</span></td>
+                <td>
+                    <div style="display: flex; gap: 8px;">
+                        <button type="button" class="btn-outline btn-edit-perms" style="padding: 4px 8px; font-size: 10px;">Edit</button>
+                        ${u.role !== 'super_admin' ? `<button type="button" class="btn-outline btn-delete-admin" style="padding: 4px 8px; font-size: 10px; border-color: #ef4444; color: #ef4444;">Delete</button>` : ''}
+                    </div>
+                </td>
+            `;
+
+            tr.querySelector(".btn-edit-perms").addEventListener("click", () => {
+                startEditingAdmin(u);
+            });
+
+            const delBtn = tr.querySelector(".btn-delete-admin");
+            if (delBtn) {
+                delBtn.addEventListener("click", async () => {
+                    if (!confirm(`Are you sure you want to remove admin access for ${u.displayName || u.email}?`)) return;
+                    delBtn.disabled = true;
+                    try {
+                        const res = await fetch(`${API_BASE}/admin/admins`, {
+                            method: "DELETE",
+                            headers: {
+                                "Content-Type": "application/json",
+                                Authorization: `Bearer ${idToken}`
+                            },
+                            body: JSON.stringify({ uid: u.uid })
+                        });
+                        if (!res.ok) {
+                            const errData = await res.json();
+                            throw new Error(errData.message || "Failed to remove admin access.");
+                        }
+                        showToast(`Admin access for ${u.displayName || u.email} removed.`);
+                        await fetchAndRenderAdminAccounts();
+                    } catch (err) {
+                        showToast(err.message, "error");
+                        delBtn.disabled = false;
+                    }
+                });
+            }
+
+            tbody.appendChild(tr);
+        });
+    } catch (err) {
+        console.error("Error loading admin accounts:", err);
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: #ef4444;">Error: ${sanitizeHTML(err.message)}</td></tr>`;
+    }
+}
+
+async function initAdminAccounts() {
+    const form = document.getElementById("adminAccountForm");
+    if (form) {
+        form.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById("btnSubmitAdminForm");
+            if (!btn) return;
+            btn.disabled = true;
+            const originalText = btn.textContent;
+            btn.textContent = "Processing...";
+
+            try {
+                if (currentEditingAdmin) {
+                    const userId = document.getElementById("adminFormUserId").value;
+                    const response = await fetch(`${API_BASE}/admin/permissions/${userId}`, {
+                        method: "PATCH",
+                        headers: {
+                            "Content-Type": "application/json",
+                            Authorization: `Bearer ${idToken}`
+                        },
+                        body: JSON.stringify({
+                            role: document.getElementById("adminFormRole").value,
+                            canEditScores: document.getElementById("permEditScores").checked,
+                            canPublishScores: document.getElementById("permPublishScores").checked,
+                            canManageRounds: document.getElementById("permManageRounds").checked,
+                            canManageTeams: document.getElementById("permManageTeams").checked,
+                            canSendEmails: document.getElementById("permSendEmails").checked,
+                            canViewLogs: document.getElementById("permViewLogs").checked
+                        })
+                    });
+                    if (!response.ok) {
+                        const errData = await response.json();
+                        throw new Error(errData.message || "Failed to update permissions.");
+                    }
+                    showToast("Permissions updated successfully.");
+                    cancelEditingAdmin();
+                } else {
+                    const displayName = document.getElementById("adminFormName").value;
+                    const email = document.getElementById("adminFormEmail").value;
+                    const role = document.getElementById("adminFormRole").value;
+
+                    const response = await fetch(`${API_BASE}/admin/permissions`, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            Authorization: `Bearer ${idToken}`
+                        },
+                        body: JSON.stringify({
+                            displayName,
+                            email,
+                            role
+                        })
+                    });
+                    if (!response.ok) {
+                        const errData = await response.json();
+                        throw new Error(errData.message || "Failed to create account.");
+                    }
+
+                    showToast(`Account created successfully and invite email queued.`);
+
+                    const roleDefaults = ROLE_DEFAULTS[role];
+                    const hasCustomPermissions = 
+                        document.getElementById("permEditScores").checked !== roleDefaults.canEditScores ||
+                        document.getElementById("permPublishScores").checked !== roleDefaults.canPublishScores ||
+                        document.getElementById("permManageRounds").checked !== roleDefaults.canManageRounds ||
+                        document.getElementById("permManageTeams").checked !== roleDefaults.canManageTeams ||
+                        document.getElementById("permSendEmails").checked !== roleDefaults.canSendEmails ||
+                        document.getElementById("permViewLogs").checked !== roleDefaults.canViewLogs;
+
+                    if (hasCustomPermissions) {
+                        btn.textContent = "Saving custom permissions...";
+                        await new Promise(resolve => setTimeout(resolve, 1500));
+                        const userQuery = query(collection(db, "users"), where("email", "==", email.toLowerCase().trim()));
+                        const userSnap = await getDocs(userQuery);
+                        if (!userSnap.empty) {
+                            const newUid = userSnap.docs[0].id;
+                            await fetch(`${API_BASE}/admin/permissions/${newUid}`, {
+                                method: "PATCH",
+                                headers: {
+                                    "Content-Type": "application/json",
+                                    Authorization: `Bearer ${idToken}`
+                                },
+                                body: JSON.stringify({
+                                    canEditScores: document.getElementById("permEditScores").checked,
+                                    canPublishScores: document.getElementById("permPublishScores").checked,
+                                    canManageRounds: document.getElementById("permManageRounds").checked,
+                                    canManageTeams: document.getElementById("permManageTeams").checked,
+                                    canSendEmails: document.getElementById("permSendEmails").checked,
+                                    canViewLogs: document.getElementById("permViewLogs").checked
+                                })
+                            });
+                        }
+                    }
+
+                    cancelEditingAdmin();
+                }
+                await fetchAndRenderAdminAccounts();
+            } catch (err) {
+                showToast(err.message, "error");
+            } finally {
+                btn.disabled = false;
+                btn.textContent = originalText;
+            }
+        });
+    }
+
+    const btnCancel = document.getElementById("btnCancelAdminEdit");
+    if (btnCancel) {
+        btnCancel.addEventListener("click", () => {
+            cancelEditingAdmin();
+        });
+    }
+
+    const btnRefresh = document.getElementById("btnRefreshAdminAccounts");
+    if (btnRefresh) {
+        btnRefresh.addEventListener("click", async () => {
+            btnRefresh.disabled = true;
+            await fetchAndRenderAdminAccounts();
+            showToast("Admin directory refreshed.");
+            btnRefresh.disabled = false;
+        });
+    }
+
+    const roleSelect = document.getElementById("adminFormRole");
+    if (roleSelect) {
+        roleSelect.addEventListener("change", (e) => {
+            if (!currentEditingAdmin) {
+                applyRoleDefaults(e.target.value);
+            }
+        });
+        applyRoleDefaults(roleSelect.value);
+    }
+
+    await fetchAndRenderAdminAccounts();
 }

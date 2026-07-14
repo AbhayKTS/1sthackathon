@@ -480,10 +480,13 @@
         }
 
         .superadmin-only {
-            display: none;
+            display: none !important;
         }
         body.is-superadmin .superadmin-only {
-            display: block;
+            display: block !important;
+        }
+        body.is-superadmin button.superadmin-only {
+            display: flex !important;
         }
 
         /* Layout columns */
@@ -524,6 +527,7 @@
                 <button type="button" class="nav-item" data-tab="import">Registration Import</button>
                 <button type="button" class="nav-item" data-tab="teams">Teams</button>
                 <button type="button" class="nav-item" data-tab="users">Users</button>
+                <button type="button" class="nav-item superadmin-only" data-tab="admin-accounts">Admin Accounts</button>
                 <button type="button" class="nav-item" data-tab="rounds">Round Manager</button>
                 <button type="button" class="nav-item" data-tab="mentor">Mentor Sessions</button>
                 <button type="button" class="nav-item" data-tab="submissions">Submissions</button>
@@ -748,6 +752,95 @@
                                 <tr><td colspan="4" style="text-align: center; color: var(--muted-foreground);">Loading verified accounts...</td></tr>
                             </tbody>
                         </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: Admin Accounts -->
+            <div id="panel-admin-accounts" class="tab-panel superadmin-only">
+                <div class="layout-columns">
+                    <div class="glass-card">
+                        <div class="card-title-section" style="display: flex; justify-content: space-between; align-items: center;">
+                            <span class="card-title">Admin & Staff Directory</span>
+                            <button type="button" id="btnRefreshAdminAccounts" class="btn-outline" style="padding: 6px 12px; font-size: 10px;">Refresh Directory</button>
+                        </div>
+                        <div class="data-table-wrapper">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Email</th>
+                                        <th>Role</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="adminAccountsTableBody">
+                                    <tr><td colspan="5" style="text-align: center; color: var(--muted-foreground);">Loading admin accounts...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="glass-card">
+                        <div class="card-title-section">
+                            <span class="card-title" id="adminFormTitle">Create New Account</span>
+                        </div>
+                        <form id="adminAccountForm" class="dash-form">
+                            <input type="hidden" id="adminFormUserId" value="">
+                            <div class="form-group">
+                                <label class="form-label" for="adminFormName">NAME</label>
+                                <input type="text" id="adminFormName" class="form-input" required placeholder="John Doe">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="adminFormEmail">EMAIL</label>
+                                <input type="email" id="adminFormEmail" class="form-input" required placeholder="john@example.com">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="adminFormRole">ROLE</label>
+                                <select id="adminFormRole" class="form-select" required>
+                                    <option value="admin">Admin</option>
+                                    <option value="judge">Judge</option>
+                                    <option value="mentor">Mentor</option>
+                                    <option value="volunteer">Volunteer</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group" style="margin-top: 16px;">
+                                <label class="form-label">PERMISSIONS</label>
+                                <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
+                                    <label style="display: flex; align-items: center; gap: 8px; font-size: 11px; cursor: pointer;">
+                                        <input type="checkbox" id="permEditScores" class="form-checkbox">
+                                        Can Edit Scores
+                                    </label>
+                                    <label style="display: flex; align-items: center; gap: 8px; font-size: 11px; cursor: pointer;">
+                                        <input type="checkbox" id="permPublishScores" class="form-checkbox">
+                                        Can Publish Scores
+                                    </label>
+                                    <label style="display: flex; align-items: center; gap: 8px; font-size: 11px; cursor: pointer;">
+                                        <input type="checkbox" id="permManageRounds" class="form-checkbox">
+                                        Can Manage Rounds
+                                    </label>
+                                    <label style="display: flex; align-items: center; gap: 8px; font-size: 11px; cursor: pointer;">
+                                        <input type="checkbox" id="permManageTeams" class="form-checkbox">
+                                        Can Manage Teams
+                                    </label>
+                                    <label style="display: flex; align-items: center; gap: 8px; font-size: 11px; cursor: pointer;">
+                                        <input type="checkbox" id="permSendEmails" class="form-checkbox">
+                                        Can Send Emails
+                                    </label>
+                                    <label style="display: flex; align-items: center; gap: 8px; font-size: 11px; cursor: pointer;">
+                                        <input type="checkbox" id="permViewLogs" class="form-checkbox">
+                                        Can View Logs
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div style="display: flex; gap: 8px; margin-top: 20px;">
+                                <button type="submit" id="btnSubmitAdminForm" class="btn-primary" style="flex: 1;">Create & Invite</button>
+                                <button type="button" id="btnCancelAdminEdit" class="btn-outline hidden" style="flex: 1;">Cancel</button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             </div>

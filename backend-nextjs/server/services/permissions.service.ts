@@ -227,6 +227,7 @@ export async function listAllPermissions(opts: {
       role: userData['role'],
       displayName: userData['displayName'] || '',
       teamId: userData['teamId'] || null,
+      isActive: userData['isActive'] !== false,
       ...(permSnap?.exists ? permSnap.data() : {}),
     };
   });
