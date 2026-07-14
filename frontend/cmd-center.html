@@ -1095,7 +1095,10 @@
 
                 <div class="glass-card" style="margin-bottom: 24px;">
                     <div class="card-title-section" style="display: flex; justify-content: space-between; align-items: center;">
-                        <span class="card-title">Background Queue Workers Control Deck</span>
+                        <div>
+                            <span class="card-title">Background Queue Workers Control Deck</span>
+                            <div style="font-size: 11px; color: var(--muted-foreground); margin-top: 4px;">Last successful worker run: <span id="lastSuccessfulWorkerRun" style="color: var(--primary); font-weight: bold;">Never</span></div>
+                        </div>
                         <button type="button" id="btnRefreshWorkers" class="btn-outline" style="padding: 6px 12px; font-size: 10px;">Refresh Stats</button>
                     </div>
                     <div class="data-table-wrapper">

@@ -1293,6 +1293,22 @@ async function initSystemHealth() {
             renderWorker('mail', 'Mail');
             renderWorker('sheets', 'Sheets');
             renderWorker('scheduler', 'Scheduler');
+
+            let latestSuccessfulTime = null;
+            ['mail', 'sheets', 'scheduler'].forEach(wKey => {
+                const w = data[wKey] || {};
+                if (w.lastRun) {
+                    const timeMs = typeof w.lastRun.seconds === 'number' ? w.lastRun.seconds * 1000 : new Date(w.lastRun).getTime();
+                    if (!w.lastError && (!latestSuccessfulTime || timeMs > latestSuccessfulTime)) {
+                        latestSuccessfulTime = timeMs;
+                    }
+                }
+            });
+
+            const lastCronEl = document.getElementById("lastSuccessfulWorkerRun");
+            if (lastCronEl) {
+                lastCronEl.textContent = latestSuccessfulTime ? new Date(latestSuccessfulTime).toLocaleString() : "Never";
+            }
         } catch (e) {
             console.error("Worker stats fetch failed:", e);
         }

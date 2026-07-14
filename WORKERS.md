@@ -43,3 +43,11 @@ To prevent hanging processes from exhausting runner limits or Vercel execution t
 
 ### 3. Fail-safe Sequencer (Continue on Error)
 The workflow step runs include `continue-on-error: true`. If a worker endpoint fails (e.g. returns a 500 error or times out), the runner logs the error details (`--fail-with-body`) but continues to invoke subsequent worker steps. One worker failure never blocks others from executing.
+
+---
+
+## Verifying Cron Status
+
+1. **GitHub Actions**: Navigate to `Actions` in your repository. Locate the **Background Queue Workers Runner** workflow and verify it is running successfully every 5 minutes.
+2. **Admin Control Deck**: Under the **System Health** tab in the command center (`cmd-center.html`), look at the **Background Queue Workers Control Deck** section to see the real-time status of each worker and the **Last successful worker run** timestamp.
+
