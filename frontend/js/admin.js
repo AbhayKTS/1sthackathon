@@ -206,6 +206,7 @@ onAuthStateChanged(auth, async (user) => {
         startStartupTask("teams realtime", initTeamsRealtime);
         startStartupTask("submissions realtime", initSubmissionsRealtime);
         startStartupTask("user accounts", initUserAccounts);
+        startStartupTask("rounds tab", initRoundsTab);
         startStartupTask("mentor sessions", initMentorSessions);
         startStartupTask("evaluations", initEvaluations);
         startStartupTask("mail queue", initMailQueue);
@@ -263,22 +264,26 @@ function initDashboardRealtime() {
         const roundSelect = document.getElementById("roundSelect");
         const deadlineRoundSelect = document.getElementById("deadlineRoundSelect");
         
-        roundSelect.innerHTML = '<option value="">Select a round to activate...</option>';
-        deadlineRoundSelect.innerHTML = '<option value="">Select round to set deadline...</option>';
+        if (roundSelect) roundSelect.innerHTML = '<option value="">Select a round to activate...</option>';
+        if (deadlineRoundSelect) deadlineRoundSelect.innerHTML = '<option value="">Select round to set deadline...</option>';
         
         snap.docs.forEach(d => {
             const data = d.data();
             const optionText = `${data.title} (${data.status})`;
             
-            const opt1 = document.createElement("option");
-            opt1.value = d.id;
-            opt1.textContent = optionText;
-            roundSelect.appendChild(opt1);
+            if (roundSelect) {
+                const opt1 = document.createElement("option");
+                opt1.value = d.id;
+                opt1.textContent = optionText;
+                roundSelect.appendChild(opt1);
+            }
 
-            const opt2 = document.createElement("option");
-            opt2.value = d.id;
-            opt2.textContent = optionText;
-            deadlineRoundSelect.appendChild(opt2);
+            if (deadlineRoundSelect) {
+                const opt2 = document.createElement("option");
+                opt2.value = d.id;
+                opt2.textContent = optionText;
+                deadlineRoundSelect.appendChild(opt2);
+            }
         });
 
         if (activeRound) {
@@ -641,94 +646,170 @@ async function initUserAccounts() {
 }
 
 // ─── TAB 5: ROUND MANAGER ────────────────────────────────────────────────────
-const activateRoundBtn = document.getElementById("activateRoundBtn");
-if (activateRoundBtn) {
-    activateRoundBtn.addEventListener("click", async () => {
-        const roundId = document.getElementById("roundSelect").value;
-        if (!roundId) return;
+async function fetchAndRenderRounds() {
+    const container = document.getElementById("roundsCardsContainer");
+    if (!container) return;
 
-        activateRoundBtn.disabled = true;
-        try {
-            const roundDoc = await getDoc(doc(db, "rounds", roundId));
-            if (!roundDoc.exists()) throw new Error("Round not found in database.");
-            const roundData = roundDoc.data();
-            const roundTitle = roundData.title || roundId;
-            const roundDesc = roundData.description || "";
+    try {
+        const response = await fetch(`${API_BASE}/admin/rounds`, {
+            headers: { Authorization: `Bearer ${idToken}` }
+        });
+        if (!response.ok) throw new Error("Failed to fetch rounds.");
+        const result = await response.json();
+        const rounds = result.data?.rounds || [];
 
-            const response = await fetch(`${API_BASE}/admin/rounds/activate`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${idToken}`
-                },
-                body: JSON.stringify({
-                    roundId,
-                    roundTitle,
-                    roundDesc
-                })
+        container.innerHTML = "";
+        if (rounds.length === 0) {
+            container.innerHTML = '<div style="font-size: 11px; color: var(--muted-foreground); text-align: center; grid-column: 1/-1;">No rounds found.</div>';
+            return;
+        }
+
+        rounds.forEach(r => {
+            const card = document.createElement("div");
+            card.className = "glass-card";
+            card.style.display = "flex";
+            card.style.flexDirection = "column";
+            card.style.gap = "12px";
+            card.style.padding = "20px";
+
+            // Format deadline date for datetime-local value (YYYY-MM-DDTHH:MM)
+            let deadlineVal = "";
+            if (r.deadline) {
+                const date = new Date(typeof r.deadline.seconds === 'number' ? r.deadline.seconds * 1000 : r.deadline);
+                // Adjust to local timezone
+                const tzOffset = date.getTimezoneOffset() * 60000;
+                const localISOTime = new Date(date.getTime() - tzOffset).toISOString().slice(0, 16);
+                deadlineVal = localISOTime;
+            }
+
+            const statusClass = r.status === "Active" ? "badge-verified" : (r.status === "Locked" ? "badge-amber" : "badge-gray");
+
+            card.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid var(--border); padding-bottom: 10px; margin-bottom: 8px;">
+                    <div>
+                        <h4 style="margin: 0; font-size: 1.1rem; color: #fff; font-family: 'Zen Dots', sans-serif;">${sanitizeHTML(r.title)}</h4>
+                        <span style="font-size: 10px; color: var(--muted-foreground); font-family: var(--font-mono);">${sanitizeHTML(r.id)}</span>
+                    </div>
+                    <span class="role-tag ${statusClass}">${sanitizeHTML(r.status)}</span>
+                </div>
+                <div style="font-size: 12px; color: var(--muted-foreground); margin-bottom: 8px; flex: 1;">
+                    ${sanitizeHTML(r.description || "No description provided.")}
+                </div>
+                <div class="form-group" style="margin-bottom: 12px;">
+                    <label class="form-label" style="font-size: 10px;">SUBMISSION DEADLINE</label>
+                    <input type="datetime-local" class="form-input deadline-picker" value="${deadlineVal}">
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    <button type="button" class="btn-outline btn-activate" style="flex: 1; border-color: var(--accent); color: var(--accent); font-size: 11px; padding: 6px 12px;" ${r.status === 'Active' ? 'disabled style="opacity: 0.5; cursor: not-allowed; border-color: var(--border); color: var(--muted-foreground);"' : ''}>Activate</button>
+                    <button type="button" class="btn-outline btn-deactivate" style="flex: 1; border-color: #ef4444; color: #ef4444; font-size: 11px; padding: 6px 12px;" ${r.status !== 'Active' ? 'disabled style="opacity: 0.5; cursor: not-allowed; border-color: var(--border); color: var(--muted-foreground);"' : ''}>Deactivate</button>
+                    <button type="button" class="btn-primary btn-save" style="flex: 1; font-size: 11px; padding: 6px 12px;">Save</button>
+                </div>
+            `;
+
+            // Wire button events
+            const actBtn = card.querySelector(".btn-activate");
+            const deactBtn = card.querySelector(".btn-deactivate");
+            const saveBtn = card.querySelector(".btn-save");
+            const deadlineInput = card.querySelector(".deadline-picker");
+
+            actBtn.addEventListener("click", async () => {
+                actBtn.disabled = true;
+                actBtn.textContent = "Activating...";
+                try {
+                    const response = await fetch(`${API_BASE}/admin/rounds/activate`, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            Authorization: `Bearer ${idToken}`
+                        },
+                        body: JSON.stringify({
+                            roundId: r.id,
+                            roundTitle: r.title,
+                            roundDesc: r.description || "Active Round"
+                        })
+                    });
+                    if (!response.ok) throw new Error("Failed to activate round.");
+                    showToast(`Round ${r.title} activated successfully!`);
+                    await fetchAndRenderRounds();
+                } catch (err) {
+                    showToast(err.message, "error");
+                } finally {
+                    actBtn.disabled = false;
+                    actBtn.textContent = "Activate";
+                }
             });
 
-            if (!response.ok) throw new Error("Activation failed.");
-            showToast("Round activated successfully!");
-        } catch (err) {
-            showToast(err.message, "error");
-        } finally {
-            activateRoundBtn.disabled = false;
-        }
-    });
+            deactBtn.addEventListener("click", async () => {
+                deactBtn.disabled = true;
+                deactBtn.textContent = "Deactivating...";
+                try {
+                    const response = await fetch(`${API_BASE}/admin/rounds/${r.id}/transition`, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            Authorization: `Bearer ${idToken}`
+                        },
+                        body: JSON.stringify({ to: "Locked" })
+                    });
+                    if (!response.ok) throw new Error("Failed to deactivate round.");
+                    showToast(`Round ${r.title} deactivated (Locked).`);
+                    await fetchAndRenderRounds();
+                } catch (err) {
+                    showToast(err.message, "error");
+                } finally {
+                    deactBtn.disabled = false;
+                    deactBtn.textContent = "Deactivate";
+                }
+            });
+
+            saveBtn.addEventListener("click", async () => {
+                const deadlineStr = deadlineInput.value;
+                if (!deadlineStr) {
+                    showToast("Please select a valid deadline date and time.", "error");
+                    return;
+                }
+                saveBtn.disabled = true;
+                saveBtn.textContent = "Saving...";
+                try {
+                    const timeDate = new Date(deadlineStr);
+                    const response = await fetch(`${API_BASE}/admin/rounds`, {
+                        method: "PATCH",
+                        headers: {
+                            "Content-Type": "application/json",
+                            Authorization: `Bearer ${idToken}`
+                        },
+                        body: JSON.stringify({ roundId: r.id, deadline: timeDate.toISOString() })
+                    });
+                    if (!response.ok) throw new Error("Failed to save deadline.");
+                    showToast(`Deadline for ${r.title} saved successfully!`);
+                    await fetchAndRenderRounds();
+                } catch (err) {
+                    showToast(err.message, "error");
+                } finally {
+                    saveBtn.disabled = false;
+                    saveBtn.textContent = "Save";
+                }
+            });
+
+            container.appendChild(card);
+        });
+    } catch (e) {
+        console.error("Error loading rounds list:", e);
+        container.innerHTML = `<div style="font-size: 11px; color: #ef4444; text-align: center; grid-column: 1/-1;">Error loading rounds: ${sanitizeHTML(e.message)}</div>`;
+    }
 }
 
-const deactivateRoundBtn = document.getElementById("deactivateRoundBtn");
-if (deactivateRoundBtn) {
-    deactivateRoundBtn.addEventListener("click", async () => {
-        deactivateRoundBtn.disabled = true;
-        try {
-            const response = await fetch(`${API_BASE}/admin/rounds/activate`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${idToken}`
-                },
-                body: JSON.stringify({ deactivateAll: true })
-            });
-
-            if (!response.ok) throw new Error("Deactivation failed.");
-            showToast("All rounds deactivated.");
-        } catch (err) {
-            showToast(err.message, "error");
-        } finally {
-            deactivateRoundBtn.disabled = false;
-        }
-    });
-}
-
-const setDeadlineBtn = document.getElementById("setDeadlineBtn");
-if (setDeadlineBtn) {
-    setDeadlineBtn.addEventListener("click", async () => {
-        const roundId = document.getElementById("deadlineRoundSelect").value;
-        const deadlineStr = document.getElementById("deadlineInput").value;
-        if (!roundId || !deadlineStr) return;
-
-        setDeadlineBtn.disabled = true;
-        try {
-            const timeDate = new Date(deadlineStr);
-            const response = await fetch(`${API_BASE}/admin/rounds`, {
-                method: "PATCH",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${idToken}`
-                },
-                body: JSON.stringify({ roundId, deadline: timeDate.toISOString() })
-            });
-
-            if (!response.ok) throw new Error("Deadline set failed.");
-            showToast("Deadline configured successfully!");
-        } catch (err) {
-            showToast(err.message, "error");
-        } finally {
-            setDeadlineBtn.disabled = false;
-        }
-    });
+async function initRoundsTab() {
+    const btnRefresh = document.getElementById("btnRefreshRounds");
+    if (btnRefresh) {
+        btnRefresh.addEventListener("click", async () => {
+            btnRefresh.disabled = true;
+            await fetchAndRenderRounds();
+            showToast("Rounds list refreshed.");
+            btnRefresh.disabled = false;
+        });
+    }
+    await fetchAndRenderRounds();
 }
 
 // ─── TAB 6: MENTOR SESSIONS ──────────────────────────────────────────────────
