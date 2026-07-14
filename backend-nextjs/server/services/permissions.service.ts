@@ -193,7 +193,7 @@ export async function listAllPermissions(opts: {
   role?: UserRole;
   limit?: number;
   startAfter?: string;
-}): Promise<{ permissions: Array<Record<string, unknown>>; hasMore: boolean }> {
+}): Promise<{ permissions: Array<Record<string, unknown>>; users: Array<Record<string, unknown>>; hasMore: boolean }> {
   const db = getAdminDb();
   const limit = opts.limit ?? 50;
 
@@ -217,18 +217,54 @@ export async function listAllPermissions(opts: {
     users.map((u) => db.collection('permissions').doc(u.id).get())
   );
 
-  const result = users.map((userDoc, idx) => {
+  const registeredUsers = users.map((userDoc, idx) => {
     const permSnap = permissionDocs[idx];
+    const userData = userDoc.data()!;
     return {
       userId: userDoc.id,
-      email: userDoc.data()!['email'],
-      role: userDoc.data()!['role'],
-      displayName: userDoc.data()!['displayName'],
+      uid: userDoc.id,
+      email: userData['email'],
+      role: userData['role'],
+      displayName: userData['displayName'] || '',
+      teamId: userData['teamId'] || null,
       ...(permSnap?.exists ? permSnap.data() : {}),
     };
   });
 
-  return { permissions: result, hasMore };
+  // Query all approved teams to find expected members who haven't logged in/onboarded yet
+  const pendingMembers: Array<Record<string, unknown>> = [];
+  try {
+    const teamsSnap = await db.collection('teams').where('status', '==', 'Approved').get();
+    teamsSnap.docs.forEach((teamDoc) => {
+      const teamData = teamDoc.data();
+      const members = (teamData['members'] || []) as Array<{
+        uid: string | null;
+        name: string;
+        email: string;
+        role: string;
+      }>;
+
+      members.forEach((m) => {
+        if (!m.uid) {
+          pendingMembers.push({
+            userId: `PENDING-${m.email}`,
+            uid: `PENDING-${m.email}`,
+            email: m.email.toLowerCase().trim(),
+            role: m.role || 'participant_member',
+            displayName: `${m.name} (Pending Onboarding)`,
+            teamId: teamDoc.id,
+            status: 'Pending Onboarding',
+          });
+        }
+      });
+    });
+  } catch (err) {
+    console.error('[permissions.service] Failed to fetch pending members:', err);
+  }
+
+  const combinedResult = [...registeredUsers, ...pendingMembers];
+
+  return { permissions: combinedResult, users: combinedResult, hasMore };
 }
 
 /**

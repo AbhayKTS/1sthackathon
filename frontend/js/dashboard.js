@@ -199,7 +199,7 @@ async function loadTeamData(teamId) {
             const team = teamSnap.data();
 
             // Block access if not Approved
-            if (team.status === 'Incomplete') {
+            if (team.status === 'Incomplete' || team.status === 'NeedChanges') {
                 sessionStorage.setItem('rh_need_changes', JSON.stringify(team.needChangesHistory || []));
                 window.location.href = '/onboarding.html';
                 return;

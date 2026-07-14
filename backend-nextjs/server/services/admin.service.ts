@@ -413,21 +413,48 @@ export async function reviewTeam(adminUid: string, input: ReviewTeamInput): Prom
     const teamData = snap.data()!;
     teamName = teamData['teamName'] ?? 'Unknown Team';
     leaderId = teamData['leaderId'] ?? '';
+    const invitedTeamId = teamData['invitedTeamId'] as string | null;
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const updateData: any = { updatedAt: FieldValue.serverTimestamp() };
 
     if (input.action === 'approve') {
-      updateData.status = 'Verified';
+      updateData.status = 'Approved';
       updateData.verifiedAt = FieldValue.serverTimestamp();
     } else if (input.action === 'reject') {
-      updateData.status = 'Draft';
+      updateData.status = 'Rejected';
       updateData.adminNotes = input.notes ?? null;
     } else if (input.action === 'needChanges') {
+      updateData.status = 'NeedChanges';
       updateData.adminNotes = input.notes ?? null;
+      updateData.needChangesHistory = FieldValue.arrayUnion({
+        note: input.notes,
+        at: new Date(),
+        byAdminUid: adminUid,
+      });
     }
 
     tx.update(teamRef, updateData);
+
+    if (invitedTeamId) {
+      const inviteRef = db.collection('invitedTeams').doc(invitedTeamId);
+      if (input.action === 'approve') {
+        tx.update(inviteRef, {
+          status: 'Approved',
+          updatedAt: FieldValue.serverTimestamp(),
+        });
+      } else if (input.action === 'reject') {
+        tx.update(inviteRef, {
+          status: 'Rejected',
+          updatedAt: FieldValue.serverTimestamp(),
+        });
+      } else if (input.action === 'needChanges') {
+        tx.update(inviteRef, {
+          status: 'Incomplete',
+          updatedAt: FieldValue.serverTimestamp(),
+        });
+      }
+    }
   });
 
   await writeAuditLog({

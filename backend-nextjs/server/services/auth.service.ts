@@ -84,11 +84,10 @@ export async function checkInviteStatus(email: string): Promise<InviteRecord> {
     .get();
 
   if (snap.empty) {
-    // Check if the email belongs to a member of an Approved team
+    // Check if the email belongs to a member of a team
     const teamSnap = await db
       .collection('teams')
       .where('memberEmails', 'array-contains', normalizedEmail)
-      .where('status', '==', 'Approved')
       .limit(1)
       .get();
 
@@ -98,6 +97,11 @@ export async function checkInviteStatus(email: string): Promise<InviteRecord> {
 
     const teamDoc = teamSnap.docs[0]!;
     const teamData = teamDoc.data();
+
+    if (teamData.status === 'Rejected') {
+      throw Errors.forbidden('Your team application has been rejected.');
+    }
+
     const member = (teamData.members || []).find(
       (m: any) => (m.email || '').toLowerCase() === normalizedEmail
     );
@@ -106,7 +110,7 @@ export async function checkInviteStatus(email: string): Promise<InviteRecord> {
       id: `member-${teamDoc.id}-${normalizedEmail}`,
       teamName: teamData.teamName as string,
       leaderName: member ? (member.name as string) : 'Team Member',
-      status: 'Approved',
+      status: teamData.status as string,
     };
   }
 
@@ -335,11 +339,10 @@ export async function verifyOtpAndCreateSession(
       .get();
 
     if (inviteSnap.empty) {
-      // Check if they are a member of an Approved team
+      // Check if they are a member of a team
       const teamSnap = await db
         .collection('teams')
         .where('memberEmails', 'array-contains', normalizedEmail)
-        .where('status', '==', 'Approved')
         .limit(1)
         .get();
 
@@ -347,10 +350,16 @@ export async function verifyOtpAndCreateSession(
         throw Errors.notInvited();
       }
 
-      isMember = true;
       const teamDoc = teamSnap.docs[0]!;
+      const teamData = teamDoc.data();
+
+      if (teamData.status === 'Rejected') {
+        throw Errors.forbidden('Your team application has been rejected.');
+      }
+
+      isMember = true;
       memberTeamId = teamDoc.id;
-      memberInvitedTeamId = teamDoc.data().invitedTeamId || '';
+      memberInvitedTeamId = teamData.invitedTeamId || '';
       invitedTeamId = `member-${memberTeamId}-${normalizedEmail}`;
     } else {
       invitedTeamId = inviteSnap.docs[0]!.id;
