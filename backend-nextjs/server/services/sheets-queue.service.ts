@@ -4,6 +4,25 @@
  * Firestore is ALWAYS the source of truth.
  * Google Sheets is a secondary sync target for reporting/organizer views.
  *
+ * Expected Google Sheet Header Layouts:
+ *
+ * 1. Onboarding Sheet (GOOGLE_SHEET_ONBOARDING_ID):
+ *    - Team Name, leaderName, leaderEmail, leaderWhatsapp, leaderCollege, leaderCourse,
+ *      leaderGradYear, leaderGithub, leaderLinkedin,
+ *      member2Name, member2Email, member2Whatsapp, member2College, member2Course, member2GradYear, member2Role, member2Github, member2Linkedin,
+ *      member3Name, member3Email, member3Whatsapp, member3College, member3Course, member3GradYear, member3Role, member3Github, member3Linkedin,
+ *      member4Name, member4Email, member4Whatsapp, member4College, member4Course, member4GradYear, member4Role, member4Github, member4Linkedin,
+ *      teamStatus, registrationLockedAt
+ *
+ * 2. PPT Submission Sheet (GOOGLE_SHEET_PPT_ID):
+ *    - Team Name, Team ID, Round ID, Submitted At, PPT Link
+ *
+ * 3. Prototype Submission Sheet (GOOGLE_SHEET_PROTO_ID):
+ *    - Team Name, Team ID, Round ID, Submitted At, Prototype Link
+ *
+ * 4. GitHub Submission Sheet (Default/General):
+ *    - Team Name, Team ID, Round ID, Submitted At, GitHub Link, Demo Link
+ *
  * Flow:
  *   1. Submission saved to Firestore
  *   2. createSyncJob() writes to googleSheets/{jobId} with status: 'pending'
