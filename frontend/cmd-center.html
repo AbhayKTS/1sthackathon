@@ -1,1370 +1,2224 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Mission Control | RevengersHack Admin</title>
-    <link rel="icon" type="image/png" href="/assets/images/image.webp">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" href="/assets/images/image.webp" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&family=Space+Grotesk:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
     <style>
-        :root {
-            --background: #050505;
-            --foreground: #f3f4f6;
-            --surface: rgba(18, 18, 18, 0.75);
-            --surface-2: rgba(30, 30, 30, 0.5);
-            --border: rgba(255, 255, 255, 0.08);
-            --border-hover: rgba(255, 255, 255, 0.15);
-            --primary: #e50914;
-            --primary-glow: rgba(229, 9, 20, 0.2);
-            --accent: #00b4d8;
-            --accent-glow: rgba(0, 180, 216, 0.25);
-            --success: #10b981;
-            --warning: #f59e0b;
-            --muted-foreground: #8a8a8e;
-            --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-            --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
-            --font-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
-        }
+      :root {
+        --background: #050505;
+        --foreground: #f3f4f6;
+        --surface: rgba(18, 18, 18, 0.75);
+        --surface-2: rgba(30, 30, 30, 0.5);
+        --border: rgba(255, 255, 255, 0.08);
+        --border-hover: rgba(255, 255, 255, 0.15);
+        --primary: #e50914;
+        --primary-glow: rgba(229, 9, 20, 0.2);
+        --accent: #00b4d8;
+        --accent-glow: rgba(0, 180, 216, 0.25);
+        --success: #10b981;
+        --warning: #f59e0b;
+        --muted-foreground: #8a8a8e;
+        --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+        --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+        --font-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+      }
 
-        * {
-            box-sizing: border-box;
-            scrollbar-width: thin;
-            scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
-        }
+      * {
+        box-sizing: border-box;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+      }
 
-        *::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
-        }
-        *::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        *::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.15);
-            border-radius: 3px;
-        }
-        *::-webkit-scrollbar-thumb:hover {
-            background: var(--primary);
-        }
+      *::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+      }
+      *::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      *::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.15);
+        border-radius: 3px;
+      }
+      *::-webkit-scrollbar-thumb:hover {
+        background: var(--primary);
+      }
 
-        body {
-            background-color: var(--background);
-            color: var(--foreground);
-            font-family: var(--font-sans);
-            margin: 0;
-            padding: 0;
-            min-height: 100vh;
-            display: flex;
-            background-image: 
-                radial-gradient(circle at 10% 20%, rgba(229, 9, 20, 0.05) 0%, transparent 40%),
-                radial-gradient(circle at 90% 80%, rgba(0, 180, 216, 0.05) 0%, transparent 40%);
-            background-attachment: fixed;
-            overflow: hidden;
-        }
+      body {
+        background-color: var(--background);
+        color: var(--foreground);
+        font-family: var(--font-sans);
+        margin: 0;
+        padding: 0;
+        min-height: 100vh;
+        display: flex;
+        background-image:
+          radial-gradient(
+            circle at 10% 20%,
+            rgba(229, 9, 20, 0.05) 0%,
+            transparent 40%
+          ),
+          radial-gradient(
+            circle at 90% 80%,
+            rgba(0, 180, 216, 0.05) 0%,
+            transparent 40%
+          );
+        background-attachment: fixed;
+        overflow: hidden;
+      }
 
-        /* App container */
-        .app-container {
-            display: flex;
-            width: 100vw;
-            height: 100vh;
-        }
+      /* App container */
+      .app-container {
+        display: flex;
+        width: 100vw;
+        height: 100vh;
+      }
 
-        /* Sidebar navigation */
-        .sidebar {
-            width: 280px;
-            background: #0a0a0a;
-            border-right: 1px solid var(--border);
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            flex-shrink: 0;
-        }
+      /* Sidebar navigation */
+      .sidebar {
+        width: 280px;
+        background: #0a0a0a;
+        border-right: 1px solid var(--border);
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        flex-shrink: 0;
+      }
 
-        .sidebar-brand {
-            height: 64px;
-            padding: 0 24px;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            text-decoration: none;
-        }
+      .sidebar-brand {
+        height: 64px;
+        padding: 0 24px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        text-decoration: none;
+      }
 
-        .logo-icon {
-            width: 32px;
-            height: 32px;
-            background: var(--primary);
-            color: #fff;
-            font-family: var(--font-mono);
-            font-weight: 700;
-            display: grid;
-            place-items: center;
-            border-radius: 4px;
-        }
+      .logo-icon {
+        width: 32px;
+        height: 32px;
+        background: var(--primary);
+        color: #fff;
+        font-family: var(--font-mono);
+        font-weight: 700;
+        display: grid;
+        place-items: center;
+        border-radius: 4px;
+      }
 
-        .logo-text {
-            font-family: var(--font-display);
-            font-weight: 700;
-            letter-spacing: 0.15em;
-            color: #fff;
-            font-size: 13px;
-        }
+      .logo-text {
+        font-family: var(--font-display);
+        font-weight: 700;
+        letter-spacing: 0.15em;
+        color: #fff;
+        font-size: 13px;
+      }
 
-        .logo-text span {
-            color: var(--muted-foreground);
-        }
+      .logo-text span {
+        color: var(--muted-foreground);
+      }
 
-        .user-profile-section {
-            padding: 16px 24px;
-            border-bottom: 1px solid var(--border);
-            background: rgba(0, 0, 0, 0.15);
-        }
+      .user-profile-section {
+        padding: 16px 24px;
+        border-bottom: 1px solid var(--border);
+        background: rgba(0, 0, 0, 0.15);
+      }
 
-        .clearance-label {
-            font-size: 9px;
-            font-family: var(--font-mono);
-            color: var(--muted-foreground);
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            margin-bottom: 2px;
-        }
+      .clearance-label {
+        font-size: 9px;
+        font-family: var(--font-mono);
+        color: var(--muted-foreground);
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        margin-bottom: 2px;
+      }
 
-        .role-badge-display {
-            font-size: 11px;
-            font-weight: 600;
-            color: var(--primary);
-            font-family: var(--font-mono);
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
+      .role-badge-display {
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--primary);
+        font-family: var(--font-mono);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
 
-        .user-email-display {
-            font-size: 10px;
-            color: var(--muted-foreground);
-            margin-top: 4px;
-            word-break: break-all;
-            font-family: var(--font-mono);
-        }
+      .user-email-display {
+        font-size: 10px;
+        color: var(--muted-foreground);
+        margin-top: 4px;
+        word-break: break-all;
+        font-family: var(--font-mono);
+      }
 
-        .nav-menu {
-            flex: 1;
-            padding: 16px 12px;
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-            overflow-y: auto;
-        }
+      .nav-menu {
+        flex: 1;
+        padding: 16px 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        overflow-y: auto;
+      }
 
-        .nav-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 8px 12px;
-            color: #b3b3b3;
-            text-decoration: none;
-            font-size: 11px;
-            font-weight: 600;
-            font-family: var(--font-mono);
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            border-radius: 4px;
-            border: 1px solid transparent;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            background: transparent;
-            width: 100%;
-            text-align: left;
-        }
+      .nav-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 12px;
+        color: #b3b3b3;
+        text-decoration: none;
+        font-size: 11px;
+        font-weight: 600;
+        font-family: var(--font-mono);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        border-radius: 4px;
+        border: 1px solid transparent;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        background: transparent;
+        width: 100%;
+        text-align: left;
+      }
 
-        .nav-item:hover, .nav-item.active {
-            color: #fff;
-            background: rgba(255, 255, 255, 0.025);
-            border-color: var(--border);
-        }
+      .nav-item:hover,
+      .nav-item.active {
+        color: #fff;
+        background: rgba(255, 255, 255, 0.025);
+        border-color: var(--border);
+      }
 
-        .nav-item.active {
-            border-color: rgba(229, 9, 20, 0.25);
-            box-shadow: 0 0 10px var(--primary-glow);
-            color: var(--primary);
-        }
+      .nav-item.active {
+        border-color: rgba(229, 9, 20, 0.25);
+        box-shadow: 0 0 10px var(--primary-glow);
+        color: var(--primary);
+      }
 
-        .sidebar-footer {
-            padding: 16px;
-            border-top: 1px solid var(--border);
-        }
+      .sidebar-footer {
+        padding: 16px;
+        border-top: 1px solid var(--border);
+      }
 
-        .btn-logout {
-            width: 100%;
-            padding: 10px;
-            background: transparent;
-            border: 1px solid var(--border);
-            color: var(--muted-foreground);
-            font-family: var(--font-mono);
-            font-size: 10px;
-            font-weight: 600;
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
+      .btn-logout {
+        width: 100%;
+        padding: 10px;
+        background: transparent;
+        border: 1px solid var(--border);
+        color: var(--muted-foreground);
+        font-family: var(--font-mono);
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
 
-        .btn-logout:hover {
-            color: var(--primary);
-            border-color: rgba(229, 9, 20, 0.3);
-            background: rgba(229, 9, 20, 0.05);
-        }
+      .btn-logout:hover {
+        color: var(--primary);
+        border-color: rgba(229, 9, 20, 0.3);
+        background: rgba(229, 9, 20, 0.05);
+      }
 
-        /* Main Display Layout */
-        .main-content {
-            flex: 1;
-            padding: 32px 40px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-        }
+      /* Main Display Layout */
+      .main-content {
+        flex: 1;
+        padding: 32px 40px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+      }
 
-        .page-header {
-            margin-bottom: 24px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
+      .page-header {
+        margin-bottom: 24px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
 
-        .page-title {
-            font-family: var(--font-display);
-            font-size: 22px;
-            font-weight: 700;
-            letter-spacing: -0.02em;
-            margin: 0;
-            color: #fff;
-        }
+      .page-title {
+        font-family: var(--font-display);
+        font-size: 22px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        margin: 0;
+        color: #fff;
+      }
 
-        .page-subtitle {
-            font-family: var(--font-mono);
-            font-size: 9px;
-            color: var(--muted-foreground);
-            text-transform: uppercase;
-            letter-spacing: 0.15em;
-            margin-top: 4px;
-        }
+      .page-subtitle {
+        font-family: var(--font-mono);
+        font-size: 9px;
+        color: var(--muted-foreground);
+        text-transform: uppercase;
+        letter-spacing: 0.15em;
+        margin-top: 4px;
+      }
 
-        /* Glassmorphic cards */
-        .glass-card {
-            background: var(--surface);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            padding: 24px;
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
-            margin-bottom: 24px;
-        }
+      /* Glassmorphic cards */
+      .glass-card {
+        background: var(--surface);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 24px;
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+        margin-bottom: 24px;
+      }
 
-        .card-title-section {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid var(--border);
-            padding-bottom: 12px;
-            margin-bottom: 16px;
-        }
+      .card-title-section {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 12px;
+        margin-bottom: 16px;
+      }
 
-        .card-title {
-            font-family: var(--font-display);
-            font-size: 13px;
-            font-weight: 600;
-            letter-spacing: 0.05em;
-            color: #fff;
-            text-transform: uppercase;
-        }
+      .card-title {
+        font-family: var(--font-display);
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        color: #fff;
+        text-transform: uppercase;
+      }
 
-        /* Metrics */
-        .metrics-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 16px;
-            margin-bottom: 24px;
-        }
+      /* Metrics */
+      .metrics-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+      }
 
-        .metric-box {
-            background: rgba(18, 18, 18, 0.45);
-            border: 1px solid var(--border);
-            border-radius: 4px;
-            padding: 16px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
+      .metric-box {
+        background: rgba(18, 18, 18, 0.45);
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        padding: 16px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
 
-        .metric-box:hover {
-            border-color: var(--border-hover);
-            background: rgba(255, 255, 255, 0.02);
-            transform: translateY(-1px);
-        }
+      .metric-box:hover {
+        border-color: var(--border-hover);
+        background: rgba(255, 255, 255, 0.02);
+        transform: translateY(-1px);
+      }
 
-        .metric-title {
-            font-family: var(--font-mono);
-            font-size: 9px;
-            color: var(--muted-foreground);
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-            margin-bottom: 6px;
-        }
+      .metric-title {
+        font-family: var(--font-mono);
+        font-size: 9px;
+        color: var(--muted-foreground);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        margin-bottom: 6px;
+      }
 
-        .metric-value {
-            font-family: var(--font-display);
-            font-size: 2rem;
-            font-weight: 700;
-            color: #fff;
-            margin: 0;
-        }
+      .metric-value {
+        font-family: var(--font-display);
+        font-size: 2rem;
+        font-weight: 700;
+        color: #fff;
+        margin: 0;
+      }
 
-        /* Tab panels display */
-        .tab-panel {
-            display: none;
-        }
+      /* Tab panels display */
+      .tab-panel {
+        display: none;
+      }
 
-        .tab-panel.active {
-            display: block;
-        }
+      .tab-panel.active {
+        display: block;
+      }
 
-        /* Forms styling */
-        .dash-form {
-            display: flex;
-            flex-direction: column;
-            gap: 14px;
-        }
+      /* Forms styling */
+      .dash-form {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
 
-        .form-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 14px;
-        }
+      .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+      }
 
-        .form-group {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
+      .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
 
-        .form-label {
-            font-family: var(--font-mono);
-            font-size: 8px;
-            color: var(--muted-foreground);
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-        }
+      .form-label {
+        font-family: var(--font-mono);
+        font-size: 8px;
+        color: var(--muted-foreground);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
 
-        .form-input, .form-textarea, .form-select {
-            background: rgba(0, 0, 0, 0.35);
-            border: 1px solid var(--border);
-            border-radius: 4px;
-            color: #fff;
-            padding: 8px 12px;
-            font-family: var(--font-mono);
-            font-size: 12px;
-            width: 100%;
-            transition: border-color 0.2s;
-        }
+      .form-input,
+      .form-textarea,
+      .form-select {
+        background: rgba(0, 0, 0, 0.35);
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        color: #fff;
+        padding: 8px 12px;
+        font-family: var(--font-mono);
+        font-size: 12px;
+        width: 100%;
+        transition: border-color 0.2s;
+      }
 
-        .form-input:focus, .form-textarea:focus, .form-select:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 8px var(--primary-glow);
-        }
+      .form-input:focus,
+      .form-textarea:focus,
+      .form-select:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 8px var(--primary-glow);
+      }
 
-        /* Data Tables */
-        .data-table-wrapper {
-            overflow-x: auto;
-        }
+      /* Data Tables */
+      .data-table-wrapper {
+        overflow-x: auto;
+      }
 
-        .data-table {
-            width: 100%;
-            border-collapse: collapse;
-            text-align: left;
-        }
+      .data-table {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
+      }
 
-        .data-table th, .data-table td {
-            padding: 12px 14px;
-            border-bottom: 1px solid var(--border);
-        }
+      .data-table th,
+      .data-table td {
+        padding: 12px 14px;
+        border-bottom: 1px solid var(--border);
+      }
 
-        .data-table th {
-            font-family: var(--font-mono);
-            font-size: 9px;
-            color: var(--muted-foreground);
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            font-weight: 500;
-        }
+      .data-table th {
+        font-family: var(--font-mono);
+        font-size: 9px;
+        color: var(--muted-foreground);
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        font-weight: 500;
+      }
 
-        .data-table td {
-            font-size: 12px;
-        }
+      .data-table td {
+        font-size: 12px;
+      }
 
-        .data-table tbody tr:hover {
-            background: rgba(255, 255, 255, 0.015);
-        }
+      .data-table tbody tr:hover {
+        background: rgba(255, 255, 255, 0.015);
+      }
 
-        /* Badges & Tags */
-        .role-tag {
-            font-size: 9px;
-            background: rgba(255, 255, 255, 0.04);
-            padding: 3px 6px;
-            border-radius: 4px;
-            color: #fff;
-            display: inline-block;
-            border: 1px solid var(--border);
-            font-family: var(--font-mono);
-        }
+      /* Badges & Tags */
+      .role-tag {
+        font-size: 9px;
+        background: rgba(255, 255, 255, 0.04);
+        padding: 3px 6px;
+        border-radius: 4px;
+        color: #fff;
+        display: inline-block;
+        border: 1px solid var(--border);
+        font-family: var(--font-mono);
+      }
 
-        .badge-verified {
-            background: rgba(16, 185, 129, 0.1);
-            border-color: rgba(16, 185, 129, 0.2);
-            color: var(--success);
-        }
+      .badge-verified {
+        background: rgba(16, 185, 129, 0.1);
+        border-color: rgba(16, 185, 129, 0.2);
+        color: var(--success);
+      }
 
-        .badge-amber {
-            background: rgba(245, 158, 11, 0.1);
-            border-color: rgba(245, 158, 11, 0.2);
-            color: var(--warning);
-        }
+      .badge-amber {
+        background: rgba(245, 158, 11, 0.1);
+        border-color: rgba(245, 158, 11, 0.2);
+        color: var(--warning);
+      }
 
-        .badge-red {
-            background: rgba(239, 68, 68, 0.1);
-            border-color: rgba(239, 68, 68, 0.2);
-            color: var(--primary);
-        }
+      .badge-red {
+        background: rgba(239, 68, 68, 0.1);
+        border-color: rgba(239, 68, 68, 0.2);
+        color: var(--primary);
+      }
 
-        /* Buttons styling */
-        .btn-primary {
-            background: var(--primary);
-            color: #fff;
-            border: none;
-            padding: 8px 16px;
-            font-family: var(--font-mono);
-            font-weight: 600;
-            font-size: 10px;
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: filter 0.2s;
-        }
+      /* Buttons styling */
+      .btn-primary {
+        background: var(--primary);
+        color: #fff;
+        border: none;
+        padding: 8px 16px;
+        font-family: var(--font-mono);
+        font-weight: 600;
+        font-size: 10px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: filter 0.2s;
+      }
 
-        .btn-primary:hover {
-            filter: brightness(1.15);
-        }
+      .btn-primary:hover {
+        filter: brightness(1.15);
+      }
 
-        .btn-outline {
-            background: transparent;
-            color: var(--primary);
-            border: 1px solid var(--primary);
-            padding: 6px 12px;
-            font-family: var(--font-mono);
-            font-weight: 600;
-            font-size: 10px;
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
+      .btn-outline {
+        background: transparent;
+        color: var(--primary);
+        border: 1px solid var(--primary);
+        padding: 6px 12px;
+        font-family: var(--font-mono);
+        font-weight: 600;
+        font-size: 10px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
 
-        .btn-outline:hover {
-            background: rgba(229, 9, 20, 0.08);
-        }
+      .btn-outline:hover {
+        background: rgba(229, 9, 20, 0.08);
+      }
 
-        .superadmin-only {
-            display: none !important;
-        }
-        body.is-superadmin .superadmin-only {
-            display: block !important;
-        }
-        body.is-superadmin button.superadmin-only {
-            display: flex !important;
-        }
-        body.is-superadmin .tab-panel.superadmin-only {
-            display: none !important;
-        }
-        body.is-superadmin .tab-panel.superadmin-only.active {
-            display: block !important;
-        }
+      .superadmin-only {
+        display: none !important;
+      }
+      body.is-superadmin .superadmin-only {
+        display: block !important;
+      }
+      body.is-superadmin button.superadmin-only {
+        display: flex !important;
+      }
+      body.is-superadmin .tab-panel.superadmin-only {
+        display: none !important;
+      }
+      body.is-superadmin .tab-panel.superadmin-only.active {
+        display: block !important;
+      }
 
-        /* Layout columns */
+      /* Layout columns */
+      .layout-columns {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 24px;
+      }
+
+      @media (max-width: 1024px) {
         .layout-columns {
-            display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: 24px;
+          grid-template-columns: 1fr;
         }
-
-        @media (max-width: 1024px) {
-            .layout-columns {
-                grid-template-columns: 1fr;
-            }
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
         }
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
+      }
     </style>
-</head>
-<body>
-
+  </head>
+  <body>
     <div class="app-container">
-        <!-- Sidebar Navigation -->
-        <aside class="sidebar">
-            <a href="/" class="sidebar-brand">
-                <span class="logo-icon">R</span>
-                <span class="logo-text">REVENGERS<span>/</span>ADMIN</span>
-            </a>
+      <!-- Sidebar Navigation -->
+      <aside class="sidebar">
+        <a href="/" class="sidebar-brand">
+          <span class="logo-icon">R</span>
+          <span class="logo-text">REVENGERS<span>/</span>ADMIN</span>
+        </a>
 
-            <div class="user-profile-section">
-                <div class="clearance-label">Clearance Level</div>
-                <div class="role-badge-display" id="roleBadgeDisplay">Admin Panel</div>
-                <div class="user-email-display" id="userEmailDisplay">Loading...</div>
+        <div class="user-profile-section">
+          <div class="clearance-label">Clearance Level</div>
+          <div class="role-badge-display" id="roleBadgeDisplay">
+            Admin Panel
+          </div>
+          <div class="user-email-display" id="userEmailDisplay">Loading...</div>
+        </div>
+
+        <nav class="nav-menu">
+          <button type="button" class="nav-item active" data-tab="dashboard">
+            Dashboard
+          </button>
+          <button type="button" class="nav-item" data-tab="teams">Teams</button>
+          <button type="button" class="nav-item" data-tab="users">Users</button>
+          <button type="button" class="nav-item" data-tab="rounds">
+            Rounds
+          </button>
+          <button type="button" class="nav-item" data-tab="submissions">
+            Submissions
+          </button>
+          <button type="button" class="nav-item" data-tab="sheets-sync">
+            Google Sheets
+          </button>
+          <button type="button" class="nav-item" data-tab="announcements">
+            Announcements
+          </button>
+          <button type="button" class="nav-item" data-tab="workers">
+            Workers
+          </button>
+          <button
+            type="button"
+            class="nav-item superadmin-only"
+            data-tab="admin-accounts"
+          >
+            Admin Accounts
+          </button>
+          <button type="button" class="nav-item" data-tab="logs">
+            Activity Logs
+          </button>
+          <button type="button" class="nav-item" data-tab="settings">
+            Settings
+          </button>
+        </nav>
+
+        <div class="sidebar-footer">
+          <button id="logoutBtn" class="btn-logout">LOGOUT</button>
+        </div>
+      </aside>
+
+      <!-- Main Display Container -->
+      <main class="main-content">
+        <!-- Page Header -->
+        <div class="page-header">
+          <div>
+            <h1 class="page-title" id="pageTitleText">DASHBOARD OVERVIEW</h1>
+            <p class="page-subtitle" id="pageSubtitleText">
+              Central Operational Metrics
+            </p>
+          </div>
+          <div>
+            <!-- Toast Status Notification inside header -->
+            <div
+              id="toastNotification"
+              style="
+                font-family: var(--font-mono);
+                font-size: 11px;
+                padding: 6px 12px;
+                border-radius: 4px;
+                display: none;
+              "
+            ></div>
+          </div>
+        </div>
+
+        <!-- TAB 1: Dashboard Overview -->
+        <div id="panel-dashboard" class="tab-panel active">
+          <div class="metrics-grid">
+            <div
+              class="metric-box"
+              role="button"
+              tabindex="0"
+              data-tab="import"
+            >
+              <div class="metric-title" style="color: var(--accent)">
+                Invited Drafts
+              </div>
+              <div class="metric-value" id="statInvited">0</div>
+            </div>
+            <div class="metric-box" role="button" tabindex="0" data-tab="users">
+              <div class="metric-title" style="color: var(--primary)">
+                Verified Users
+              </div>
+              <div class="metric-value" id="statUsers">0</div>
+            </div>
+            <div class="metric-box" role="button" tabindex="0" data-tab="teams">
+              <div class="metric-title" style="color: var(--accent)">
+                Profiles Submitted
+              </div>
+              <div class="metric-value" id="statSubmitted">0</div>
+            </div>
+            <div class="metric-box" role="button" tabindex="0" data-tab="teams">
+              <div class="metric-title" style="color: var(--success)">
+                Approved Teams
+              </div>
+              <div class="metric-value" id="statApproved">0</div>
+            </div>
+          </div>
+
+          <div class="layout-columns">
+            <div style="display: flex; flex-direction: column; gap: 24px">
+              <!-- Active Round Widget -->
+              <div class="glass-card">
+                <div class="card-title-section">
+                  <span class="card-title" style="color: var(--accent)"
+                    >Live Round Status</span
+                  >
+                </div>
+                <div
+                  id="activeRoundStatus"
+                  style="
+                    padding: 12px;
+                    border: 1px solid var(--border);
+                    border-radius: 4px;
+                    font-family: var(--font-mono);
+                    font-size: 11px;
+                    color: var(--muted-foreground);
+                    background: rgba(0, 0, 0, 0.15);
+                    line-height: 1.5;
+                  "
+                >
+                  Checking active round...
+                </div>
+              </div>
+
+              <!-- Recent Submissions Overview -->
+              <div class="glass-card">
+                <div class="card-title-section">
+                  <span class="card-title">Recent Submissions</span>
+                </div>
+                <div class="data-table-wrapper">
+                  <table class="data-table">
+                    <thead>
+                      <tr style="border-bottom: 1px solid var(--border)">
+                        <th>Team ID</th>
+                        <th>Round</th>
+                        <th>Time</th>
+                      </tr>
+                    </thead>
+                    <tbody id="recentSubmissionsBody">
+                      <tr>
+                        <td
+                          colspan="3"
+                          style="
+                            text-align: center;
+                            color: var(--muted-foreground);
+                          "
+                        >
+                          Loading...
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </div>
 
-            <nav class="nav-menu">
-                <button type="button" class="nav-item active" data-tab="dashboard">Dashboard Overview</button>
-                <button type="button" class="nav-item" data-tab="import">Registration Import</button>
-                <button type="button" class="nav-item" data-tab="teams">Teams</button>
-                <button type="button" class="nav-item" data-tab="users">Users</button>
-                <button type="button" class="nav-item superadmin-only" data-tab="admin-accounts">Admin Accounts</button>
-                <button type="button" class="nav-item" data-tab="rounds">Round Manager</button>
-                <button type="button" class="nav-item" data-tab="mentor">Mentor Sessions</button>
-                <button type="button" class="nav-item" data-tab="submissions">Submissions</button>
-                <button type="button" class="nav-item" data-tab="evaluations">Evaluations</button>
-                <button type="button" class="nav-item" data-tab="leaderboard">Leaderboard</button>
-                <button type="button" class="nav-item" data-tab="email-queue">Email Queue</button>
-                <button type="button" class="nav-item" data-tab="sheets-sync">Google Sheets Sync</button>
-                <button type="button" class="nav-item" data-tab="logs">Activity Logs</button>
-                <button type="button" class="nav-item" data-tab="announcements">Announcements</button>
-                <button type="button" class="nav-item" data-tab="settings">Settings</button>
-                <button type="button" class="nav-item" data-tab="system-health">System Health</button>
-            </nav>
-
-            <div class="sidebar-footer">
-                <button id="logoutBtn" class="btn-logout">LOGOUT</button>
+            <div style="display: flex; flex-direction: column; gap: 24px">
+              <!-- Broadcast Stream Feed -->
+              <div class="glass-card">
+                <div class="card-title-section">
+                  <span class="card-title">Broadcast Logs</span>
+                </div>
+                <div
+                  id="announcementFeedBody"
+                  style="
+                    display: flex;
+                    flex-direction: column;
+                    gap: 12px;
+                    max-height: 380px;
+                    overflow-y: auto;
+                  "
+                >
+                  <div
+                    style="
+                      font-size: 11px;
+                      color: var(--muted-foreground);
+                      text-align: center;
+                    "
+                  >
+                    Loading stream...
+                  </div>
+                </div>
+              </div>
             </div>
-        </aside>
+          </div>
+        </div>
 
-        <!-- Main Display Container -->
-        <main class="main-content">
-            
-            <!-- Page Header -->
-            <div class="page-header">
-                <div>
-                    <h1 class="page-title" id="pageTitleText">DASHBOARD OVERVIEW</h1>
-                    <p class="page-subtitle" id="pageSubtitleText">Central Operational Metrics</p>
+        <!-- TAB 2: Teams (Merged with Import) -->
+        <div id="panel-teams" class="tab-panel">
+          <details
+            class="glass-card"
+            style="margin-bottom: 24px; cursor: pointer"
+          >
+            <summary class="card-title-section" style="outline: none">
+              <span class="card-title" style="color: var(--accent)"
+                >Registration Import Tools (Click to Expand)</span
+              >
+            </summary>
+            <div
+              class="layout-columns"
+              style="margin-top: 16px; cursor: default"
+            >
+              <div
+                class="glass-card"
+                style="border: 1px solid var(--border-hover)"
+              >
+                <div class="card-title-section">
+                  <span class="card-title" style="color: var(--accent)"
+                    >Manual Draft Creation</span
+                  >
                 </div>
-                <div>
-                    <!-- Toast Status Notification inside header -->
-                    <div id="toastNotification" style="font-family: var(--font-mono); font-size: 11px; padding: 6px 12px; border-radius: 4px; display: none;"></div>
+                <form id="quickAddTeamForm" class="dash-form">
+                  <div class="form-group">
+                    <label class="form-label">Team Name</label>
+                    <input
+                      type="text"
+                      id="qaTeamName"
+                      class="form-input"
+                      required
+                    />
+                  </div>
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label class="form-label">Leader Name</label>
+                      <input
+                        type="text"
+                        id="qaLeaderName"
+                        class="form-input"
+                        required
+                      />
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Leader Email</label>
+                      <input
+                        type="email"
+                        id="qaLeaderEmail"
+                        class="form-input"
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label class="form-label">Leader Phone</label>
+                      <input
+                        type="tel"
+                        id="qaLeaderPhone"
+                        class="form-input"
+                        required
+                      />
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">College</label>
+                      <input
+                        type="text"
+                        id="qaCollege"
+                        class="form-input"
+                        required
+                      />
+                    </div>
+                  </div>
+                  <button
+                    type="submit"
+                    class="btn-primary"
+                    id="quickAddTeamBtn"
+                  >
+                    Create Draft
+                  </button>
+                  <div
+                    id="quickAddStatus"
+                    style="
+                      font-size: 11px;
+                      font-family: var(--font-mono);
+                      min-height: 16px;
+                    "
+                  ></div>
+                </form>
+              </div>
+
+              <div
+                class="glass-card"
+                style="border: 1px solid var(--border-hover)"
+              >
+                <div class="card-title-section">
+                  <span class="card-title" style="color: var(--primary)"
+                    >Upload Shortlist (CSV / EXCEL)</span
+                  >
                 </div>
+                <form id="importCsvForm" class="dash-form">
+                  <p
+                    style="
+                      font-size: 11px;
+                      color: var(--muted-foreground);
+                      margin: 0;
+                      font-family: var(--font-mono);
+                    "
+                  >
+                    Expected Columns: teamName, leaderName, leaderEmail,
+                    leaderPhone, college
+                  </p>
+                  <div class="form-group" style="margin-top: 8px">
+                    <input
+                      type="file"
+                      id="csvFileInput"
+                      class="form-input"
+                      accept=".csv, .xlsx, .xls"
+                      required
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    class="btn-primary"
+                    id="importSubmitBtn"
+                  >
+                    Import Shortlist
+                  </button>
+                  <div
+                    id="importStatus"
+                    style="
+                      font-size: 11px;
+                      font-family: var(--font-mono);
+                      min-height: 16px;
+                    "
+                  ></div>
+                </form>
+              </div>
             </div>
+          </details>
 
-            <!-- TAB 1: Dashboard Overview -->
-            <div id="panel-dashboard" class="tab-panel active">
-                <div class="metrics-grid">
-                    <div class="metric-box" role="button" tabindex="0" data-tab="import">
-                        <div class="metric-title" style="color: var(--accent);">Invited Drafts</div>
-                        <div class="metric-value" id="statInvited">0</div>
-                    </div>
-                    <div class="metric-box" role="button" tabindex="0" data-tab="users">
-                        <div class="metric-title" style="color: var(--primary);">Verified Users</div>
-                        <div class="metric-value" id="statUsers">0</div>
-                    </div>
-                    <div class="metric-box" role="button" tabindex="0" data-tab="teams">
-                        <div class="metric-title" style="color: var(--accent);">Profiles Submitted</div>
-                        <div class="metric-value" id="statSubmitted">0</div>
-                    </div>
-                    <div class="metric-box" role="button" tabindex="0" data-tab="teams">
-                        <div class="metric-title" style="color: var(--success);">Approved Teams</div>
-                        <div class="metric-value" id="statApproved">0</div>
-                    </div>
-                </div>
-
-                <div class="layout-columns">
-                    <div style="display: flex; flex-direction: column; gap: 24px;">
-                        <!-- Active Round Widget -->
-                        <div class="glass-card">
-                            <div class="card-title-section">
-                                <span class="card-title" style="color: var(--accent);">Live Round Status</span>
-                            </div>
-                            <div id="activeRoundStatus" style="padding: 12px; border: 1px solid var(--border); border-radius: 4px; font-family: var(--font-mono); font-size: 11px; color: var(--muted-foreground); background: rgba(0,0,0,0.15); line-height: 1.5;">
-                                Checking active round...
-                            </div>
-                        </div>
-
-                        <!-- Recent Submissions Overview -->
-                        <div class="glass-card">
-                            <div class="card-title-section">
-                                <span class="card-title">Recent Submissions</span>
-                            </div>
-                            <div class="data-table-wrapper">
-                                <table class="data-table">
-                                  <thead>
-                                    <tr style="border-bottom: 1px solid var(--border);">
-                                      <th>Team ID</th>
-                                      <th>Round</th>
-                                      <th>Time</th>
-                                    </tr>
-                                  </thead>
-                                  <tbody id="recentSubmissionsBody">
-                                    <tr><td colspan="3" style="text-align: center; color: var(--muted-foreground);">Loading...</td></tr>
-                                  </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div style="display: flex; flex-direction: column; gap: 24px;">
-                        <!-- Broadcast Stream Feed -->
-                        <div class="glass-card">
-                            <div class="card-title-section">
-                                <span class="card-title">Broadcast Logs</span>
-                            </div>
-                            <div id="announcementFeedBody" style="display: flex; flex-direction: column; gap: 12px; max-height: 380px; overflow-y: auto;">
-                                <div style="font-size: 11px; color: var(--muted-foreground); text-align: center;">Loading stream...</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+          <div class="glass-card" style="margin-bottom: 24px">
+            <div class="card-title-section">
+              <span class="card-title" style="color: var(--accent)"
+                >Invited Draft Standings</span
+              >
             </div>
-
-            <!-- TAB 2: Registration Import -->
-            <div id="panel-import" class="tab-panel">
-                <div class="layout-columns">
-                    <div class="glass-card">
-                        <div class="card-title-section">
-                            <span class="card-title" style="color: var(--accent);">Manual Draft Creation</span>
-                        </div>
-                        <form id="quickAddTeamForm" class="dash-form">
-                            <div class="form-group">
-                                <label class="form-label">Team Name</label>
-                                <input type="text" id="qaTeamName" class="form-input" required>
-                            </div>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label class="form-label">Leader Name</label>
-                                    <input type="text" id="qaLeaderName" class="form-input" required>
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Leader Email</label>
-                                    <input type="email" id="qaLeaderEmail" class="form-input" required>
-                                </div>
-                            </div>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label class="form-label">Leader Phone</label>
-                                    <input type="tel" id="qaLeaderPhone" class="form-input" required>
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">College</label>
-                                    <input type="text" id="qaCollege" class="form-input" required>
-                                </div>
-                            </div>
-                            <button type="submit" class="btn-primary" id="quickAddTeamBtn">Create Draft</button>
-                            <div id="quickAddStatus" style="font-size: 11px; font-family: var(--font-mono); min-height: 16px;"></div>
-                        </form>
-                    </div>
-
-                    <div class="glass-card">
-                        <div class="card-title-section">
-                            <span class="card-title" style="color: var(--primary);">Upload Shortlist Shortlist (CSV / EXCEL)</span>
-                        </div>
-                        <form id="importCsvForm" class="dash-form">
-                            <p style="font-size: 11px; color: var(--muted-foreground); margin: 0; font-family: var(--font-mono);">
-                              Expected Columns: teamName, leaderName, leaderEmail, leaderPhone, college
-                            </p>
-                            <div class="form-group">
-                                <input type="file" id="csvFileInput" class="form-input" accept=".csv, .xlsx, .xls" required>
-                            </div>
-                            <button type="submit" class="btn-primary" id="importSubmitBtn">Import Shortlist</button>
-                            <div id="importStatus" style="font-size: 11px; font-family: var(--font-mono); min-height: 16px;"></div>
-                        </form>
-                    </div>
-                </div>
-
-                <div class="glass-card" style="margin-top: 24px;">
-                    <div class="card-title-section">
-                        <span class="card-title" style="color: var(--accent);">Invited Draft Standings</span>
-                    </div>
-                    <div class="data-table-wrapper">
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Team Name</th>
-                                    <th>Leader Details</th>
-                                    <th>College</th>
-                                    <th>Status</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="invitedTeamsTableBody">
-                                <tr><td colspan="5" style="text-align: center; color: var(--muted-foreground);">Loading drafts...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+            <div class="data-table-wrapper">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Team Name</th>
+                    <th>Leader Details</th>
+                    <th>College</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="invitedTeamsTableBody">
+                  <tr>
+                    <td
+                      colspan="5"
+                      style="text-align: center; color: var(--muted-foreground)"
+                    >
+                      Loading drafts...
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
-
-            <!-- TAB 3: Teams -->
-            <div id="panel-teams" class="tab-panel">
-                <div class="glass-card">
-                    <div class="card-title-section">
-                        <span class="card-title">All Registered Teams</span>
-                    </div>
-                    <div class="data-table-wrapper">
-                        <table class="data-table" id="teamsTable">
-                            <thead>
-                                <tr>
-                                    <th>Team Name</th>
-                                    <th>Leader / Members</th>
-                                    <th>College & Contact</th>
-                                    <th>Status</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="teamsTableBody">
-                                <tr><td colspan="5" style="text-align: center; color: var(--muted-foreground);">Loading teams...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+          </div>
+          <div class="glass-card">
+            <div class="card-title-section">
+              <span class="card-title">All Registered Teams</span>
             </div>
-
-            <!-- TAB 4: Users -->
-            <div id="panel-users" class="tab-panel">
-                <div class="glass-card">
-                    <div class="card-title-section">
-                        <span class="card-title">Verified Accounts</span>
-                    </div>
-                    <div class="data-table-wrapper">
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>User UID</th>
-                                    <th>Email</th>
-                                    <th>Role</th>
-                                    <th>Assigned Team ID</th>
-                                </tr>
-                            </thead>
-                            <tbody id="usersTableBody">
-                                <tr><td colspan="4" style="text-align: center; color: var(--muted-foreground);">Loading verified accounts...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+            <div class="data-table-wrapper">
+              <table class="data-table" id="teamsTable">
+                <thead>
+                  <tr>
+                    <th>Team Name</th>
+                    <th>Leader / Members</th>
+                    <th>College & Contact</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="teamsTableBody">
+                  <tr>
+                    <td
+                      colspan="5"
+                      style="text-align: center; color: var(--muted-foreground)"
+                    >
+                      Loading teams...
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
+          </div>
+        </div>
 
-            <!-- TAB: Admin Accounts -->
-            <div id="panel-admin-accounts" class="tab-panel superadmin-only">
-                <div class="layout-columns">
-                    <div class="glass-card">
-                        <div class="card-title-section" style="display: flex; justify-content: space-between; align-items: center;">
-                            <span class="card-title">Admin & Staff Directory</span>
-                            <button type="button" id="btnRefreshAdminAccounts" class="btn-outline" style="padding: 6px 12px; font-size: 10px;">Refresh Directory</button>
-                        </div>
-                        <div class="data-table-wrapper">
-                            <table class="data-table">
-                                <thead>
-                                    <tr>
-                                        <th>Name</th>
-                                        <th>Email</th>
-                                        <th>Role</th>
-                                        <th>Status</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="adminAccountsTableBody">
-                                    <tr><td colspan="5" style="text-align: center; color: var(--muted-foreground);">Loading admin accounts...</td></tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
+        <!-- TAB 4: Users -->
+        <div id="panel-users" class="tab-panel">
+          <div class="glass-card">
+            <div class="card-title-section">
+              <span class="card-title">Verified Accounts</span>
+            </div>
+            <div class="data-table-wrapper">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>User UID</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>Assigned Team ID</th>
+                  </tr>
+                </thead>
+                <tbody id="usersTableBody">
+                  <tr>
+                    <td
+                      colspan="4"
+                      style="text-align: center; color: var(--muted-foreground)"
+                    >
+                      Loading verified accounts...
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
 
-                    <div class="glass-card">
-                        <div class="card-title-section">
-                            <span class="card-title" id="adminFormTitle">Create New Account</span>
-                        </div>
-                        <form id="adminAccountForm" class="dash-form">
-                            <input type="hidden" id="adminFormUserId" value="">
-                            <div class="form-group">
-                                <label class="form-label" for="adminFormName">NAME</label>
-                                <input type="text" id="adminFormName" class="form-input" required placeholder="John Doe">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label" for="adminFormEmail">EMAIL</label>
-                                <input type="email" id="adminFormEmail" class="form-input" required placeholder="john@example.com">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label" for="adminFormRole">ROLE</label>
-                                <select id="adminFormRole" class="form-select" required>
-                                    <option value="admin">Admin</option>
-                                    <option value="judge">Judge</option>
-                                    <option value="mentor">Mentor</option>
-                                    <option value="volunteer">Volunteer</option>
-                                </select>
-                            </div>
-                            
-                            <div class="form-group" style="margin-top: 16px;">
-                                <label class="form-label">PERMISSIONS</label>
-                                <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
-                                    <label style="display: flex; align-items: center; gap: 8px; font-size: 11px; cursor: pointer;">
-                                        <input type="checkbox" id="permEditScores" class="form-checkbox">
-                                        Can Edit Scores
-                                    </label>
-                                    <label style="display: flex; align-items: center; gap: 8px; font-size: 11px; cursor: pointer;">
-                                        <input type="checkbox" id="permPublishScores" class="form-checkbox">
-                                        Can Publish Scores
-                                    </label>
-                                    <label style="display: flex; align-items: center; gap: 8px; font-size: 11px; cursor: pointer;">
-                                        <input type="checkbox" id="permManageRounds" class="form-checkbox">
-                                        Can Manage Rounds
-                                    </label>
-                                    <label style="display: flex; align-items: center; gap: 8px; font-size: 11px; cursor: pointer;">
-                                        <input type="checkbox" id="permManageTeams" class="form-checkbox">
-                                        Can Manage Teams
-                                    </label>
-                                    <label style="display: flex; align-items: center; gap: 8px; font-size: 11px; cursor: pointer;">
-                                        <input type="checkbox" id="permSendEmails" class="form-checkbox">
-                                        Can Send Emails
-                                    </label>
-                                    <label style="display: flex; align-items: center; gap: 8px; font-size: 11px; cursor: pointer;">
-                                        <input type="checkbox" id="permViewLogs" class="form-checkbox">
-                                        Can View Logs
-                                    </label>
-                                </div>
-                            </div>
-                            
-                            <div style="display: flex; gap: 8px; margin-top: 20px;">
-                                <button type="submit" id="btnSubmitAdminForm" class="btn-primary" style="flex: 1;">Create & Invite</button>
-                                <button type="button" id="btnCancelAdminEdit" class="btn-outline hidden" style="flex: 1;">Cancel</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
+        <!-- TAB: Admin Accounts -->
+        <div id="panel-admin-accounts" class="tab-panel superadmin-only">
+          <div class="layout-columns">
+            <div class="glass-card">
+              <div
+                class="card-title-section"
+                style="
+                  display: flex;
+                  justify-content: space-between;
+                  align-items: center;
+                "
+              >
+                <span class="card-title">Admin & Staff Directory</span>
+                <button
+                  type="button"
+                  id="btnRefreshAdminAccounts"
+                  class="btn-outline"
+                  style="padding: 6px 12px; font-size: 10px"
+                >
+                  Refresh Directory
+                </button>
+              </div>
+              <div class="data-table-wrapper">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Email</th>
+                      <th>Role</th>
+                      <th>Status</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="adminAccountsTableBody">
+                    <tr>
+                      <td
+                        colspan="5"
+                        style="
+                          text-align: center;
+                          color: var(--muted-foreground);
+                        "
+                      >
+                        Loading admin accounts...
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
 
-            <!-- TAB 5: Round Manager -->
-            <div id="panel-rounds" class="tab-panel">
-                <div class="glass-card" style="margin-bottom: 24px;">
-                    <div class="card-title-section" style="display: flex; justify-content: space-between; align-items: center;">
-                        <span class="card-title">Round Manager Controls</span>
-                        <button type="button" id="btnRefreshRounds" class="btn-outline" style="padding: 6px 12px; font-size: 10px;">Refresh Rounds</button>
-                    </div>
-                    <div id="roundsCardsContainer" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; margin-top: 16px;">
-                        <!-- Dynamically populated card per round -->
-                        <div style="font-size: 11px; color: var(--muted-foreground); text-align: center; grid-column: 1/-1;">Loading rounds...</div>
-                    </div>
+            <div class="glass-card">
+              <div class="card-title-section">
+                <span class="card-title" id="adminFormTitle"
+                  >Create New Account</span
+                >
+              </div>
+              <form id="adminAccountForm" class="dash-form">
+                <input type="hidden" id="adminFormUserId" value="" />
+                <div class="form-group">
+                  <label class="form-label" for="adminFormName">NAME</label>
+                  <input
+                    type="text"
+                    id="adminFormName"
+                    class="form-input"
+                    required
+                    placeholder="John Doe"
+                  />
                 </div>
+                <div class="form-group">
+                  <label class="form-label" for="adminFormEmail">EMAIL</label>
+                  <input
+                    type="email"
+                    id="adminFormEmail"
+                    class="form-input"
+                    required
+                    placeholder="john@example.com"
+                  />
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="adminFormRole">ROLE</label>
+                  <select id="adminFormRole" class="form-select" required>
+                    <option value="admin">Admin</option>
+                    <option value="judge">Judge</option>
+                    <option value="mentor">Mentor</option>
+                    <option value="volunteer">Volunteer</option>
+                  </select>
+                </div>
+
+                <div class="form-group" style="margin-top: 16px">
+                  <label class="form-label">PERMISSIONS</label>
+                  <div
+                    style="
+                      display: flex;
+                      flex-direction: column;
+                      gap: 8px;
+                      margin-top: 8px;
+                    "
+                  >
+                    <label
+                      style="
+                        display: flex;
+                        align-items: center;
+                        gap: 8px;
+                        font-size: 11px;
+                        cursor: pointer;
+                      "
+                    >
+                      <input
+                        type="checkbox"
+                        id="permEditScores"
+                        class="form-checkbox"
+                      />
+                      Can Edit Scores
+                    </label>
+                    <label
+                      style="
+                        display: flex;
+                        align-items: center;
+                        gap: 8px;
+                        font-size: 11px;
+                        cursor: pointer;
+                      "
+                    >
+                      <input
+                        type="checkbox"
+                        id="permPublishScores"
+                        class="form-checkbox"
+                      />
+                      Can Publish Scores
+                    </label>
+                    <label
+                      style="
+                        display: flex;
+                        align-items: center;
+                        gap: 8px;
+                        font-size: 11px;
+                        cursor: pointer;
+                      "
+                    >
+                      <input
+                        type="checkbox"
+                        id="permManageRounds"
+                        class="form-checkbox"
+                      />
+                      Can Manage Rounds
+                    </label>
+                    <label
+                      style="
+                        display: flex;
+                        align-items: center;
+                        gap: 8px;
+                        font-size: 11px;
+                        cursor: pointer;
+                      "
+                    >
+                      <input
+                        type="checkbox"
+                        id="permManageTeams"
+                        class="form-checkbox"
+                      />
+                      Can Manage Teams
+                    </label>
+                    <label
+                      style="
+                        display: flex;
+                        align-items: center;
+                        gap: 8px;
+                        font-size: 11px;
+                        cursor: pointer;
+                      "
+                    >
+                      <input
+                        type="checkbox"
+                        id="permSendEmails"
+                        class="form-checkbox"
+                      />
+                      Can Send Emails
+                    </label>
+                    <label
+                      style="
+                        display: flex;
+                        align-items: center;
+                        gap: 8px;
+                        font-size: 11px;
+                        cursor: pointer;
+                      "
+                    >
+                      <input
+                        type="checkbox"
+                        id="permViewLogs"
+                        class="form-checkbox"
+                      />
+                      Can View Logs
+                    </label>
+                  </div>
+                </div>
+
+                <div style="display: flex; gap: 8px; margin-top: 20px">
+                  <button
+                    type="submit"
+                    id="btnSubmitAdminForm"
+                    class="btn-primary"
+                    style="flex: 1"
+                  >
+                    Create & Invite
+                  </button>
+                  <button
+                    type="button"
+                    id="btnCancelAdminEdit"
+                    class="btn-outline hidden"
+                    style="flex: 1"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 5: Round Manager -->
+        <div id="panel-rounds" class="tab-panel">
+          <div class="glass-card" style="margin-bottom: 24px">
+            <div
+              class="card-title-section"
+              style="
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+              "
+            >
+              <span class="card-title">Round Manager Controls</span>
+              <button
+                type="button"
+                id="btnRefreshRounds"
+                class="btn-outline"
+                style="padding: 6px 12px; font-size: 10px"
+              >
+                Refresh Rounds
+              </button>
+            </div>
+            <div
+              id="roundsCardsContainer"
+              style="
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+                gap: 20px;
+                margin-top: 16px;
+              "
+            >
+              <!-- Dynamically populated card per round -->
+              <div
+                style="
+                  font-size: 11px;
+                  color: var(--muted-foreground);
+                  text-align: center;
+                  grid-column: 1/-1;
+                "
+              >
+                Loading rounds...
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 7: Submissions -->
+        <div id="panel-submissions" class="tab-panel">
+          <div class="glass-card">
+            <div class="card-title-section">
+              <span class="card-title">Participant Submissions</span>
+            </div>
+            <div class="data-table-wrapper">
+              <table class="data-table" id="submissionsTable">
+                <thead>
+                  <tr>
+                    <th>Team</th>
+                    <th>Round</th>
+                    <th>GitHub</th>
+                    <th>Demo Link</th>
+                    <th>Timestamp</th>
+                  </tr>
+                </thead>
+                <tbody id="submissionsTableBody">
+                  <tr>
+                    <td
+                      colspan="5"
+                      style="text-align: center; color: var(--muted-foreground)"
+                    >
+                      Loading submissions...
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 11: Google Sheets Sync -->
+        <div id="panel-sheets-sync" class="tab-panel">
+          <div class="metrics-grid" style="margin-bottom: 24px">
+            <div class="metric-box">
+              <div class="metric-title" style="color: var(--accent)">
+                Pending Jobs
+              </div>
+              <div class="metric-value" id="sheetsStatPending">0</div>
+            </div>
+            <div class="metric-box">
+              <div class="metric-title" style="color: var(--warning)">
+                Retry Jobs
+              </div>
+              <div class="metric-value" id="sheetsStatRetry">0</div>
+            </div>
+            <div class="metric-box">
+              <div class="metric-title" style="color: #ef4444">Failed Jobs</div>
+              <div class="metric-value" id="sheetsStatFailed">0</div>
+            </div>
+            <div class="metric-box">
+              <div class="metric-title" style="color: var(--success)">
+                Synced Jobs
+              </div>
+              <div class="metric-value" id="sheetsStatSynced">0</div>
+            </div>
+          </div>
+
+          <div
+            class="glass-card"
+            style="
+              margin-bottom: 24px;
+              padding: 20px;
+              display: flex;
+              flex-direction: row;
+              gap: 24px;
+              align-items: center;
+              justify-content: space-between;
+              flex-wrap: wrap;
+            "
+          >
+            <div
+              style="
+                font-family: var(--font-mono);
+                font-size: 12px;
+                color: var(--muted-foreground);
+                line-height: 1.6;
+                display: flex;
+                gap: 24px;
+              "
+            >
+              <div>
+                Sync Status:
+                <span
+                  id="sheetsSyncStatus"
+                  style="font-weight: bold; color: var(--success)"
+                  >IDLE</span
+                >
+              </div>
+              <div>
+                Last Sync Time:
+                <span id="sheetsLastSyncTime" style="color: #fff">Never</span>
+              </div>
+            </div>
+            <div style="display: flex; gap: 12px; align-items: center">
+              <span
+                id="syncSpinner"
+                class="spinner"
+                style="
+                  display: none;
+                  width: 16px;
+                  height: 16px;
+                  border: 2px solid rgba(255, 255, 255, 0.1);
+                  border-top-color: var(--accent);
+                  border-radius: 50%;
+                  animation: spin 1s linear infinite;
+                  margin-right: 8px;
+                "
+              ></span>
+              <button
+                type="button"
+                id="btnRefreshQueue"
+                class="btn-outline"
+                style="padding: 10px 20px; font-weight: 600"
+              >
+                Refresh Queue
+              </button>
+              <button
+                type="button"
+                id="btnRetryFailed"
+                class="btn-outline"
+                style="
+                  padding: 10px 20px;
+                  font-weight: 600;
+                  border-color: #ef4444;
+                  color: #ef4444;
+                "
+              >
+                Retry Failed
+              </button>
+              <button
+                type="button"
+                id="btnSyncNow"
+                class="btn-primary"
+                style="padding: 10px 20px; font-weight: 600"
+              >
+                Sync Now
+              </button>
+            </div>
+          </div>
+
+          <div class="glass-card">
+            <div class="card-title-section">
+              <span class="card-title">Google Sheets Queue Sync Logs</span>
+            </div>
+            <div class="data-table-wrapper">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Job Reference</th>
+                    <th>Sheet Type</th>
+                    <th>Sync Status</th>
+                    <th>Attempts</th>
+                    <th>Updated At</th>
+                  </tr>
+                </thead>
+                <tbody id="sheetsSyncTableBody">
+                  <tr>
+                    <td
+                      colspan="5"
+                      style="text-align: center; color: var(--muted-foreground)"
+                    >
+                      Loading sheets sync queue...
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 12: Activity Logs -->
+        <div id="panel-logs" class="tab-panel">
+          <div class="glass-card">
+            <div class="card-title-section">
+              <span class="card-title">Platform Activity Audit Trails</span>
+            </div>
+            <div class="data-table-wrapper">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Actor</th>
+                    <th>Action Type</th>
+                    <th>Target ID</th>
+                    <th>Details / Info</th>
+                    <th>Timestamp</th>
+                  </tr>
+                </thead>
+                <tbody id="activityLogsTableBody">
+                  <tr>
+                    <td
+                      colspan="5"
+                      style="text-align: center; color: var(--muted-foreground)"
+                    >
+                      Loading activity logs...
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 13: Announcements -->
+        <div id="panel-announcements" class="tab-panel">
+          <div class="layout-columns">
+            <div class="glass-card">
+              <div
+                class="card-title-section"
+                style="
+                  display: flex;
+                  justify-content: space-between;
+                  align-items: center;
+                "
+              >
+                <span class="card-title">Announcements Directory</span>
+                <button
+                  type="button"
+                  id="btnRefreshAnnouncements"
+                  class="btn-outline"
+                  style="padding: 6px 12px; font-size: 10px"
+                >
+                  Refresh
+                </button>
+              </div>
+              <div class="data-table-wrapper">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Title</th>
+                      <th>Status</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="announcementsTableBody">
+                    <tr>
+                      <td
+                        colspan="4"
+                        style="
+                          text-align: center;
+                          color: var(--muted-foreground);
+                        "
+                      >
+                        Loading announcements...
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
 
-            <!-- TAB 6: Mentor Sessions -->
-            <div id="panel-mentor" class="tab-panel">
-                <div class="glass-card">
-                    <div class="card-title-section">
-                        <span class="card-title">Mentor Slot Bookings</span>
-                    </div>
-                    <div class="data-table-wrapper">
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Mentor Name</th>
-                                    <th>Scheduled For</th>
-                                    <th>Duration</th>
-                                    <th>Assigned Team</th>
-                                    <th>Meeting Link</th>
-                                </tr>
-                            </thead>
-                            <tbody id="mentorSessionsTableBody">
-                                <tr><td colspan="5" style="text-align: center; color: var(--muted-foreground);">Loading mentor sessions...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
+            <div class="glass-card">
+              <div class="card-title-section">
+                <span class="card-title" id="annFormTitle"
+                  >Transmute System Broadcasts</span
+                >
+              </div>
+              <form id="announcementForm" class="dash-form">
+                <input type="hidden" id="annFormId" value="" />
+                <div class="form-group">
+                  <label class="form-label" for="annTitle"
+                    >Broadcast Title</label
+                  >
+                  <input
+                    type="text"
+                    id="annTitle"
+                    class="form-input"
+                    required
+                    placeholder="ALERT"
+                  />
                 </div>
+                <div class="form-group">
+                  <label class="form-label" for="annMessage"
+                    >Broadcast Message Details</label
+                  >
+                  <textarea
+                    id="annMessage"
+                    class="form-textarea"
+                    required
+                    rows="5"
+                    placeholder="Transmit details..."
+                    style="resize: none"
+                  ></textarea>
+                </div>
+
+                <div style="display: flex; gap: 8px; margin-top: 20px">
+                  <button
+                    type="submit"
+                    class="btn-primary"
+                    id="annSubmitBtn"
+                    style="flex: 1"
+                  >
+                    Transmit Stream
+                  </button>
+                  <button
+                    type="button"
+                    id="btnCancelAnnEdit"
+                    class="btn-outline hidden"
+                    style="flex: 1"
+                  >
+                    Cancel
+                  </button>
+                </div>
+                <div
+                  id="annStatus"
+                  style="
+                    font-size: 11px;
+                    font-family: var(--font-mono);
+                    min-height: 16px;
+                    margin-top: 8px;
+                  "
+                ></div>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 14: Settings -->
+        <div id="panel-settings" class="tab-panel">
+          <div class="glass-card" style="max-width: 680px">
+            <div class="card-title-section">
+              <span class="card-title">Platform Global Properties</span>
+            </div>
+            <form id="systemSettingsForm" class="dash-form">
+              <div class="form-group">
+                <label class="form-label"
+                  >Rate Limiter Limit (OTP requests per hour)</label
+                >
+                <input
+                  type="number"
+                  id="settingOtpLimit"
+                  class="form-input"
+                  min="1"
+                />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Google Sheet PPT Document ID</label>
+                <input type="text" id="settingPptSheetId" class="form-input" />
+              </div>
+              <div class="form-group">
+                <label class="form-label"
+                  >Google Sheet Prototype Document ID</label
+                >
+                <input
+                  type="text"
+                  id="settingProtoSheetId"
+                  class="form-input"
+                />
+              </div>
+              <button type="submit" class="btn-primary" id="saveSettingsBtn">
+                Save Platform Settings
+              </button>
+              <div
+                id="settingsSaveStatus"
+                style="
+                  font-size: 11px;
+                  font-family: var(--font-mono);
+                  min-height: 16px;
+                  margin-top: 8px;
+                "
+              ></div>
+            </form>
+          </div>
+        </div>
+
+        <!-- TAB 15: Workers & System Health -->
+        <div id="panel-workers" class="tab-panel">
+          <div class="glass-card" style="margin-bottom: 24px">
+            <div class="card-title-section">
+              <span class="card-title">Mail Delivery Queue</span>
+              <div style="display: flex; gap: 8px">
+                <button
+                  id="runMailWorkerBtn"
+                  class="btn-primary"
+                  style="padding: 6px 12px; font-size: 11px"
+                >
+                  Force Run Queue
+                </button>
+                <button
+                  id="refreshMailQueueBtn"
+                  class="btn-secondary"
+                  style="padding: 6px 12px; font-size: 11px"
+                >
+                  Refresh
+                </button>
+              </div>
+            </div>
+            <div class="data-table-wrapper">
+              <table class="data-table" id="mailQueueTable">
+                <thead>
+                  <tr>
+                    <th>To</th>
+                    <th>Template</th>
+                    <th>Status</th>
+                    <th>Attempts</th>
+                    <th>Scheduled / Sent At</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="mailQueueTableBody">
+                  <tr>
+                    <td
+                      colspan="6"
+                      style="text-align: center; color: var(--muted-foreground)"
+                    >
+                      <div class="loading-spinner"></div>
+                      Loading queue...
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div
+            style="
+              display: grid;
+              grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+              gap: 24px;
+              margin-bottom: 24px;
+            "
+          >
+            <!-- Health Status Cards -->
+            <div class="glass-card">
+              <div class="card-title-section">
+                <span class="card-title">System Metrics</span>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 16px">
+                <div
+                  style="
+                    display: flex;
+                    justify-content: space-between;
+                    border-bottom: 1px solid var(--border);
+                    padding-bottom: 8px;
+                  "
+                >
+                  <span style="color: var(--muted-foreground)"
+                    >Firestore Status</span
+                  >
+                  <span
+                    id="healthFirestoreStatus"
+                    style="font-weight: bold; color: #10b981"
+                    >HEALTHY</span
+                  >
+                </div>
+                <div
+                  style="
+                    display: flex;
+                    justify-content: space-between;
+                    border-bottom: 1px solid var(--border);
+                    padding-bottom: 8px;
+                  "
+                >
+                  <span style="color: var(--muted-foreground)"
+                    >Firestore Latency</span
+                  >
+                  <span
+                    id="healthFirestoreLatency"
+                    style="font-family: var(--font-mono); color: #fff"
+                    >-- ms</span
+                  >
+                </div>
+                <div
+                  style="
+                    display: flex;
+                    justify-content: space-between;
+                    border-bottom: 1px solid var(--border);
+                    padding-bottom: 8px;
+                  "
+                >
+                  <span style="color: var(--muted-foreground)"
+                    >Active Users (15m)</span
+                  >
+                  <span
+                    id="healthActiveUsers"
+                    style="font-weight: bold; color: var(--primary)"
+                    >--</span
+                  >
+                </div>
+              </div>
             </div>
 
-            <!-- TAB 7: Submissions -->
-            <div id="panel-submissions" class="tab-panel">
-                <div class="glass-card">
-                    <div class="card-title-section">
-                        <span class="card-title">Participant Submissions</span>
-                    </div>
-                    <div class="data-table-wrapper">
-                        <table class="data-table" id="submissionsTable">
-                            <thead>
-                                <tr>
-                                    <th>Team</th>
-                                    <th>Round</th>
-                                    <th>GitHub</th>
-                                    <th>Demo Link</th>
-                                    <th>Timestamp</th>
-                                </tr>
-                            </thead>
-                            <tbody id="submissionsTableBody">
-                                <tr><td colspan="5" style="text-align: center; color: var(--muted-foreground);">Loading submissions...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
+            <div class="glass-card">
+              <div class="card-title-section">
+                <span class="card-title">Integration Check</span>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 16px">
+                <div
+                  style="
+                    display: flex;
+                    justify-content: space-between;
+                    border-bottom: 1px solid var(--border);
+                    padding-bottom: 8px;
+                  "
+                >
+                  <span style="color: var(--muted-foreground)"
+                    >Email Service (Resend)</span
+                  >
+                  <span
+                    id="healthEmailService"
+                    style="font-weight: bold; color: #fff"
+                    >Checking...</span
+                  >
                 </div>
+                <div
+                  style="
+                    display: flex;
+                    justify-content: space-between;
+                    border-bottom: 1px solid var(--border);
+                    padding-bottom: 8px;
+                  "
+                >
+                  <span style="color: var(--muted-foreground)"
+                    >Discord Webhook</span
+                  >
+                  <span
+                    id="healthDiscordWebhook"
+                    style="font-weight: bold; color: #fff"
+                    >Checking...</span
+                  >
+                </div>
+                <div
+                  style="
+                    display: flex;
+                    justify-content: space-between;
+                    border-bottom: 1px solid var(--border);
+                    padding-bottom: 8px;
+                  "
+                >
+                  <span style="color: var(--muted-foreground)"
+                    >WhatsApp API</span
+                  >
+                  <span
+                    id="healthWhatsApp"
+                    style="font-weight: bold; color: #fff"
+                    >Checking...</span
+                  >
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="glass-card" style="margin-bottom: 24px">
+            <div
+              class="card-title-section"
+              style="
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+              "
+            >
+              <div>
+                <span class="card-title"
+                  >Background Queue Workers Control Deck</span
+                >
+                <div
+                  style="
+                    font-size: 11px;
+                    color: var(--muted-foreground);
+                    margin-top: 4px;
+                  "
+                >
+                  Last successful worker run:
+                  <span
+                    id="lastSuccessfulWorkerRun"
+                    style="color: var(--primary); font-weight: bold"
+                    >Never</span
+                  >
+                </div>
+              </div>
+              <button
+                type="button"
+                id="btnRefreshWorkers"
+                class="btn-outline"
+                style="padding: 6px 12px; font-size: 10px"
+              >
+                Refresh Stats
+              </button>
+            </div>
+            <div class="data-table-wrapper">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Worker Name</th>
+                    <th>Status</th>
+                    <th>Last Execution</th>
+                    <th>Processed</th>
+                    <th>Failed</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>Mail Worker</strong></td>
+                    <td>
+                      <span
+                        id="workerMailStatus"
+                        class="role-tag badge-verified"
+                        >IDLE</span
+                      >
+                    </td>
+                    <td id="workerMailLastRun">Never</td>
+                    <td id="workerMailProcessed">0</td>
+                    <td id="workerMailFailed">0</td>
+                    <td>
+                      <button
+                        type="button"
+                        id="btnRunMailWorker"
+                        class="btn-primary"
+                        style="padding: 6px 12px; font-size: 10px"
+                      >
+                        Run Now
+                      </button>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td><strong>Sheets Worker</strong></td>
+                    <td>
+                      <span
+                        id="workerSheetsStatus"
+                        class="role-tag badge-verified"
+                        >IDLE</span
+                      >
+                    </td>
+                    <td id="workerSheetsLastRun">Never</td>
+                    <td id="workerSheetsProcessed">0</td>
+                    <td id="workerSheetsFailed">0</td>
+                    <td>
+                      <button
+                        type="button"
+                        id="btnRunSheetsWorker"
+                        class="btn-primary"
+                        style="padding: 6px 12px; font-size: 10px"
+                      >
+                        Run Now
+                      </button>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td><strong>Scheduler Worker</strong></td>
+                    <td>
+                      <span
+                        id="workerSchedulerStatus"
+                        class="role-tag badge-verified"
+                        >IDLE</span
+                      >
+                    </td>
+                    <td id="workerSchedulerLastRun">Never</td>
+                    <td id="workerSchedulerProcessed">0</td>
+                    <td id="workerSchedulerFailed">0</td>
+                    <td>
+                      <button
+                        type="button"
+                        id="btnRunSchedulerWorker"
+                        class="btn-primary"
+                        style="padding: 6px 12px; font-size: 10px"
+                      >
+                        Run Now
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div
+            style="
+              display: grid;
+              grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+              gap: 24px;
+              margin-bottom: 24px;
+            "
+          >
+            <!-- Queue Sizes -->
+            <div class="glass-card">
+              <div class="card-title-section">
+                <span class="card-title">Email Queue Monitor</span>
+              </div>
+              <div
+                style="
+                  display: flex;
+                  flex-direction: column;
+                  gap: 12px;
+                  color: #fff;
+                "
+                id="emailQueueStatsBody"
+              >
+                Loading...
+              </div>
             </div>
 
-            <!-- TAB 8: Evaluations -->
-            <div id="panel-evaluations" class="tab-panel">
-                <div class="glass-card">
-                    <div class="card-title-section">
-                        <span class="card-title" style="color: var(--warning);">Score Management & Grading</span>
-                    </div>
-                    <div class="data-table-wrapper">
-                        <table class="data-table" id="scoresTable">
-                            <thead>
-                                <tr>
-                                    <th>Team</th>
-                                    <th>R1 (IDEATION)</th>
-                                    <th>R2 (CODE)</th>
-                                    <th>R3 (FINALE)</th>
-                                    <th>TOTAL</th>
-                                    <th>ACTION</th>
-                                </tr>
-                            </thead>
-                            <tbody id="scoresTableBody">
-                                <tr><td colspan="6" style="text-align: center; color: var(--muted-foreground);">Loading grading grid...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+            <div class="glass-card">
+              <div class="card-title-section">
+                <span class="card-title">Sheets Sync Monitor</span>
+              </div>
+              <div
+                style="
+                  display: flex;
+                  flex-direction: column;
+                  gap: 12px;
+                  color: #fff;
+                "
+                id="sheetsQueueStatsBody"
+              >
+                Loading...
+              </div>
+            </div>
+          </div>
+
+          <div
+            style="
+              display: grid;
+              grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+              gap: 24px;
+              margin-bottom: 24px;
+            "
+          >
+            <!-- Emergency Controls -->
+            <div class="glass-card">
+              <div class="card-title-section">
+                <span class="card-title">Emergency Pause Deck</span>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 16px">
+                <label
+                  style="
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    cursor: pointer;
+                  "
+                >
+                  <span style="color: #fff; font-weight: 600"
+                    >Emergency Lock Mode (Global Pause)</span
+                  >
+                  <input
+                    type="checkbox"
+                    id="toggleEmergencyMode"
+                    style="width: 18px; height: 18px; cursor: pointer"
+                  />
+                </label>
+                <label
+                  style="
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    cursor: pointer;
+                  "
+                >
+                  <span style="color: var(--muted-foreground)"
+                    >Maintenance Mode</span
+                  >
+                  <input
+                    type="checkbox"
+                    id="toggleMaintenanceMode"
+                    style="width: 18px; height: 18px; cursor: pointer"
+                  />
+                </label>
+                <label
+                  style="
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    cursor: pointer;
+                  "
+                >
+                  <span style="color: var(--muted-foreground)"
+                    >Pause Team Registrations</span
+                  >
+                  <input
+                    type="checkbox"
+                    id="toggleRegistrationsPaused"
+                    style="width: 18px; height: 18px; cursor: pointer"
+                  />
+                </label>
+                <label
+                  style="
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    cursor: pointer;
+                  "
+                >
+                  <span style="color: var(--muted-foreground)"
+                    >Pause Deliverable Submissions</span
+                  >
+                  <input
+                    type="checkbox"
+                    id="toggleSubmissionsPaused"
+                    style="width: 18px; height: 18px; cursor: pointer"
+                  />
+                </label>
+                <label
+                  style="
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    cursor: pointer;
+                  "
+                >
+                  <span style="color: var(--muted-foreground)"
+                    >Pause Email Worker</span
+                  >
+                  <input
+                    type="checkbox"
+                    id="toggleEmailsPaused"
+                    style="width: 18px; height: 18px; cursor: pointer"
+                  />
+                </label>
+                <label
+                  style="
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    cursor: pointer;
+                  "
+                >
+                  <span style="color: var(--muted-foreground)"
+                    >Pause Google Sheets Sync</span
+                  >
+                  <input
+                    type="checkbox"
+                    id="toggleSheetsPaused"
+                    style="width: 18px; height: 18px; cursor: pointer"
+                  />
+                </label>
+                <label
+                  style="
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    cursor: pointer;
+                  "
+                >
+                  <span style="color: var(--muted-foreground)"
+                    >Pause Broadcast Announcements</span
+                  >
+                  <input
+                    type="checkbox"
+                    id="toggleAnnouncementsPaused"
+                    style="width: 18px; height: 18px; cursor: pointer"
+                  />
+                </label>
+                <button
+                  id="saveEmergencyControlsBtn"
+                  class="btn-primary"
+                  style="margin-top: 10px"
+                >
+                  Apply Global Controls
+                </button>
+              </div>
             </div>
 
-            <!-- TAB 9: Leaderboard -->
-            <div id="panel-leaderboard" class="tab-panel">
-                <div class="glass-card">
-                    <div class="card-title-section">
-                        <span class="card-title" style="color: var(--success);">Platform Standings Leaderboard</span>
-                    </div>
-                    <div class="data-table-wrapper">
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Rank</th>
-                                    <th>Team Name</th>
-                                    <th>College</th>
-                                    <th>Round Scores</th>
-                                    <th>Total standing</th>
-                                </tr>
-                            </thead>
-                            <tbody id="leaderboardTableBody">
-                                <tr><td colspan="5" style="text-align: center; color: var(--muted-foreground);">Loading leaderboard...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+            <!-- Disaster Recovery -->
+            <div class="glass-card">
+              <div class="card-title-section">
+                <span class="card-title">Disaster Recovery (Backups)</span>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 16px">
+                <p
+                  style="
+                    font-size: 11px;
+                    color: var(--muted-foreground);
+                    margin: 0;
+                    line-height: 1.5;
+                  "
+                >
+                  Initiate an on-demand database backup. This exports all users,
+                  teams, submissions, and settings, and clones submissions into
+                  the <code>backups_submissions</code> table.
+                </p>
+                <button id="triggerDbBackupBtn" class="btn-primary">
+                  Trigger Database Backup
+                </button>
+                <button
+                  id="downloadBackupJsonBtn"
+                  class="btn-outline"
+                  style="border-color: var(--primary); color: var(--primary)"
+                >
+                  Download Full JSON Export
+                </button>
+                <div
+                  id="backupStatusText"
+                  style="
+                    font-size: 11px;
+                    font-family: var(--font-mono);
+                    min-height: 16px;
+                    margin-top: 8px;
+                  "
+                ></div>
+              </div>
             </div>
-
-            <!-- TAB 10: Email Queue -->
-            <div id="panel-email-queue" class="tab-panel">
-                <div class="glass-card">
-                    <div class="card-title-section">
-                        <span class="card-title">Asynchronous Email Dispatch Log</span>
-                    </div>
-                    <div class="data-table-wrapper">
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Recipient</th>
-                                    <th>Template</th>
-                                    <th>Status</th>
-                                    <th>Attempts</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="emailQueueTableBody">
-                                <tr><td colspan="5" style="text-align: center; color: var(--muted-foreground);">Loading email queue...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <!-- TAB 11: Google Sheets Sync -->
-            <div id="panel-sheets-sync" class="tab-panel">
-                <div class="metrics-grid" style="margin-bottom: 24px;">
-                    <div class="metric-box">
-                        <div class="metric-title" style="color: var(--accent);">Pending Jobs</div>
-                        <div class="metric-value" id="sheetsStatPending">0</div>
-                    </div>
-                    <div class="metric-box">
-                        <div class="metric-title" style="color: var(--warning);">Retry Jobs</div>
-                        <div class="metric-value" id="sheetsStatRetry">0</div>
-                    </div>
-                    <div class="metric-box">
-                        <div class="metric-title" style="color: #ef4444;">Failed Jobs</div>
-                        <div class="metric-value" id="sheetsStatFailed">0</div>
-                    </div>
-                    <div class="metric-box">
-                        <div class="metric-title" style="color: var(--success);">Synced Jobs</div>
-                        <div class="metric-value" id="sheetsStatSynced">0</div>
-                    </div>
-                </div>
-
-                <div class="glass-card" style="margin-bottom: 24px; padding: 20px; display: flex; flex-direction: row; gap: 24px; align-items: center; justify-content: space-between; flex-wrap: wrap;">
-                    <div style="font-family: var(--font-mono); font-size: 12px; color: var(--muted-foreground); line-height: 1.6; display: flex; gap: 24px;">
-                        <div>Sync Status: <span id="sheetsSyncStatus" style="font-weight: bold; color: var(--success);">IDLE</span></div>
-                        <div>Last Sync Time: <span id="sheetsLastSyncTime" style="color: #fff;">Never</span></div>
-                    </div>
-                    <div style="display: flex; gap: 12px; align-items: center;">
-                        <span id="syncSpinner" class="spinner" style="display: none; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.1); border-top-color: var(--accent); border-radius: 50%; animation: spin 1s linear infinite; margin-right: 8px;"></span>
-                        <button type="button" id="btnRefreshQueue" class="btn-outline" style="padding: 10px 20px; font-weight: 600;">Refresh Queue</button>
-                        <button type="button" id="btnRetryFailed" class="btn-outline" style="padding: 10px 20px; font-weight: 600; border-color: #ef4444; color: #ef4444;">Retry Failed</button>
-                        <button type="button" id="btnSyncNow" class="btn-primary" style="padding: 10px 20px; font-weight: 600;">Sync Now</button>
-                    </div>
-                </div>
-
-                <div class="glass-card">
-                    <div class="card-title-section">
-                        <span class="card-title">Google Sheets Queue Sync Logs</span>
-                    </div>
-                    <div class="data-table-wrapper">
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Job Reference</th>
-                                    <th>Sheet Type</th>
-                                    <th>Sync Status</th>
-                                    <th>Attempts</th>
-                                    <th>Updated At</th>
-                                </tr>
-                            </thead>
-                            <tbody id="sheetsSyncTableBody">
-                                <tr><td colspan="5" style="text-align: center; color: var(--muted-foreground);">Loading sheets sync queue...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <!-- TAB 12: Activity Logs -->
-            <div id="panel-logs" class="tab-panel">
-                <div class="glass-card">
-                    <div class="card-title-section">
-                        <span class="card-title">Platform Activity Audit Trails</span>
-                    </div>
-                    <div class="data-table-wrapper">
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Actor</th>
-                                    <th>Action Type</th>
-                                    <th>Target ID</th>
-                                    <th>Details / Info</th>
-                                    <th>Timestamp</th>
-                                </tr>
-                            </thead>
-                            <tbody id="activityLogsTableBody">
-                                <tr><td colspan="5" style="text-align: center; color: var(--muted-foreground);">Loading activity logs...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <!-- TAB 13: Announcements -->
-            <div id="panel-announcements" class="tab-panel">
-                <div class="layout-columns">
-                    <div class="glass-card">
-                        <div class="card-title-section" style="display: flex; justify-content: space-between; align-items: center;">
-                            <span class="card-title">Announcements Directory</span>
-                            <button type="button" id="btnRefreshAnnouncements" class="btn-outline" style="padding: 6px 12px; font-size: 10px;">Refresh</button>
-                        </div>
-                        <div class="data-table-wrapper">
-                            <table class="data-table">
-                                <thead>
-                                    <tr>
-                                        <th>Date</th>
-                                        <th>Title</th>
-                                        <th>Status</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="announcementsTableBody">
-                                    <tr><td colspan="4" style="text-align: center; color: var(--muted-foreground);">Loading announcements...</td></tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <div class="glass-card">
-                        <div class="card-title-section">
-                            <span class="card-title" id="annFormTitle">Transmute System Broadcasts</span>
-                        </div>
-                        <form id="announcementForm" class="dash-form">
-                            <input type="hidden" id="annFormId" value="">
-                            <div class="form-group">
-                                <label class="form-label" for="annTitle">Broadcast Title</label>
-                                <input type="text" id="annTitle" class="form-input" required placeholder="ALERT">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label" for="annMessage">Broadcast Message Details</label>
-                                <textarea id="annMessage" class="form-textarea" required rows="5" placeholder="Transmit details..." style="resize: none;"></textarea>
-                            </div>
-                            
-                            <div style="display: flex; gap: 8px; margin-top: 20px;">
-                                <button type="submit" class="btn-primary" id="annSubmitBtn" style="flex: 1;">Transmit Stream</button>
-                                <button type="button" id="btnCancelAnnEdit" class="btn-outline hidden" style="flex: 1;">Cancel</button>
-                            </div>
-                            <div id="annStatus" style="font-size: 11px; font-family: var(--font-mono); min-height: 16px; margin-top: 8px;"></div>
-                        </form>
-                    </div>
-                </div>
-            </div>
-
-            <!-- TAB 14: Settings -->
-            <div id="panel-settings" class="tab-panel">
-                <div class="glass-card" style="max-width: 680px;">
-                    <div class="card-title-section">
-                        <span class="card-title">Platform Global Properties</span>
-                    </div>
-                    <form id="systemSettingsForm" class="dash-form">
-                        <div class="form-group">
-                            <label class="form-label">Rate Limiter Limit (OTP requests per hour)</label>
-                            <input type="number" id="settingOtpLimit" class="form-input" min="1">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Google Sheet PPT Document ID</label>
-                            <input type="text" id="settingPptSheetId" class="form-input">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Google Sheet Prototype Document ID</label>
-                            <input type="text" id="settingProtoSheetId" class="form-input">
-                        </div>
-                        <button type="submit" class="btn-primary" id="saveSettingsBtn">Save Platform Settings</button>
-                        <div id="settingsSaveStatus" style="font-size: 11px; font-family: var(--font-mono); min-height: 16px; margin-top: 8px;"></div>
-                    </form>
-                </div>
-            </div>
-
-            <!-- TAB 15: System Health -->
-            <div id="panel-system-health" class="tab-panel">
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; margin-bottom: 24px;">
-                    <!-- Health Status Cards -->
-                    <div class="glass-card">
-                        <div class="card-title-section">
-                            <span class="card-title">System Metrics</span>
-                        </div>
-                        <div style="display: flex; flex-direction: column; gap: 16px;">
-                            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border); padding-bottom: 8px;">
-                                <span style="color: var(--muted-foreground);">Firestore Status</span>
-                                <span id="healthFirestoreStatus" style="font-weight: bold; color: #10b981;">HEALTHY</span>
-                            </div>
-                            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border); padding-bottom: 8px;">
-                                <span style="color: var(--muted-foreground);">Firestore Latency</span>
-                                <span id="healthFirestoreLatency" style="font-family: var(--font-mono); color: #fff;">-- ms</span>
-                            </div>
-                            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border); padding-bottom: 8px;">
-                                <span style="color: var(--muted-foreground);">Active Users (15m)</span>
-                                <span id="healthActiveUsers" style="font-weight: bold; color: var(--primary);">--</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="glass-card">
-                        <div class="card-title-section">
-                            <span class="card-title">Integration Check</span>
-                        </div>
-                        <div style="display: flex; flex-direction: column; gap: 16px;">
-                            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border); padding-bottom: 8px;">
-                                <span style="color: var(--muted-foreground);">Email Service (Resend)</span>
-                                <span id="healthEmailService" style="font-weight: bold; color: #fff;">Checking...</span>
-                            </div>
-                            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border); padding-bottom: 8px;">
-                                <span style="color: var(--muted-foreground);">Discord Webhook</span>
-                                <span id="healthDiscordWebhook" style="font-weight: bold; color: #fff;">Checking...</span>
-                            </div>
-                            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border); padding-bottom: 8px;">
-                                <span style="color: var(--muted-foreground);">WhatsApp API</span>
-                                <span id="healthWhatsApp" style="font-weight: bold; color: #fff;">Checking...</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="glass-card" style="margin-bottom: 24px;">
-                    <div class="card-title-section" style="display: flex; justify-content: space-between; align-items: center;">
-                        <div>
-                            <span class="card-title">Background Queue Workers Control Deck</span>
-                            <div style="font-size: 11px; color: var(--muted-foreground); margin-top: 4px;">Last successful worker run: <span id="lastSuccessfulWorkerRun" style="color: var(--primary); font-weight: bold;">Never</span></div>
-                        </div>
-                        <button type="button" id="btnRefreshWorkers" class="btn-outline" style="padding: 6px 12px; font-size: 10px;">Refresh Stats</button>
-                    </div>
-                    <div class="data-table-wrapper">
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Worker Name</th>
-                                    <th>Status</th>
-                                    <th>Last Execution</th>
-                                    <th>Processed</th>
-                                    <th>Failed</th>
-                                    <th>Action</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td><strong>Mail Worker</strong></td>
-                                    <td><span id="workerMailStatus" class="role-tag badge-verified">IDLE</span></td>
-                                    <td id="workerMailLastRun">Never</td>
-                                    <td id="workerMailProcessed">0</td>
-                                    <td id="workerMailFailed">0</td>
-                                    <td>
-                                        <button type="button" id="btnRunMailWorker" class="btn-primary" style="padding: 6px 12px; font-size: 10px;">Run Now</button>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Sheets Worker</strong></td>
-                                    <td><span id="workerSheetsStatus" class="role-tag badge-verified">IDLE</span></td>
-                                    <td id="workerSheetsLastRun">Never</td>
-                                    <td id="workerSheetsProcessed">0</td>
-                                    <td id="workerSheetsFailed">0</td>
-                                    <td>
-                                        <button type="button" id="btnRunSheetsWorker" class="btn-primary" style="padding: 6px 12px; font-size: 10px;">Run Now</button>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Scheduler Worker</strong></td>
-                                    <td><span id="workerSchedulerStatus" class="role-tag badge-verified">IDLE</span></td>
-                                    <td id="workerSchedulerLastRun">Never</td>
-                                    <td id="workerSchedulerProcessed">0</td>
-                                    <td id="workerSchedulerFailed">0</td>
-                                    <td>
-                                        <button type="button" id="btnRunSchedulerWorker" class="btn-primary" style="padding: 6px 12px; font-size: 10px;">Run Now</button>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; margin-bottom: 24px;">
-                    <!-- Queue Sizes -->
-                    <div class="glass-card">
-                        <div class="card-title-section">
-                            <span class="card-title">Email Queue Monitor</span>
-                        </div>
-                        <div style="display: flex; flex-direction: column; gap: 12px; color: #fff;" id="emailQueueStatsBody">
-                            Loading...
-                        </div>
-                    </div>
-
-                    <div class="glass-card">
-                        <div class="card-title-section">
-                            <span class="card-title">Sheets Sync Monitor</span>
-                        </div>
-                        <div style="display: flex; flex-direction: column; gap: 12px; color: #fff;" id="sheetsQueueStatsBody">
-                            Loading...
-                        </div>
-                    </div>
-                </div>
-
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; margin-bottom: 24px;">
-                    <!-- Emergency Controls -->
-                    <div class="glass-card">
-                        <div class="card-title-section">
-                            <span class="card-title">Emergency Pause Deck</span>
-                        </div>
-                        <div style="display: flex; flex-direction: column; gap: 16px;">
-                            <label style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
-                                <span style="color: #fff; font-weight: 600;">Emergency Lock Mode (Global Pause)</span>
-                                <input type="checkbox" id="toggleEmergencyMode" style="width: 18px; height: 18px; cursor: pointer;">
-                            </label>
-                            <label style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
-                                <span style="color: var(--muted-foreground);">Maintenance Mode</span>
-                                <input type="checkbox" id="toggleMaintenanceMode" style="width: 18px; height: 18px; cursor: pointer;">
-                            </label>
-                            <label style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
-                                <span style="color: var(--muted-foreground);">Pause Team Registrations</span>
-                                <input type="checkbox" id="toggleRegistrationsPaused" style="width: 18px; height: 18px; cursor: pointer;">
-                            </label>
-                            <label style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
-                                <span style="color: var(--muted-foreground);">Pause Deliverable Submissions</span>
-                                <input type="checkbox" id="toggleSubmissionsPaused" style="width: 18px; height: 18px; cursor: pointer;">
-                            </label>
-                            <label style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
-                                <span style="color: var(--muted-foreground);">Pause Email Worker</span>
-                                <input type="checkbox" id="toggleEmailsPaused" style="width: 18px; height: 18px; cursor: pointer;">
-                            </label>
-                            <label style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
-                                <span style="color: var(--muted-foreground);">Pause Google Sheets Sync</span>
-                                <input type="checkbox" id="toggleSheetsPaused" style="width: 18px; height: 18px; cursor: pointer;">
-                            </label>
-                            <label style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
-                                <span style="color: var(--muted-foreground);">Pause Broadcast Announcements</span>
-                                <input type="checkbox" id="toggleAnnouncementsPaused" style="width: 18px; height: 18px; cursor: pointer;">
-                            </label>
-                            <button id="saveEmergencyControlsBtn" class="btn-primary" style="margin-top: 10px;">Apply Global Controls</button>
-                        </div>
-                    </div>
-
-                    <!-- Disaster Recovery -->
-                    <div class="glass-card">
-                        <div class="card-title-section">
-                            <span class="card-title">Disaster Recovery (Backups)</span>
-                        </div>
-                        <div style="display: flex; flex-direction: column; gap: 16px;">
-                            <p style="font-size: 11px; color: var(--muted-foreground); margin: 0; line-height: 1.5;">
-                                Initiate an on-demand database backup. This exports all users, teams, submissions, and settings, and clones submissions into the <code>backups_submissions</code> table.
-                            </p>
-                            <button id="triggerDbBackupBtn" class="btn-primary">Trigger Database Backup</button>
-                            <button id="downloadBackupJsonBtn" class="btn-outline" style="border-color: var(--primary); color: var(--primary);">Download Full JSON Export</button>
-                            <div id="backupStatusText" style="font-size: 11px; font-family: var(--font-mono); min-height: 16px; margin-top: 8px;"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-        </main>
+          </div>
+        </div>
+      </main>
     </div>
 
     <!-- Edit Team Modal (Hidden by default) -->
-    <div id="editTeamModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(4px);">
-        <div class="glass-card" style="width: 440px; max-width: 95%; margin: 0;">
-            <h3 style="color: #fff; margin-top: 0; font-family: var(--font-display); letter-spacing: 2px; font-size: 14px; border-bottom: 1px solid var(--border); padding-bottom: 12px; margin-bottom: 20px;">EDIT TEAM PROFILE</h3>
-            <form id="editTeamForm" class="dash-form">
-                <input type="hidden" id="edit_team_id">
-                
-                <div class="form-group">
-                    <label class="form-label">Team Name</label>
-                    <input type="text" id="edit_team_name" required class="form-input">
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label">College</label>
-                    <input type="text" id="edit_team_college" required class="form-input">
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label">Status</label>
-                    <select id="edit_team_status" class="form-select">
-                        <option value="Submitted">Submitted</option>
-                        <option value="Approved">Approved</option>
-                        <option value="Rejected">Rejected</option>
-                        <option value="Incomplete">Incomplete</option>
-                    </select>
-                </div>
+    <div
+      id="editTeamModal"
+      style="
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.85);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+        backdrop-filter: blur(4px);
+      "
+    >
+      <div class="glass-card" style="width: 440px; max-width: 95%; margin: 0">
+        <h3
+          style="
+            color: #fff;
+            margin-top: 0;
+            font-family: var(--font-display);
+            letter-spacing: 2px;
+            font-size: 14px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 12px;
+            margin-bottom: 20px;
+          "
+        >
+          EDIT TEAM PROFILE
+        </h3>
+        <form id="editTeamForm" class="dash-form">
+          <input type="hidden" id="edit_team_id" />
 
-                <div style="display: flex; gap: 10px; margin-top: 12px;">
-                    <button type="button" id="closeEditModalBtn" class="btn-outline" style="flex: 1; border-color: var(--border); color: #fff;">CANCEL</button>
-                    <button type="submit" id="saveEditModalBtn" class="btn-primary" style="flex: 1;">SAVE CHANGES</button>
-                </div>
-            </form>
-        </div>
+          <div class="form-group">
+            <label class="form-label">Team Name</label>
+            <input
+              type="text"
+              id="edit_team_name"
+              required
+              class="form-input"
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">College</label>
+            <input
+              type="text"
+              id="edit_team_college"
+              required
+              class="form-input"
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Status</label>
+            <select id="edit_team_status" class="form-select">
+              <option value="Submitted">Submitted</option>
+              <option value="Approved">Approved</option>
+              <option value="Rejected">Rejected</option>
+              <option value="Incomplete">Incomplete</option>
+            </select>
+          </div>
+
+          <div style="display: flex; gap: 10px; margin-top: 12px">
+            <button
+              type="button"
+              id="closeEditModalBtn"
+              class="btn-outline"
+              style="flex: 1; border-color: var(--border); color: #fff"
+            >
+              CANCEL
+            </button>
+            <button
+              type="submit"
+              id="saveEditModalBtn"
+              class="btn-primary"
+              style="flex: 1"
+            >
+              SAVE CHANGES
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
 
     <!-- Firebase SDKs & App Logic -->
     <script type="module" src="js/admin.js"></script>
-</body>
+  </body>
 </html>

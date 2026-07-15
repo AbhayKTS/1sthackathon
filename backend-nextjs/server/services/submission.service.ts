@@ -39,6 +39,7 @@ export interface SubmitPayloadInput {
   pptLink?: string;
   prototypeLink?: string;
   hasNoPrototype?: boolean;
+  customLink?: string;
 }
 
 // ─── Submit ───────────────────────────────────────────────────────────────────
@@ -119,7 +120,7 @@ export async function submitPayload(userUid: string, input: SubmitPayloadInput):
   }
 
   // 5. Branch by submissionType and build submission document
-  const submissionType = (roundData['submissionType'] ?? 'github_link') as SubmissionType;
+  const submissionType = (roundData['submissionType'] ?? 'Github') as SubmissionType;
   const teamName: string = teamData['teamName'] ?? '';
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -137,6 +138,7 @@ export async function submitPayload(userUid: string, input: SubmitPayloadInput):
     hasNoPrototype: false,
     githubLink: null,
     demoLink: null,
+    customLink: null,
   };
 
   let sheetSyncData: Record<string, string | number> | null = null;
@@ -145,7 +147,7 @@ export async function submitPayload(userUid: string, input: SubmitPayloadInput):
   const submittedAtIso = new Date().toISOString();
 
   switch (submissionType) {
-    case 'ppt_link': {
+    case 'PPT': {
       if (!input.pptLink?.trim()) {
         throw Errors.validation('A PPT link (Canva / Google Slides) is required for this round.');
       }
@@ -159,7 +161,7 @@ export async function submitPayload(userUid: string, input: SubmitPayloadInput):
       break;
     }
 
-    case 'prototype_link': {
+    case 'Prototype': {
       if (!input.hasNoPrototype && !input.prototypeLink?.trim()) {
         throw Errors.validation(
           'Please provide a prototype link, or check "No prototype yet" to indicate your status.'
@@ -176,12 +178,38 @@ export async function submitPayload(userUid: string, input: SubmitPayloadInput):
       break;
     }
 
-    case 'none': {
+    case 'Demo': {
+      if (!input.demoLink?.trim()) {
+        throw Errors.validation('A Demo link is required for this round.');
+      }
+      submissionDoc.demoLink = input.demoLink.trim();
+      sheetSyncData = {
+        teamId: input.teamId,
+        roundId: input.roundId,
+        submittedAt: submittedAtIso,
+        demoLink: input.demoLink.trim(),
+      };
+      break;
+    }
+
+    case 'Custom': {
+      submissionDoc.customLink = input.customLink?.trim() ?? null;
+      sheetSyncData = {
+        teamId: input.teamId,
+        roundId: input.roundId,
+        submittedAt: submittedAtIso,
+        customLink: input.customLink?.trim() ?? '',
+      };
+      break;
+    }
+
+    case 'None': {
       throw Errors.validation(
         'Teams do not submit links for this round. Your session will be assigned by the admin.'
       );
     }
 
+    case 'Github':
     default: {
       if (!input.githubLink?.trim()) {
         throw Errors.validation('A GitHub link is required for this round.');
@@ -206,8 +234,8 @@ export async function submitPayload(userUid: string, input: SubmitPayloadInput):
   if (sheetSyncData) {
     const effectiveSheetId =
       sheetId ||
-      (submissionType === 'ppt_link' ? env.GOOGLE_SHEET_PPT_ID : null) ||
-      (submissionType === 'prototype_link' ? env.GOOGLE_SHEET_PROTO_ID : null) ||
+      (submissionType === 'PPT' ? env.GOOGLE_SHEET_PPT_ID : null) ||
+      (submissionType === 'Prototype' ? env.GOOGLE_SHEET_PROTO_ID : null) ||
       null;
 
     if (effectiveSheetId) {

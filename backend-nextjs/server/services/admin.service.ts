@@ -522,7 +522,7 @@ export async function activateRound(
       title: roundTitle,
       description: roundDesc,
       type: 'general',
-      submissionType: 'github_link',
+      submissionType: 'Github',
     });
     await transitionRound(adminUid, roundId, 'Published');
     await transitionRound(adminUid, roundId, 'Active');

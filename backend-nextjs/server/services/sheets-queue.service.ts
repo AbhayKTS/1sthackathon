@@ -162,7 +162,7 @@ export async function processSheetsQueue(): Promise<SheetsProcessResult> {
     });
 
     try {
-      await appendToSheet(data.sheetId, data.sheetName, data.teamName, data.data);
+      await upsertToSheet(data.sheetId, data.sheetName, data.teamName, data.roundId, data.data);
 
       await doc.ref.update({
         status: 'synced',
@@ -213,13 +213,15 @@ export async function processSheetsQueue(): Promise<SheetsProcessResult> {
 // ─── Sheets Writer ────────────────────────────────────────────────────────────
 
 /**
- * Appends a row to a Google Sheet via the googleapis SDK.
+ * Upserts a row to a Google Sheet via the googleapis SDK.
+ * Prevents duplicate rows by using Team Name and optionally Round ID as a composite key.
  * Uses service account from GOOGLE_SERVICE_ACCOUNT_JSON env var.
  */
-async function appendToSheet(
+async function upsertToSheet(
   sheetId: string,
   sheetName: string,
   teamName: string,
+  roundId: string,
   data: Record<string, string | number>,
 ): Promise<void> {
   if (!env.GOOGLE_SERVICE_ACCOUNT_JSON) {
@@ -240,13 +242,50 @@ async function appendToSheet(
   // Build row as ordered values
   const row = [teamName, ...Object.values(data)];
 
-  await sheets.spreadsheets.values.append({
+  // 1. Fetch existing rows to find a match
+  const getRes = await sheets.spreadsheets.values.get({
     spreadsheetId: sheetId,
     range: `${sheetName}!A:Z`,
-    valueInputOption: 'USER_ENTERED',
-    insertDataOption: 'INSERT_ROWS',
-    requestBody: { values: [row] },
   });
+
+  const existingRows = getRes.data.values || [];
+  let foundIndex = -1;
+
+  for (let i = 0; i < existingRows.length; i++) {
+    const existingRow = existingRows[i];
+    if (existingRow && existingRow[0] === teamName) {
+      if (roundId === 'onboarding') {
+        foundIndex = i;
+        break;
+      } else {
+        // For submissions, Column C (index 2) is the round ID.
+        if (existingRow[2] === roundId) {
+          foundIndex = i;
+          break;
+        }
+      }
+    }
+  }
+
+  if (foundIndex >= 0) {
+    // 2. Update existing row (Google Sheets uses 1-based indexing)
+    const targetRange = `${sheetName}!A${foundIndex + 1}:Z${foundIndex + 1}`;
+    await sheets.spreadsheets.values.update({
+      spreadsheetId: sheetId,
+      range: targetRange,
+      valueInputOption: 'USER_ENTERED',
+      requestBody: { values: [row] },
+    });
+  } else {
+    // 3. Append new row
+    await sheets.spreadsheets.values.append({
+      spreadsheetId: sheetId,
+      range: `${sheetName}!A:Z`,
+      valueInputOption: 'USER_ENTERED',
+      insertDataOption: 'INSERT_ROWS',
+      requestBody: { values: [row] },
+    });
+  }
 }
 
 // ─── Status / Admin Views ─────────────────────────────────────────────────────

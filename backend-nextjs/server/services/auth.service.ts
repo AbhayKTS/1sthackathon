@@ -477,34 +477,21 @@ export async function verifyOtpAndCreateSession(
       isActive: true,
     });
   } else {
+    const existingDocData = userDocSnap.data()!;
     const updateData: any = {
       lastLoginAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),
     };
-    if (isMember && !userDocSnap.data()?.teamId) {
+    if (existingDocData.role === 'super_admin' && normalizedEmail !== 'team@revengershack.tech') {
+      updateData.role = 'admin';
+    }
+    if (isMember && !existingDocData.teamId) {
       updateData.teamId = memberTeamId;
       updateData.role = 'participant_member';
     }
     await userRef.update(updateData);
   }
 
-  // ─── 8. Update invitedTeams status → Verified ────────────────────────────
-  if (!isAdmin && !isMember) {
-    await db.collection('invitedTeams').doc(invitedTeamId).update({
-      status: 'Verified',
-      verifiedAt: FieldValue.serverTimestamp(),
-    });
-
-    if (isNewUser) {
-        const baseUrl = process.env.NODE_ENV === 'production' ? 'https://revengershack.tech' : (env.NEXT_PUBLIC_APP_URL || 'http://localhost:5173');
-        const loginUrl = `${baseUrl}/dashboard`;
-        await sendEmail({
-            to: normalizedEmail,
-            template: 'verified',
-            variables: { loginUrl }
-        }).catch(e => console.error("Failed to send verified email", e));
-    }
-  }
 
   // ─── 9. Issue Firebase custom token ──────────────────────────────────────
   // Client uses signInWithCustomToken(auth, customToken) to get a real ID token.

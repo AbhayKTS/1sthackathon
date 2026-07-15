@@ -80,21 +80,16 @@ const logoutBtn = document.getElementById("logoutBtn");
 
 const tabTitles = {
     dashboard: ["DASHBOARD OVERVIEW", "Central Operational Metrics"],
-    import: ["REGISTRATION IMPORT", "Manual Draft Entry & CSV/Excel Upload Shortlist"],
-    teams: ["TEAMS LIFE-CYCLE", "Comprehensive Hackathon Team Management"],
+    teams: ["TEAMS LIFE-CYCLE", "Comprehensive Hackathon Team Management & Import"],
     users: ["USER ACCOUNTS", "Registered Platform Participant Roles"],
     rounds: ["ROUND MANAGER", "Hackathon Round States & Deadlines Config"],
-    mentor: ["MENTOR SESSIONS", "Mentor Booking Schedules & Meeting Links"],
     submissions: ["SUBMISSIONS LOG", "Live Participant Deliverable Links"],
-    evaluations: ["ROUND EVALUATIONS", "Evaluate Submissions & Input Scores"],
-    leaderboard: ["STANDINGS LEADERBOARD", "Live Rank Standing of Active Teams"],
-    "email-queue": ["EMAIL QUEUE JOBS", "Monitor Mail Delivery Queue & Retry Jobs"],
     "sheets-sync": ["SHEETS SYNC", "Double-Write Google Sheets Queue Logs"],
-    logs: ["ACTIVITY AUDIT LOGS", "Internal System Log Feeds & Events"],
     announcements: ["ANNOUNCEMENTS", "Broadcast Multi-channel Alerts & Broadcasts"],
+    workers: ["WORKER NODES & QUEUES", "System Health, Worker Controls & Mail Delivery Queue"],
+    logs: ["ACTIVITY AUDIT LOGS", "Internal System Log Feeds & Events"],
     settings: ["SYSTEM SETTINGS", "Global Platform Property Configurations"],
-    "system-health": ["SYSTEM HEALTH MONITOR", "Real-time Queue Statuses & Emergency Control Deck"],
-    "admin-accounts": ["ADMIN & STAFF ACCOUNTS", "Manage Administrators, Judges, and Mentors Permissions"],
+    "admin-accounts": ["ADMIN & STAFF ACCOUNTS", "Manage Administrators Permissions"],
 };
 
 let tabControlsWired = false;
@@ -447,7 +442,27 @@ function initTeamsRealtime() {
         snap.docs.forEach(docSnap => {
             const data = docSnap.data();
             const id = docSnap.id;
-            const members = data.members ? data.members.map(m => m.name).join(", ") : "None";
+            
+            let membersHtml = "";
+            if (data.members && data.members.length > 0) {
+                membersHtml = data.members.map(m => {
+                    if (m.onboardingComplete && m.uid) {
+                        return `<div style="color: #22c55e; margin-bottom: 2px;">✔ ${sanitizeHTML(m.name)} (${sanitizeHTML(m.role || 'Member')})</div>`;
+                    } else {
+                        return `<div style="color: #ef4444; margin-bottom: 4px; line-height: 1.2;">
+                            ❌ ${sanitizeHTML(m.name)} (${sanitizeHTML(m.role || 'Member')})<br>
+                            <span style="color: #f59e0b; font-size: 9px; padding-left: 12px; display: inline-block;">
+                                • Missing User<br>
+                                • Incomplete Registration<br>
+                                • Waiting for Member Completion
+                            </span>
+                        </div>`;
+                    }
+                }).join("");
+            } else {
+                membersHtml = `<span style="color: var(--muted-foreground);">None</span>`;
+            }
+
             const tr = document.createElement("tr");
             tr.innerHTML = `
                 <td>
@@ -455,8 +470,8 @@ function initTeamsRealtime() {
                     <div style="font-size: 10px; color: var(--muted-foreground);">Track: ${sanitizeHTML(data.track || "Not selected")}</div>
                 </td>
                 <td>
-                    <div><strong>${sanitizeHTML(data.leaderName)} (Leader)</strong></div>
-                    <div style="font-size: 10px; color: var(--muted-foreground);">${sanitizeHTML(members)}</div>
+                    <div style="margin-bottom: 4px;"><strong>${sanitizeHTML(data.leaderName)} (Leader)</strong></div>
+                    <div style="display: flex; flex-direction: column; gap: 2px;">${membersHtml}</div>
                 </td>
                 <td>
                     <div>${sanitizeHTML(data.college)}</div>
@@ -625,19 +640,60 @@ editTeamForm.addEventListener("submit", async (e) => {
 // ─── TAB 4: USERS ACCOUNTS ────────────────────────────────────────────────────
 async function initUserAccounts() {
     try {
-        const response = await fetch(`${API_BASE}/admin/permissions?limit=50`, {
+        // Fetch verified users
+        const permissionsRes = await fetch(`${API_BASE}/admin/permissions?limit=1000`, {
             headers: { Authorization: `Bearer ${idToken}` }
         });
-        const result = await response.json();
+        const permissionsResult = await permissionsRes.json();
+        const users = permissionsResult.data?.users ?? [];
+
+        // Fetch teams to find missing users
+        const teamsRes = await fetch(`${API_BASE}/admin/teams`, {
+            headers: { Authorization: `Bearer ${idToken}` }
+        });
+        const teamsResult = await teamsRes.json();
+        const allTeams = teamsResult.data || [];
+
         const tbody = document.getElementById("usersTableBody");
         tbody.innerHTML = "";
 
-        const users = result.data?.users ?? [];
-        if (users.length === 0) {
+        const registeredEmails = new Set(users.map(u => u.email?.toLowerCase()));
+        let missingUsers = [];
+
+        allTeams.forEach(team => {
+            if (team.leader && team.leader.email) {
+                if (!registeredEmails.has(team.leader.email.toLowerCase())) {
+                    missingUsers.push({ email: team.leader.email, role: 'Team Lead', teamName: team.teamName });
+                }
+            }
+            if (team.members && Array.isArray(team.members)) {
+                team.members.forEach(member => {
+                    if (member.email && !registeredEmails.has(member.email.toLowerCase())) {
+                        missingUsers.push({ email: member.email, role: 'Member', teamName: team.teamName });
+                    }
+                });
+            }
+        });
+
+        if (users.length === 0 && missingUsers.length === 0) {
             tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--muted-foreground);">No users accounts found.</td></tr>';
             return;
         }
 
+        // Render missing users first
+        missingUsers.forEach(mu => {
+            const tr = document.createElement("tr");
+            tr.style.background = "rgba(229, 9, 20, 0.05)";
+            tr.innerHTML = `
+                <td><span class="role-tag" style="background: rgba(229, 9, 20, 0.1); color: var(--primary); border: 1px solid var(--primary);">Missing User</span></td>
+                <td>${sanitizeHTML(mu.email)}</td>
+                <td><span style="color: var(--muted-foreground); font-size: 11px;">Waiting for Member Completion (${sanitizeHTML(mu.role)})</span></td>
+                <td>${sanitizeHTML(mu.teamName)}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        // Render verified users
         users.forEach(u => {
             const tr = document.createElement("tr");
             tr.innerHTML = `
@@ -704,10 +760,29 @@ async function fetchAndRenderRounds() {
                 <div style="font-size: 12px; color: var(--muted-foreground); margin-bottom: 8px; flex: 1;">
                     ${sanitizeHTML(r.description || "No description provided.")}
                 </div>
+                
                 <div class="form-group" style="margin-bottom: 12px;">
                     <label class="form-label" style="font-size: 10px;">SUBMISSION DEADLINE</label>
                     <input type="datetime-local" class="form-input deadline-picker" value="${deadlineVal}">
                 </div>
+                
+                <div class="form-group" style="margin-bottom: 12px;">
+                    <label class="form-label" style="font-size: 10px;">SUBMISSION TYPE</label>
+                    <select class="form-input submission-type-select">
+                        <option value="PPT" ${r.submissionType === 'PPT' ? 'selected' : ''}>PPT</option>
+                        <option value="Github" ${r.submissionType === 'Github' ? 'selected' : ''}>Github</option>
+                        <option value="Prototype" ${r.submissionType === 'Prototype' ? 'selected' : ''}>Prototype</option>
+                        <option value="Demo" ${r.submissionType === 'Demo' ? 'selected' : ''}>Demo</option>
+                        <option value="Custom" ${r.submissionType === 'Custom' ? 'selected' : ''}>Custom</option>
+                        <option value="None" ${r.submissionType === 'None' ? 'selected' : ''}>None</option>
+                    </select>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 16px;">
+                    <label class="form-label" style="font-size: 10px;">LINKED GOOGLE SHEET ID (Optional)</label>
+                    <input type="text" class="form-input linked-sheet-input" placeholder="e.g. 1BxiMVs0XRYFgCE..." value="${sanitizeHTML(r.googleSheetId || '')}">
+                </div>
+
                 <div style="display: flex; gap: 8px;">
                     <button type="button" class="btn-outline btn-activate" style="flex: 1; border-color: var(--accent); color: var(--accent); font-size: 11px; padding: 6px 12px;" ${r.status === 'Active' ? 'disabled style="opacity: 0.5; cursor: not-allowed; border-color: var(--border); color: var(--muted-foreground);"' : ''}>Activate</button>
                     <button type="button" class="btn-outline btn-deactivate" style="flex: 1; border-color: #ef4444; color: #ef4444; font-size: 11px; padding: 6px 12px;" ${r.status !== 'Active' ? 'disabled style="opacity: 0.5; cursor: not-allowed; border-color: var(--border); color: var(--muted-foreground);"' : ''}>Deactivate</button>
@@ -720,6 +795,8 @@ async function fetchAndRenderRounds() {
             const deactBtn = card.querySelector(".btn-deactivate");
             const saveBtn = card.querySelector(".btn-save");
             const deadlineInput = card.querySelector(".deadline-picker");
+            const submissionTypeSelect = card.querySelector(".submission-type-select");
+            const googleSheetInput = card.querySelector(".linked-sheet-input");
 
             actBtn.addEventListener("click", async () => {
                 actBtn.disabled = true;
@@ -773,6 +850,9 @@ async function fetchAndRenderRounds() {
 
             saveBtn.addEventListener("click", async () => {
                 const deadlineStr = deadlineInput.value;
+                const submissionType = submissionTypeSelect.value;
+                const googleSheetId = googleSheetInput.value;
+
                 if (!deadlineStr) {
                     showToast("Please select a valid deadline date and time.", "error");
                     return;
@@ -787,10 +867,15 @@ async function fetchAndRenderRounds() {
                             "Content-Type": "application/json",
                             Authorization: `Bearer ${idToken}`
                         },
-                        body: JSON.stringify({ roundId: r.id, submissionDeadline: timeDate.toISOString() })
+                        body: JSON.stringify({
+                            roundId: r.id,
+                            submissionDeadline: timeDate.toISOString(),
+                            submissionType,
+                            googleSheetId
+                        })
                     });
-                    if (!response.ok) throw new Error("Failed to save deadline.");
-                    showToast(`Deadline for ${r.title} saved successfully!`);
+                    if (!response.ok) throw new Error("Failed to save round settings.");
+                    showToast(`Settings for ${r.title} saved successfully!`);
                     await fetchAndRenderRounds();
                 } catch (err) {
                     showToast(err.message, "error");

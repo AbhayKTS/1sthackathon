@@ -43,6 +43,8 @@ const submissionSchema = z.object({
   // Mentoring/prototype round
   prototypeLink: z.string().url().optional(),
   hasNoPrototype: z.boolean().optional().default(false),
+  // Custom round
+  customLink: z.string().url().optional(),
 });
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
@@ -69,6 +71,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       ...(parsed.data.pptLink !== undefined && { pptLink: parsed.data.pptLink }),
       ...(parsed.data.prototypeLink !== undefined && { prototypeLink: parsed.data.prototypeLink }),
       ...(parsed.data.hasNoPrototype !== undefined && { hasNoPrototype: parsed.data.hasNoPrototype }),
+      ...(parsed.data.customLink !== undefined && { customLink: parsed.data.customLink }),
     };
 
     await submitPayload(token.uid, input);

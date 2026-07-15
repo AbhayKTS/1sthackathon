@@ -204,6 +204,10 @@ async function loadTeamData(teamId) {
             const team = teamSnap.data();
 
             // Block access if not Approved
+            if (team.status === 'Draft' || team.status === 'LeaderRegistered') {
+                window.location.href = '/onboarding.html';
+                return;
+            }
             if (team.status === 'Incomplete' || team.status === 'NeedChanges') {
                 sessionStorage.setItem('rh_need_changes', JSON.stringify(team.needChangesHistory || []));
                 window.location.href = '/onboarding.html';
@@ -218,7 +222,7 @@ async function loadTeamData(teamId) {
                 `;
                 return;
             }
-            if (team.status === 'Submitted') {
+            if (team.status === 'Verified' || team.status === 'Submitted') {
                 document.body.innerHTML = `
                     <div style="text-align:center; margin-top:20%; color: white; font-family: 'JetBrains Mono', monospace;">
                         <h2 style="font-family: 'Zen Dots', sans-serif; font-size: 2rem; margin-bottom: 20px;">TRANSMISSION RECEIVED</h2>

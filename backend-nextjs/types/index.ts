@@ -95,10 +95,14 @@ export interface TeamMemberDoc {
   uid: string | null;
   name: string;
   email: string;
-  phone: string;
   role: string;
   college: string;
+  course: string;
+  gradYear: number;
+  phone: string;
+  whatsapp: string;
   github: string | null;
+  linkedin: string | null;
   onboardingComplete: boolean;
   joinedAt: Timestamp | null;
 }
@@ -113,8 +117,12 @@ export interface TeamDoc {
   leaderName: string;
   leaderEmail: string;
   leaderPhone: string;
-  leaderGithub: string | null;
+  leaderWhatsapp: string;
   leaderCollege: string;
+  leaderCourse: string;
+  leaderGradYear: number;
+  leaderGithub: string | null;
+  leaderLinkedin: string | null;
   members: TeamMemberDoc[];
   memberEmails: string[];
   status: TeamStatus;
@@ -149,10 +157,12 @@ export type RoundType =
   | 'general';
 
 export type SubmissionType =
-  | 'ppt_link'
-  | 'prototype_link'
-  | 'github_link'
-  | 'none';
+  | 'PPT'
+  | 'Github'
+  | 'Prototype'
+  | 'Demo'
+  | 'Custom'
+  | 'None';
 
 /** Valid state transitions for rounds */
 export const ROUND_TRANSITIONS: Record<RoundStatus, RoundStatus[]> = {
@@ -204,6 +214,7 @@ export interface SubmissionDoc {
   hasNoPrototype: boolean;
   githubLink: string | null;
   demoLink: string | null;
+  customLink: string | null;
   status: SubmissionStatus;
   submittedAt: Timestamp;
   lockedAt: Timestamp | null;
