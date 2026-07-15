@@ -9,7 +9,6 @@ const MIN_MEMBERS = 1;
 // ─── DOM Refs ─────────────────────────────────────────────────────────────────
 const form             = document.getElementById("onboardingForm");
 const membersContainer = document.getElementById("membersContainer");
-const addMemberBtn     = document.getElementById("addMemberBtn");
 const errorEl          = document.getElementById("formError");
 const submitBtn        = document.getElementById("submitBtn");
 const trackSelect      = document.getElementById("trackSelect");
@@ -218,7 +217,9 @@ async function setupLeaderUI(user, userData) {
                 membersContainer.innerHTML = "";
                 
                 if (members.length === 0) {
-                    membersContainer.innerHTML = `<div class="font-mono text-xs text-muted-foreground" style="font-family: 'JetBrains Mono', monospace; padding: 12px; text-align: center;">No additional members imported. Solo Registration.</div>`;
+                    membersContainer.innerHTML = `<div class="font-mono text-xs text-blood" style="font-family: 'JetBrains Mono', monospace; padding: 12px; text-align: center;">Critical Error: Invalid Roster! Minimum team size is 2 (Leader + 1 Member). Please contact support.</div>`;
+                    submitBtn.disabled = true;
+                    submitBtn.style.opacity = "0.5";
                 } else {
                     members.forEach((m, idx) => {
                         const row = document.createElement("div");
@@ -248,9 +249,6 @@ async function setupLeaderUI(user, userData) {
                         membersContainer.appendChild(row);
                     });
                 }
-
-                // Hide roster creation triggers (roster is locked/imported)
-                if (addMemberBtn) addMemberBtn.style.display = "none";
             }
         }
     } catch (err) {

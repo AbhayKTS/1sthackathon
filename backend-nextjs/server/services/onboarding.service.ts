@@ -149,6 +149,17 @@ export async function completeLeaderProfile(
       name: string; email: string; role: string; college: string;
     }>;
 
+    // HARDENING: Verify constraints before creating the team
+    if (prePopulatedMembers.length < 1 || prePopulatedMembers.length > 3) {
+      throw Errors.validation('Invalid roster size. Team must have between 1 and 3 members in addition to the leader.');
+    }
+
+    const leaderEmailLower = (userData['email'] as string).toLowerCase();
+    const leaderInRoster = prePopulatedMembers.some(m => m.email.toLowerCase() === leaderEmailLower);
+    if (leaderInRoster) {
+      throw Errors.validation('Duplicate leader architecture detected: Leader cannot exist in the members array.');
+    }
+
     const membersArray = prePopulatedMembers.map((m) => ({
       uid: null,
       name: m.name,
