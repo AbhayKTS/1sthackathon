@@ -58,17 +58,6 @@ function parseDate(val: string | null | undefined): Date | null {
   return isNaN(d.getTime()) ? null : d;
 }
 
-/**
- * Derives legacy isActive/isLocked booleans from the canonical status.
- * Kept so the Vite frontend (which reads these fields) continues to work.
- */
-function deriveLegacyFlags(status: RoundStatus): { isActive: boolean; isLocked: boolean } {
-  return {
-    isActive: status === 'Active',
-    isLocked: status === 'Locked' || status === 'Evaluation' || status === 'Completed' || status === 'Archived',
-  };
-}
-
 // ─── Operations ───────────────────────────────────────────────────────────────
 
 /**
@@ -103,9 +92,6 @@ export async function createRound(adminUid: string, input: CreateRoundInput): Pr
     timerDuration: null,
     googleSheetId: null,
     isVisible: false,
-    // Legacy fields for backward compat with Vite frontend
-    isActive: false,
-    isLocked: false,
     updatedAt: FieldValue.serverTimestamp(),
     updatedBy: adminUid,
   });
@@ -219,13 +205,8 @@ export async function transitionRound(
       throw Errors.forbidden('Only super_admin can complete an Evaluation round (this publishes scores).');
     }
 
-    const legacyFlags = deriveLegacyFlags(toStatus);
-
     transaction.update(ref, {
       status: toStatus,
-      // Keep legacy flags in sync
-      isActive: legacyFlags.isActive,
-      isLocked: legacyFlags.isLocked,
       // Auto-set isVisible when publishing
       ...(toStatus === 'Published' && { isVisible: true }),
       updatedAt: FieldValue.serverTimestamp(),

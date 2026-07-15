@@ -10,11 +10,17 @@ rules_version = '2';
 // Roles are stored in users/{uid}.role and validated by the API.
 // Client SDK reads must be explicitly permitted here.
 //
+// Valid roles (Phase 2 hardened): super_admin, admin,
+//   participant_leader, participant_member
+//
 // Collections:
-//   users, teams, invitedTeams, rounds, submissions, sessions,
-//   evaluations, leaderboard, announcements, mailQueue, mentorSlots,
-//   judges, permissions, activityLogs, auditLogs, settings, googleSheets,
+//   users, teams, invitedTeams, rounds, submissions,
+//   evaluations, leaderboard, announcements, mailQueue,
+//   permissions, activityLogs, auditLogs, settings, googleSheets,
 //   otpCodes, otpRateLimits, notifications, emailLogs, tickets
+//
+// REMOVED (Phase 2): sessions, mentorSlots, AuditLogs(capital A),
+//   hackathondata, teamData2 — all fall through to catch-all deny.
 //
 // ─── RULE CONVENTIONS ────────────────────────────────────────────────────────
 // isAuth()       — has a valid Firebase Auth session
@@ -106,39 +112,14 @@ service cloud.firestore {
       allow write: if false; // Admin SDK only
     }
 
-    // ─── Sessions (legacy) ────────────────────────────────────────────────────
-    // Legacy sessions collection (from old round.service assignSession)
-
-    match /sessions/{sessionId} {
-      allow read: if isAdmin() ||
-        (isAuth() && resource.data.teamId != null &&
-         exists(/databases/$(database)/documents/teams/$(resource.data.teamId)) &&
-         get(/databases/$(database)/documents/teams/$(resource.data.teamId)).data.leaderId == request.auth.uid);
-      allow write: if false; // Admin SDK only
-    }
-
-    // ─── Mentor Slots ─────────────────────────────────────────────────────────
-    // Team can read their slot IF meetLinkVisibleAt has passed for the link,
-    // OR if they're reading non-sensitive fields.
-    // The time-gate on meetLink is enforced by the API (server-side), not rules.
-    // Rules only allow the read — the API strips meetLink if too early.
-
-    match /mentorSlots/{slotId} {
-      allow read: if isAdmin() ||
-        (isAuth() && resource.data.teamId != null &&
-         exists(/databases/$(database)/documents/teams/$(resource.data.teamId)) &&
-         get(/databases/$(database)/documents/teams/$(resource.data.teamId)).data.leaderId == request.auth.uid);
-      allow write: if false; // Admin SDK only
-    }
-
     // ─── Evaluations ─────────────────────────────────────────────────────────
-    // Admins and judges can read evaluations.
+    // Admin read only.
     // Participants NEVER have read access to evaluations.
     // Published scores visible via leaderboard subcollection only.
+    // NOTE: judge role removed in Phase 2 — evaluations are admin-only now.
 
     match /evaluations/{evalId} {
-      allow read: if isAdmin() ||
-        (isAuth() && getRole() == 'judge');
+      allow read: if isAdmin();
       allow write: if false; // Admin SDK only
     }
 
@@ -194,10 +175,11 @@ service cloud.firestore {
     }
 
     // ─── Judges ───────────────────────────────────────────────────────────────
+    // NOTE: judge role removed in Phase 2. This collection is blocked for all clients.
+    // Any existing judge documents are readable only via Admin SDK.
 
     match /judges/{judgeId} {
-      allow read: if isAdmin();
-      allow write: if false; // Admin SDK only
+      allow read, write: if false;
     }
 
     // ─── Permissions ─────────────────────────────────────────────────────────
@@ -222,12 +204,6 @@ service cloud.firestore {
     // Admin read only. No client writes ever.
 
     match /auditLogs/{logId} {
-      allow read: if isAdmin();
-      allow write: if false;
-    }
-
-    // ─── Legacy AuditLogs (capital A, old collection name) ────────────────────
-    match /AuditLogs/{logId} {
       allow read: if isAdmin();
       allow write: if false;
     }
@@ -264,6 +240,7 @@ service cloud.firestore {
 
     // ─── Tickets ─────────────────────────────────────────────────────────────
     // Users can read/create their own tickets. Admin can read all.
+    // NOTE: status must be 'open' (lowercase) on create — matches the enum in tickets.ts.
 
     match /tickets/{ticketId} {
       allow read: if isAdmin() ||
@@ -276,20 +253,10 @@ service cloud.firestore {
       allow update: if false; // Replies via Admin SDK
     }
 
-    // ─── Dead Collections (read-only for migration) ───────────────────────────
-    // These will be deleted after migration is confirmed.
-
-    match /hackathondata/{docId} {
-      allow read: if isAdmin();
-      allow write: if false;
-    }
-
-    match /teamData2/{docId} {
-      allow read: if isAdmin();
-      allow write: if false;
-    }
-
     // ─── Catch-all: deny all other reads/writes ────────────────────────────────
+    // This covers all removed collections: sessions, mentorSlots, AuditLogs (capital A),
+    // hackathondata, teamData2 — they are fully blocked for client SDK access.
+    // Existing data in those collections is accessible only via Admin SDK.
     match /{document=**} {
       allow read, write: if false;
     }

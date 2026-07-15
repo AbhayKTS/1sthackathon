@@ -38,11 +38,13 @@ Document ID: Firebase Auth UID
   displayName:    string | null;   // Optional display name set during verification
   phone:          string | null;   // Normalised mobile number
   whatsapp:       string | null;   // Normalised WhatsApp number
+  college:        string | null;   // College name (added by onboarding)
   course:         string | null;   // Course/Branch (e.g. B.Tech CSE)
   gradYear:       number | null;   // Graduation Year
   linkedin:       string | null;   // LinkedIn URL
   github:         string | null;   // GitHub Username
   roleInTeam:     string | null;   // Technical role in team (e.g. Backend Developer)
+  onboardingStatus: 'pending' | 'complete';
   createdAt:      Timestamp;
   updatedAt:      Timestamp;
   lastLoginAt:    Timestamp | null;
@@ -107,16 +109,18 @@ Document ID: auto-ID
   leaderPhone:   string;
   college:       string;
   // city, state, round — NOT written by current import service (CsvRow has no these fields)
-  status:        'Invited' | 'EmailSent' | 'EmailFailed' | 'Verified' | 'Submitted' | 'Approved' | 'Rejected' | 'Incomplete';
+  status:        'Draft' | 'Invited' | 'EmailSent' | 'LeaderRegistered' | 'MembersInvited' | 'Verified' | 'Locked';
   importBatchId: string;       // UUID from CSV import session (for idempotency)
   importedAt:    Timestamp;    // Written by invitation.service.ts on import
   updatedAt:     Timestamp;    // Updated on status transitions
-  // emailSentAt — NOT currently written by code
-  // verifiedAt  — NOT currently written by code
+  invitationSentAt: Timestamp | null;
+  leaderRegisteredAt: Timestamp | null;
+  allMembersRegisteredAt: Timestamp | null;
+  lockedAt: Timestamp | null;
 }
 ```
 
-> **Note (CONFLICT #3):** Original spec had `invitedAt`, `emailSentAt`, `verifiedAt`, `city`, `state`, `round`. Actual code writes `importedAt` and `updatedAt` only. `status` enum expanded to cover full lifecycle. RESOLVED 2026-07-05.
+> **Note (CONFLICT #3):** Original spec had `invitedAt`, `emailSentAt`, `verifiedAt`, `city`, `state`, `round`. Actual code writes `importedAt` and `updatedAt` only. `status` enum expanded to match actual code states. RESOLVED 2026-07-15.
 
 **Security rule:** Admin read/write only. No client access.
 
@@ -134,10 +138,9 @@ Document ID: auto-ID
   invitedTeamId: string;          // FK → InvitedTeams
 
   // Team info
-  college:      string;
-  year:         string;           // e.g., "3rd Year"
-  state:        string;
-  city:         string;
+  domain:       string;
+  problemStatement: string;
+  isCustomPS:   boolean;
 
   // Leader (denormalized for quick display)
   leaderId:     string;           // FK → Users.uid
@@ -145,6 +148,7 @@ Document ID: auto-ID
   leaderEmail:  string;
   leaderPhone:  string;
   leaderWhatsapp: string;
+  leaderCollege: string;
   leaderCourse: string;
   leaderGradYear: number;
   leaderGithub: string | null;
@@ -172,8 +176,9 @@ Document ID: auto-ID
   photoStoragePath:     string | null;  // leader photo
   idStoragePath:        string | null;  // leader college ID
 
-  // Status lifecycle
-  status: 'Incomplete' | 'Submitted' | 'UnderReview' | 'Approved' | 'Rejected' | 'NeedChanges';
+  memberEmails: string[];
+  status:       'Draft' | 'Verified' | 'Submitted' | 'Approved' | 'Rejected' | 'Incomplete' | 'NeedChanges';
+  registrationLocked: boolean;
   adminNotes:     string | null;        // Latest admin note (Need Changes message)
   needChangesHistory: Array<{           // Append-only history, never overwritten
     note:       string;

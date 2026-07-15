@@ -18,7 +18,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   const origin = request.headers.get('origin') ?? '';
   try {
     const token = await withAuth(request);
-    requireRole(token, ['admin', 'super_admin', 'judge']);
+    requireRole(token, ['admin', 'super_admin']);
 
     const url = new URL(request.url);
     const roundId = url.searchParams.get('roundId');
@@ -36,7 +36,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const origin = request.headers.get('origin') ?? '';
   try {
     const token = await withAuth(request);
-    requireRole(token, ['admin', 'super_admin', 'judge']);
+    requireRole(token, ['admin', 'super_admin']);
 
     const body = await request.json().catch(() => {
       throw Errors.validation('Invalid JSON payload.');

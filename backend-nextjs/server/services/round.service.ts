@@ -22,8 +22,6 @@ export interface RoundData {
   title: string;
   description: string;
   type: RoundType;
-  isActive: boolean;
-  isLocked: boolean;
   startsAt: Date | null;
   endsAt: Date | null;
   submissionDeadline: Date | null;
@@ -36,8 +34,6 @@ export interface UpdateRoundInput {
   title?: string;
   description?: string;
   type?: RoundType;
-  isActive?: boolean;
-  isLocked?: boolean;
   startsAt?: string | null;   // ISO string from client
   endsAt?: string | null;
   submissionDeadline?: string | null;
@@ -57,7 +53,6 @@ function parseDate(val: string | null | undefined): Date | null {
 
 /**
  * Updates round fields. Any subset of fields can be updated.
- * isActive and isLocked are independent — updating one does not affect the other.
  */
 export async function updateRound(
   adminUid: string,
@@ -81,8 +76,6 @@ export async function updateRound(
   if (input.title !== undefined) update.title = input.title;
   if (input.description !== undefined) update.description = input.description;
   if (input.type !== undefined) update.type = input.type;
-  if (input.isActive !== undefined) update.isActive = input.isActive;
-  if (input.isLocked !== undefined) update.isLocked = input.isLocked;
   if ('startsAt' in input) update.startsAt = parseDate(input.startsAt);
   if ('endsAt' in input) update.endsAt = parseDate(input.endsAt);
   if ('submissionDeadline' in input) update.submissionDeadline = parseDate(input.submissionDeadline);
@@ -120,8 +113,6 @@ export async function ensureRoundExists(
       title: defaults.title || roundId,
       description: defaults.description || '',
       type: defaults.type || 'general',
-      isActive: false,
-      isLocked: false,
       startsAt: null,
       endsAt: null,
       submissionDeadline: null,

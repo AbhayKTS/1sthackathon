@@ -53,7 +53,7 @@ const envSchema = z.object({
 
   // Internal Cron Secret — protects /api/internal/* endpoints
   // Set this to a long random string (e.g., openssl rand -hex 32)
-  CRON_SECRET: z.string().optional(),
+  CRON_SECRET: z.string().min(1, "CRON_SECRET is required"),
 
   // Announcement Broadcast Channels
   DISCORD_WEBHOOK_URL: z.string().url().optional(),

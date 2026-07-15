@@ -25,22 +25,11 @@ try {
   console.error('Failed loading .env.local:', e);
 }
 
-// Load service account JSON from Downloads if available
-if (!process.env.FORCE_EMULATOR) {
-  try {
-    const saPath = '/Users/havocerebus/Downloads/sthack-88def-4e61863395d6.json';
-    if (fs.existsSync(saPath)) {
-      const saContent = fs.readFileSync(saPath, 'utf8');
-      process.env.FIREBASE_ADMIN_SERVICE_ACCOUNT_JSON = saContent;
-      console.log('Successfully loaded Firebase service account JSON from Downloads');
-      
-      // Disable emulator bypass since we want to run against production
-      delete process.env.FIRESTORE_EMULATOR_HOST;
-      delete process.env.FIREBASE_AUTH_EMULATOR_HOST;
-    }
-  } catch (e) {
-    console.error('Failed loading Firebase service account JSON:', e);
-  }
+// Load service account JSON if necessary (removed hardcoded path for security)
+if (!process.env.FORCE_EMULATOR && process.env.FIREBASE_ADMIN_SERVICE_ACCOUNT_JSON) {
+  // Disable emulator bypass since we want to run against production
+  delete process.env.FIRESTORE_EMULATOR_HOST;
+  delete process.env.FIREBASE_AUTH_EMULATOR_HOST;
 }
 
 import { getAdminDb, getAdminAuth } from '../lib/firebase-admin';

@@ -34,33 +34,6 @@ const DEFAULT_PERMISSIONS: Record<UserRole, Omit<PermissionsDoc, 'userId' | 'gra
     canSendEmails: true,
     canViewLogs: true,
   },
-  mentor: {
-    role: 'mentor',
-    canEditScores: false,
-    canPublishScores: false,
-    canManageRounds: false,
-    canManageTeams: false,
-    canSendEmails: false,
-    canViewLogs: false,
-  },
-  judge: {
-    role: 'judge',
-    canEditScores: true,
-    canPublishScores: false,
-    canManageRounds: false,
-    canManageTeams: false,
-    canSendEmails: false,
-    canViewLogs: false,
-  },
-  volunteer: {
-    role: 'volunteer',
-    canEditScores: false,
-    canPublishScores: false,
-    canManageRounds: false,
-    canManageTeams: false,
-    canSendEmails: false,
-    canViewLogs: false,
-  },
   participant_leader: {
     role: 'participant_leader',
     canEditScores: false,
@@ -175,8 +148,6 @@ export async function updatePermissions(
   if (input.role && input.role !== existing.role) {
     await db.collection('users').doc(targetUserId).update({
       role: input.role,
-      // Also sync canEditScores to users doc (legacy field used by leaderboard.service)
-      canEditScores: update.canEditScores ?? existing.canEditScores,
       updatedAt: FieldValue.serverTimestamp(),
     });
   }
@@ -291,8 +262,15 @@ export async function createAdminUser(
 
   const normalizedEmail = input.email.toLowerCase().trim();
 
-  if (input.role === 'super_admin' && normalizedEmail !== 'team@revengershack.tech') {
-    throw Errors.validation('Only team@revengershack.tech is allowed to hold the super_admin role.');
+  // Only 'admin' role may be created via this function.
+  // super_admin is exclusively team@revengershack.tech and managed by ensure-super-admin script.
+  // participant roles are created exclusively via the OTP/onboarding flow.
+  if (input.role !== 'admin') {
+    throw Errors.validation(
+      'createAdminUser only accepts role \'admin\'. ' +
+      'super_admin is managed by the ensure-super-admin script. ' +
+      'Participant accounts are created via OTP/onboarding.',
+    );
   }
 
   // Create Firebase Auth user if not exists
@@ -320,7 +298,6 @@ export async function createAdminUser(
     college: null,
     github: null,
     onboardingStatus: 'complete',
-    canEditScores: DEFAULT_PERMISSIONS[input.role].canEditScores,
     isActive: true,
     createdAt: FieldValue.serverTimestamp(),
     updatedAt: FieldValue.serverTimestamp(),

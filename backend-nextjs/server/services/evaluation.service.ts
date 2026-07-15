@@ -4,7 +4,6 @@
  * Permissions:
  *   - super_admin: can enter draft AND publish scores
  *   - admin with canEditScores=true: can enter draft scores only
- *   - judge: can enter draft scores for their assigned teams only
  *   - All others: no access
  *
  * Score publishing:
@@ -30,27 +29,12 @@ async function assertCanEnterScore(token: AuthenticatedToken, teamId: string): P
   if (token.role === 'super_admin') return;
 
   if (token.role === 'admin') {
-    const userSnap = await db.collection('users').doc(token.uid).get();
-    if (userSnap.data()?.canEditScores === true) return;
+    const permSnap = await db.collection('permissions').doc(token.uid).get();
+    if (permSnap.data()?.canEditScores === true) return;
     throw Errors.forbidden('You do not have canEditScores permission. Ask a super_admin to grant it.');
   }
 
-  if (token.role === 'judge') {
-    // Judges can only score their assigned teams
-    const judgeSnap = await db
-      .collection('judges')
-      .where('uid', '==', token.uid)
-      .where('assignedTeams', 'array-contains', teamId)
-      .limit(1)
-      .get();
-
-    if (judgeSnap.empty) {
-      throw Errors.forbidden(`You are not assigned to judge team ${teamId}.`);
-    }
-    return;
-  }
-
-  throw Errors.forbidden('Only admins and assigned judges can enter scores.');
+  throw Errors.forbidden('Only admins can enter scores.');
 }
 
 // ─── Enter Draft Score ────────────────────────────────────────────────────────

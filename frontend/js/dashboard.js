@@ -302,9 +302,9 @@ function loadActiveRounds() {
     const roundStates = {};
 
     function renderActiveRound() {
-        const activeEntry = Object.entries(roundStates).find(([, data]) => data && data.isActive);
+        const activeEntry = Object.entries(roundStates).find(([, data]) => data && data.status === 'Active');
 
-        const closedRounds = Object.entries(roundStates).filter(([, data]) => data && data.isLocked && !data.isActive);
+        const closedRounds = Object.entries(roundStates).filter(([, data]) => data && ['Locked', 'Evaluation', 'Completed', 'Archived'].includes(data.status));
         const closedMissionsContainer = document.getElementById("closedMissionsContainer");
         const closedMissionsList = document.getElementById("closedMissionsList");
 
@@ -688,7 +688,7 @@ async function loadLeaderboard() {
     leaderboardUnsubscriber = onSnapshot(roundsRef, async (snap) => {
         try {
             const rounds = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            const activeRound = rounds.find(r => r.status === "Active" || r.isActive);
+            const activeRound = rounds.find(r => r.status === "Active");
             if (!activeRound) {
                 if (leaderboardDocUnsub) {
                     leaderboardDocUnsub();

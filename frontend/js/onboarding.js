@@ -21,6 +21,7 @@ const leaderGradYear   = document.getElementById("leaderGradYear");
 const leaderGithub     = document.getElementById("leaderGithub");
 const leaderLinkedin   = document.getElementById("leaderLinkedin");
 const leaderRole       = document.getElementById("leaderRole");
+const memberCollege    = document.getElementById("memberCollege");
 
 // ─── Graduation Year populator ────────────────────────────────────────────────
 function populateGradYears(selectEl) {
@@ -45,8 +46,9 @@ populateGradYears(leaderGradYear);
 async function loadTracks() {
     try {
         const res = await fetch("/data/tracks.json");
-        if (!res.ok) throw new Error("Failed to load tracks");
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const tracks = await res.json();
+        if (!Array.isArray(tracks) || tracks.length === 0) throw new Error("Empty tracks list");
         tracks.forEach(track => {
             const opt = document.createElement("option");
             opt.value = track.id;
@@ -54,7 +56,18 @@ async function loadTracks() {
             trackSelect.appendChild(opt);
         });
     } catch (e) {
-        console.warn("Could not load tracks.json:", e);
+        console.error("Could not load tracks.json:", e);
+        // Add a fallback "General" option so the form remains submittable
+        const fallback = document.createElement("option");
+        fallback.value = "general";
+        fallback.textContent = "General Track";
+        trackSelect.appendChild(fallback);
+        // Show a visible notice below the dropdown
+        const notice = document.createElement("p");
+        notice.className = "field-note";
+        notice.style.color = "#f59e0b";
+        notice.textContent = "⚠ Track list could not be loaded. 'General Track' selected by default. Contact support if this persists.";
+        trackSelect.parentNode.appendChild(notice);
     }
 }
 loadTracks();
@@ -179,6 +192,13 @@ async function setupLeaderUI(user, userData) {
                 document.getElementById("college").value = currentPrefillData.college || "";
                 document.getElementById("college").disabled = true;
                 document.getElementById("college").style.opacity = "0.7";
+
+                // Pre-fill and lock the memberCollege field (leaders get it from invitedTeam)
+                if (memberCollege) {
+                    memberCollege.value = currentPrefillData.college || "";
+                    memberCollege.disabled = true;
+                    memberCollege.style.opacity = "0.7";
+                }
 
                 leaderName.value = currentPrefillData.leaderName || userData.displayName || "";
                 leaderPhone.value = (currentPrefillData.leaderPhone || userData.phone || "").replace(/^\+91/, "");
@@ -313,6 +333,15 @@ function setupMemberUI(user, userData) {
     leaderLinkedin.placeholder = "YOUR LINKEDIN URL (optional)";
     leaderLinkedin.value = userData.linkedin || "";
     leaderLinkedin.style.display = "block"; // Members have LinkedIn too now
+
+    // Show and configure college input for members
+    // Members must enter their own college — it is not pre-filled from invitedTeam
+    if (memberCollege) {
+        memberCollege.placeholder = "YOUR COLLEGE / UNIVERSITY *";
+        memberCollege.value = userData.college || "";
+        memberCollege.disabled = false;
+        memberCollege.required = true;
+    }
 }
 
 // ─── Form Submit ──────────────────────────────────────────────────────────────
@@ -353,7 +382,9 @@ form.addEventListener("submit", async (e) => {
         if (!gradYearVal) throw new Error("Graduation Year is required.");
 
         if (currentUserRole === "participant_leader") {
-            const college = currentPrefillData?.college || document.getElementById("college").value.trim();
+            const college = (memberCollege && memberCollege.value.trim()) ||
+                currentPrefillData?.college ||
+                document.getElementById("college")?.value?.trim();
             if (!college) throw new Error("College is required.");
 
             payload = {
@@ -372,11 +403,9 @@ form.addEventListener("submit", async (e) => {
             const roleVal = leaderRole.value;
             if (!roleVal) throw new Error("Role in team is required.");
 
-            // Fetch member's college from their Firestore doc (already loaded)
-            const userDocRef = doc(db, "users", user.uid);
-            const userDocSnap = await getDoc(userDocRef);
-            const college = userDocSnap.data()?.college;
-            if (!college) throw new Error("College is required.");
+            // Read college from the memberCollege input field (member fills it in)
+            const college = memberCollege ? memberCollege.value.trim() : "";
+            if (!college) throw new Error("College / University is required.");
 
             payload = {
                 displayName: nameVal,

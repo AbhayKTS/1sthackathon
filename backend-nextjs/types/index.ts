@@ -11,18 +11,19 @@ import type { Timestamp } from 'firebase-admin/firestore';
 
 // ─── Roles ────────────────────────────────────────────────────────────────────
 
+/**
+ * Locked roles for RevengersHack 2026.
+ * mentor, judge, volunteer are NOT valid roles — removed in Phase 2 hardening.
+ */
 export type UserRole =
   | 'super_admin'
   | 'admin'
-  | 'mentor'
-  | 'judge'
-  | 'volunteer'
   | 'participant_leader'
   | 'participant_member';
 
 export const ADMIN_ROLES: UserRole[] = ['super_admin', 'admin'];
 export const PARTICIPANT_ROLES: UserRole[] = ['participant_leader', 'participant_member'];
-export const ALL_ROLES: UserRole[] = ['super_admin', 'admin', 'mentor', 'judge', 'volunteer', 'participant_leader', 'participant_member'];
+export const ALL_ROLES: UserRole[] = ['super_admin', 'admin', 'participant_leader', 'participant_member'];
 
 // ─── Users ────────────────────────────────────────────────────────────────────
 
@@ -42,7 +43,6 @@ export interface UserDoc {
   github: string | null;
   roleInTeam: string | null;
   onboardingStatus: 'pending' | 'complete';
-  canEditScores: boolean;
   isActive: boolean;
   createdAt: Timestamp;
   updatedAt: Timestamp;
@@ -89,7 +89,7 @@ export interface InvitedTeamDoc {
 
 // ─── Teams ────────────────────────────────────────────────────────────────────
 
-export type TeamStatus = 'Draft' | 'Verified';
+export type TeamStatus = 'Draft' | 'Verified' | 'Submitted' | 'Approved' | 'Rejected' | 'Incomplete' | 'NeedChanges';
 
 export interface TeamMemberDoc {
   uid: string | null;
@@ -150,11 +150,11 @@ export type RoundStatus =
 
 export type RoundType =
   | 'ppt'
-  | 'mentor_session'
   | 'prototype'
   | 'timeleap'
   | 'final'
   | 'general';
+// NOTE: 'mentor_session' was removed in Phase 2 — mentor system not in locked workflow.
 
 export type SubmissionType =
   | 'PPT'
@@ -317,36 +317,10 @@ export interface GoogleSheetsSyncDoc {
   createdBy: string;
 }
 
-// ─── Mentor Slots ─────────────────────────────────────────────────────────────
-
-export type MentorSlotStatus = 'scheduled' | 'in_progress' | 'completed' | 'cancelled';
-
-export interface MentorSlotDoc {
-  roundId: string;
-  mentorName: string;
-  mentorUid: string | null;
-  teamId: string;
-  teamName: string;
-  scheduledFor: Timestamp;
-  durationMins: number;
-  meetLink: string;
-  meetLinkVisibleAt: Timestamp;
-  status: MentorSlotStatus;
-  createdBy: string;
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
-}
-
-// ─── Judges ───────────────────────────────────────────────────────────────────
-
-export interface JudgeDoc {
-  uid: string | null;
-  name: string;
-  email: string;
-  assignedTeams: string[];
-  roundId: string;
-  createdAt: Timestamp;
-}
+// ─── Mentor Slots & Judges ─────────────────────────────────────────────────────
+// REMOVED in Phase 2 hardening — mentor and judge systems are not part of
+// the locked RevengersHack 2026 workflow. The mentorSlots and judges
+// Firestore collections are now inaccessible to clients (catch-all deny).
 
 // ─── Permissions ──────────────────────────────────────────────────────────────
 
