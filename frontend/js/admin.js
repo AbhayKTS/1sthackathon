@@ -49,6 +49,16 @@ function sanitizeHTML(str) {
         .replace(/'/g, '&#x27;');
 }
 
+// Safe JSON parser — throws a clean error instead of "Unexpected token '<'" when the server returns HTML
+async function safeJson(response, label = 'API') {
+    if (!response.ok) {
+        let msg = `${label} returned ${response.status}`;
+        try { const e = await response.json(); msg = e.error?.message || e.message || msg; } catch (_) {}
+        throw new Error(msg);
+    }
+    return response.json();
+}
+
 // Global state variables
 let idToken = null;
 let currentAdminRole = null;
@@ -698,7 +708,7 @@ document.getElementById("assignTeamForm").addEventListener("submit", async (e) =
             },
             body: JSON.stringify({ assignedJudgeUids, assignedMentorUids })
         });
-        const data = await res.json();
+        const data = await safeJson(res, 'Assign');
         if (data.success) {
             showToast("Assignments updated successfully!");
             document.getElementById("assignTeamModal").style.display = "none";
@@ -765,14 +775,14 @@ async function initUserAccounts() {
         const permissionsRes = await fetch(`${API_BASE}/admin/permissions?limit=1000`, {
             headers: { Authorization: `Bearer ${idToken}` }
         });
-        const permissionsResult = await permissionsRes.json();
+        const permissionsResult = await safeJson(permissionsRes, 'Permissions');
         const users = permissionsResult.data?.users ?? [];
 
         // Fetch teams to find missing users
         const teamsRes = await fetch(`${API_BASE}/admin/teams`, {
             headers: { Authorization: `Bearer ${idToken}` }
         });
-        const teamsResult = await teamsRes.json();
+        const teamsResult = await safeJson(teamsRes, 'Teams');
         const allTeams = teamsResult.data || [];
 
         const tbody = document.getElementById("usersTableBody");
