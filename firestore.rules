@@ -84,7 +84,9 @@ service cloud.firestore {
       allow read: if isAdmin() ||
         (isAuth() && (
           (resource.data.keys().hasAny(['leaderId']) && resource.data.leaderId == request.auth.uid) ||
-          (resource.data.keys().hasAny(['memberEmails']) && request.auth.token.email in resource.data.memberEmails)
+          (resource.data.keys().hasAny(['memberEmails']) && request.auth.token.email in resource.data.memberEmails) ||
+          (resource.data.keys().hasAny(['assignedJudgeUids']) && request.auth.uid in resource.data.assignedJudgeUids) ||
+          (resource.data.keys().hasAny(['assignedMentorUids']) && request.auth.uid in resource.data.assignedMentorUids)
         ));
       allow write: if false; // Admin SDK only
     }
@@ -108,7 +110,11 @@ service cloud.firestore {
 
     match /submissions/{submissionId} {
       allow read: if isAdmin() ||
-        (isAuth() && resource.data.submittedBy == request.auth.uid);
+        (isAuth() && resource.data.submittedBy == request.auth.uid) ||
+        (isAuth() && (
+          (get(/databases/$(database)/documents/teams/$(resource.data.teamId)).data.keys().hasAny(['assignedJudgeUids']) && request.auth.uid in get(/databases/$(database)/documents/teams/$(resource.data.teamId)).data.assignedJudgeUids) ||
+          (get(/databases/$(database)/documents/teams/$(resource.data.teamId)).data.keys().hasAny(['assignedMentorUids']) && request.auth.uid in get(/databases/$(database)/documents/teams/$(resource.data.teamId)).data.assignedMentorUids)
+        ));
       allow write: if false; // Admin SDK only
     }
 

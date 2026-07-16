@@ -37,6 +37,8 @@ export interface OnboardingProfileInput {
   course: string;
   gradYear: number;    // e.g., 2026
   linkedin: string | null;
+  trackId?: string;
+  problemStatement?: string;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -180,7 +182,8 @@ export async function completeLeaderProfile(
       teamName: inviteData['teamName'] as string,
       invitedTeamId,
       domain: inviteData['domain'] as string || '',
-      problemStatement: inviteData['problemStatement'] as string || '',
+      trackId: input.trackId || null,
+      problemStatement: input.problemStatement ?? (inviteData['problemStatement'] as string || ''),
       isCustomPS: inviteData['isCustomPS'] as boolean || false,
       leaderId: uid,
       leaderName: input.displayName.trim(),

@@ -111,6 +111,7 @@ export interface TeamDoc {
   teamName: string;
   invitedTeamId: string;
   domain: string;
+  trackId?: string | null;
   problemStatement: string;
   isCustomPS: boolean;
   leaderId: string;
@@ -127,6 +128,8 @@ export interface TeamDoc {
   memberEmails: string[];
   status: TeamStatus;
   registrationLocked: boolean;
+  assignedJudgeUids: string[];
+  assignedMentorUids: string[];
   adminNotes: string | null;
   isTimeLeapEligible: boolean;
   isTimeLeapQualified: boolean;
@@ -195,6 +198,21 @@ export interface RoundDoc {
   googleSheetId: string | null;
   isVisible: boolean;
   updatedAt: Timestamp;
+  updatedBy: string;
+}
+
+// ─── Sessions ───────────────────────────────────────────────────────────────
+
+export interface SessionDoc {
+  sessionId: string;
+  teamId: string;
+  roundId: string;
+  type: 'mentoring' | 'judging';
+  hostName: string | null;
+  hostUid: string | null;
+  meetLink: string | null;
+  scheduledFor: import('firebase-admin/firestore').Timestamp | null;
+  updatedAt: import('firebase-admin/firestore').Timestamp;
   updatedBy: string;
 }
 

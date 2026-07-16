@@ -397,6 +397,8 @@ form.addEventListener("submit", async (e) => {
                 github: githubVal,
                 linkedin: linkedinVal,
                 college: college,
+                trackId: document.getElementById("trackSelect")?.value || undefined,
+                problemStatement: document.getElementById("problemStatement")?.value || undefined,
             };
         } else if (currentUserRole === "participant_member") {
             // Fetch member's role from role select

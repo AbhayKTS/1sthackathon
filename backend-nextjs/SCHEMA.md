@@ -139,6 +139,7 @@ Document ID: auto-ID
 
   // Team info
   domain:       string;
+  trackId:      string | null;
   problemStatement: string;
   isCustomPS:   boolean;
 
@@ -179,6 +180,8 @@ Document ID: auto-ID
   memberEmails: string[];
   status:       'Draft' | 'Verified' | 'Submitted' | 'Approved' | 'Rejected' | 'Incomplete' | 'NeedChanges';
   registrationLocked: boolean;
+  assignedJudgeUids: string[];          // default []
+  assignedMentorUids: string[];         // default []
   adminNotes:     string | null;        // Latest admin note (Need Changes message)
   needChangesHistory: Array<{           // Append-only history, never overwritten
     note:       string;
@@ -274,7 +277,7 @@ Document ID: `roundId` (e.g. `round-1`, `timeleap`)
 ### `Sessions` — Phase 6c
 
 Schedules mentor/judge sessions for a team in a specific round.
-Document ID: `{teamId}_{roundId}`
+Document ID: `{teamId}_{roundId}_{type}`
 
 ```typescript
 {
@@ -283,6 +286,7 @@ Document ID: `{teamId}_{roundId}`
   roundId:      string;
   type:         'mentoring' | 'judging';
   hostName:     string | null;
+  hostUid:      string | null;
   meetLink:     string | null;
   scheduledFor: Timestamp | null;
   updatedAt:    Timestamp;

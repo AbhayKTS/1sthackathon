@@ -204,6 +204,7 @@ onAuthStateChanged(auth, async (user) => {
         // Initialize lists & streams independently so one failure never blocks the rest.
         await precacheRounds();
         startStartupTask("dashboard realtime", initDashboardRealtime);
+        startStartupTask("sessions tab", initSessionsTab);
         startStartupTask("teams realtime", initTeamsRealtime);
         startStartupTask("submissions realtime", initSubmissionsRealtime);
         startStartupTask("user accounts", initUserAccounts);
@@ -428,7 +429,27 @@ if (importCsvForm) {
 }
 
 // ─── TAB 3: TEAMS MANAGEMENT ─────────────────────────────────────────────────
-function initTeamsRealtime() {
+let adminUsersCache = null;
+async function loadAdminUsers() {
+    if (adminUsersCache) return adminUsersCache;
+    try {
+        const response = await fetch(`${API_BASE}/admin/permissions?limit=500`, {
+            headers: { Authorization: `Bearer ${idToken}` }
+        });
+        const result = await response.json();
+        adminUsersCache = result.data?.users ?? [];
+        return adminUsersCache;
+    } catch(err) {
+        console.error("Failed to fetch admin users", err);
+        return [];
+    }
+}
+
+async function initTeamsRealtime() {
+    const adminUsers = await loadAdminUsers();
+    const userMap = {};
+    adminUsers.forEach(u => { userMap[u.uid] = u.displayName || u.email; });
+
     // Teams List
     registerListener(onSnapshot(collection(db, "teams"), (snap) => {
         const tbody = document.getElementById("teamsTableBody");
@@ -463,11 +484,21 @@ function initTeamsRealtime() {
                 membersHtml = `<span style="color: var(--muted-foreground);">None</span>`;
             }
 
+            // Chips for assigned judges and mentors
+            let assignsHtml = "";
+            if (data.assignedJudgeUids && data.assignedJudgeUids.length > 0) {
+                assignsHtml += data.assignedJudgeUids.map(uid => `<span class="role-tag badge-amber" style="font-size: 8px;">J: ${sanitizeHTML(userMap[uid] || 'Unknown')}</span>`).join(" ");
+            }
+            if (data.assignedMentorUids && data.assignedMentorUids.length > 0) {
+                assignsHtml += " " + data.assignedMentorUids.map(uid => `<span class="role-tag badge-gray" style="font-size: 8px;">M: ${sanitizeHTML(userMap[uid] || 'Unknown')}</span>`).join(" ");
+            }
+
             const tr = document.createElement("tr");
             tr.innerHTML = `
                 <td>
                     <div style="font-weight: 600; color: #fff;">${sanitizeHTML(data.teamName)}</div>
                     <div style="font-size: 10px; color: var(--muted-foreground);">Track: ${sanitizeHTML(data.track || "Not selected")}</div>
+                    ${assignsHtml ? `<div style="margin-top: 4px;">${assignsHtml}</div>` : ''}
                 </td>
                 <td>
                     <div style="margin-bottom: 4px;"><strong>${sanitizeHTML(data.leaderName)} (Leader)</strong></div>
@@ -481,11 +512,20 @@ function initTeamsRealtime() {
                     <span class="role-tag ${data.status === "Approved" ? "badge-verified" : "badge-amber"}">${sanitizeHTML(data.status)}</span>
                 </td>
                 <td>
+                    <button class="btn-outline assign-team-btn" data-id="${sanitizeHTML(id)}" style="padding: 4px 8px; font-size: 9px; margin-right: 4px;">ASSIGN</button>
                     <button class="btn-outline edit-team-btn" data-id="${sanitizeHTML(id)}" style="padding: 4px 8px; font-size: 9px; margin-right: 4px;">EDIT</button>
                     <button class="btn-outline delete-team-btn" data-id="${sanitizeHTML(id)}" style="padding: 4px 8px; font-size: 9px; border-color: #ef4444; color: #ef4444;">DEL</button>
                 </td>
             `;
             tbody.appendChild(tr);
+        });
+
+        // Assign handlers
+        document.querySelectorAll(".assign-team-btn").forEach(btn => {
+            btn.addEventListener("click", (e) => {
+                const teamId = e.target.getAttribute("data-id");
+                openAssignModal(teamId);
+            });
         });
 
         // Edit handlers
@@ -591,6 +631,88 @@ function initTeamsRealtime() {
 // Edit Modal helpers
 const editTeamModal = document.getElementById("editTeamModal");
 const editTeamForm = document.getElementById("editTeamForm");
+
+}
+
+async function openAssignModal(teamId) {
+    try {
+        const snap = await getDoc(doc(db, "teams", teamId));
+        if (snap.exists()) {
+            const data = snap.data();
+            const adminUsers = await loadAdminUsers();
+            
+            document.getElementById("assign_team_id").value = teamId;
+            
+            const judgesSelect = document.getElementById("assign_team_judges");
+            const mentorsSelect = document.getElementById("assign_team_mentors");
+            
+            judgesSelect.innerHTML = "";
+            mentorsSelect.innerHTML = "";
+            
+            adminUsers.forEach(u => {
+                if (u.role === 'judge') {
+                    const opt = document.createElement('option');
+                    opt.value = u.uid;
+                    opt.textContent = u.displayName || u.email;
+                    if (data.assignedJudgeUids && data.assignedJudgeUids.includes(u.uid)) opt.selected = true;
+                    judgesSelect.appendChild(opt);
+                } else if (u.role === 'mentor') {
+                    const opt = document.createElement('option');
+                    opt.value = u.uid;
+                    opt.textContent = u.displayName || u.email;
+                    if (data.assignedMentorUids && data.assignedMentorUids.includes(u.uid)) opt.selected = true;
+                    mentorsSelect.appendChild(opt);
+                }
+            });
+            
+            document.getElementById("assignTeamModal").style.display = "flex";
+        }
+    } catch (err) {
+        showToast("Error loading team data for assignment.", "error");
+    }
+}
+
+document.getElementById("closeAssignModalBtn").addEventListener("click", () => {
+    document.getElementById("assignTeamModal").style.display = "none";
+});
+
+document.getElementById("assignTeamForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const id = document.getElementById("assign_team_id").value;
+    
+    const judgesSelect = document.getElementById("assign_team_judges");
+    const assignedJudgeUids = Array.from(judgesSelect.selectedOptions).map(opt => opt.value);
+    
+    const mentorsSelect = document.getElementById("assign_team_mentors");
+    const assignedMentorUids = Array.from(mentorsSelect.selectedOptions).map(opt => opt.value);
+    
+    const btn = document.getElementById("saveAssignModalBtn");
+    btn.disabled = true;
+    btn.textContent = "SAVING...";
+
+    try {
+        const res = await fetch(`${API_BASE}/admin/team/${id}/assign`, {
+            method: "PATCH",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${idToken}`
+            },
+            body: JSON.stringify({ assignedJudgeUids, assignedMentorUids })
+        });
+        const data = await res.json();
+        if (data.success) {
+            showToast("Assignments updated successfully!");
+            document.getElementById("assignTeamModal").style.display = "none";
+        } else {
+            showToast(data.error?.message || "Failed to update assignments", "error");
+        }
+    } catch (err) {
+        showToast("An error occurred.", "error");
+    } finally {
+        btn.disabled = false;
+        btn.textContent = "SAVE";
+    }
+});
 
 async function openEditModal(teamId) {
     try {
@@ -2158,3 +2280,302 @@ async function initAdminAccounts() {
 
     await fetchAndRenderAdminAccounts();
 }
+
+// ─── Bulk Sessions Tab ────────────────────────────────────────────────────────
+let sessionsAdminCache = [];
+let sessionsTeamsCache = [];
+let currentSessionsFilter = "";
+let currentSessionsSort = { field: "name", direction: "asc" };
+let selectedTeamIdsForSessions = new Set();
+let sessionsDataCache = []; // Will hold merged team + session assignment info
+
+async function initSessionsTab() {
+    // 1. Fetch judges/mentors
+    try {
+        const res = await fetch(`${API_BASE}/admin/admins`, {
+            headers: { Authorization: `Bearer ${idToken}` }
+        });
+        if (res.ok) {
+            const data = await res.json();
+            sessionsAdminCache = data.admins || [];
+            
+            const jSelect = document.getElementById("bulkJudgeSelect");
+            const mSelect = document.getElementById("bulkMentorSelect");
+            if (jSelect && mSelect) {
+                sessionsAdminCache.filter(a => a.role === 'judge').forEach(a => {
+                    const opt = document.createElement("option");
+                    opt.value = a.uid;
+                    opt.textContent = a.displayName || a.email;
+                    jSelect.appendChild(opt);
+                });
+                sessionsAdminCache.filter(a => a.role === 'mentor').forEach(a => {
+                    const opt = document.createElement("option");
+                    opt.value = a.uid;
+                    opt.textContent = a.displayName || a.email;
+                    mSelect.appendChild(opt);
+                });
+            }
+        }
+    } catch (e) {
+        console.warn("Failed to load admins for session tab", e);
+    }
+
+    // 2. Load active rounds
+    try {
+        const roundSelect = document.getElementById("bulkRoundSelect");
+        if (roundSelect) {
+            Object.values(roundsCache).filter(r => r.status === 'Active' || r.status === 'draft' || r.status === 'Published').forEach(r => {
+                const opt = document.createElement("option");
+                opt.value = r.roundId;
+                opt.textContent = r.roundName;
+                roundSelect.appendChild(opt);
+            });
+        }
+    } catch (e) {
+        console.warn("Failed to load rounds for session tab", e);
+    }
+
+    // 3. Setup event listeners
+    document.getElementById("refreshSessionsBtn")?.addEventListener("click", refreshSessionsData);
+    document.getElementById("sessionsTrackFilter")?.addEventListener("change", (e) => {
+        currentSessionsFilter = e.target.value;
+        renderSessionsTable();
+    });
+    document.getElementById("sessionsSelectAll")?.addEventListener("change", (e) => {
+        const isChecked = e.target.checked;
+        const visibleRows = document.querySelectorAll("#sessionsTbody .row-checkbox");
+        visibleRows.forEach(cb => {
+            cb.checked = isChecked;
+            if (isChecked) {
+                selectedTeamIdsForSessions.add(cb.value);
+            } else {
+                selectedTeamIdsForSessions.delete(cb.value);
+            }
+        });
+        updateBulkAssignPanel();
+    });
+
+    document.querySelectorAll("#sessionsTable th.sortable").forEach(th => {
+        th.addEventListener("click", () => {
+            const field = th.dataset.sort;
+            if (currentSessionsSort.field === field) {
+                currentSessionsSort.direction = currentSessionsSort.direction === "asc" ? "desc" : "asc";
+            } else {
+                currentSessionsSort.field = field;
+                currentSessionsSort.direction = "asc";
+            }
+            // Update UI arrows
+            document.querySelectorAll("#sessionsTable th.sortable").forEach(el => {
+                el.textContent = el.textContent.replace(" ↑", "").replace(" ↓", "").replace(" ↕", "") + " ↕";
+            });
+            th.textContent = th.textContent.replace(" ↕", "") + (currentSessionsSort.direction === "asc" ? " ↑" : " ↓");
+            renderSessionsTable();
+        });
+    });
+
+    document.getElementById("bulkAssignForm")?.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const submitBtn = document.getElementById("bulkPublishBtn");
+        submitBtn.disabled = true;
+        submitBtn.textContent = "Publishing...";
+
+        const judgeUid = document.getElementById("bulkJudgeSelect").value || undefined;
+        const mentorUid = document.getElementById("bulkMentorSelect").value || undefined;
+        const roundId = document.getElementById("bulkRoundSelect").value;
+        const meetLink = e.target.meetLink.value;
+        const startTime = e.target.startTime.value;
+        const slotDurationMinutes = parseInt(e.target.slotDurationMinutes.value, 10);
+
+        try {
+            const res = await fetch(`${API_BASE}/admin/sessions/bulk-assign`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${idToken}`
+                },
+                body: JSON.stringify({
+                    teamIds: Array.from(selectedTeamIdsForSessions),
+                    judgeUid,
+                    mentorUid,
+                    meetLink,
+                    roundId,
+                    startTime,
+                    slotDurationMinutes
+                })
+            });
+
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error?.message || "Failed to bulk assign");
+
+            showToast(`Assigned ${data.count} teams successfully!`, "success");
+            selectedTeamIdsForSessions.clear();
+            document.getElementById("sessionsSelectAll").checked = false;
+            updateBulkAssignPanel();
+            refreshSessionsData(); // reload
+        } catch (error) {
+            showToast(error.message, "error");
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = "PUBLISH BATCH";
+        }
+    });
+
+    await refreshSessionsData();
+}
+
+async function refreshSessionsData() {
+    try {
+        const tbody = document.getElementById("sessionsTbody");
+        if (tbody) tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 20px;">Fetching data...</td></tr>`;
+
+        // Load tracks for filter
+        const trackRes = await fetch("/data/tracks.json");
+        if (trackRes.ok) {
+            const tracks = await trackRes.json();
+            const filterSelect = document.getElementById("sessionsTrackFilter");
+            if (filterSelect && filterSelect.options.length <= 1) {
+                tracks.forEach(t => {
+                    const opt = document.createElement("option");
+                    opt.value = t.id;
+                    opt.textContent = t.name;
+                    filterSelect.appendChild(opt);
+                });
+            }
+        }
+
+        // Fetch teams and sessions
+        const [teamsRes, sessionsRes] = await Promise.all([
+            fetch(`${API_BASE}/admin/teams`, { headers: { Authorization: `Bearer ${idToken}` } }),
+            fetch(`${API_BASE}/admin/sessions`, { headers: { Authorization: `Bearer ${idToken}` } }).catch(() => ({ ok: false }))
+        ]);
+
+        if (!teamsRes.ok) throw new Error("Failed to load teams");
+        const teamsData = await teamsRes.json();
+        
+        let allSessions = [];
+        if (sessionsRes.ok) {
+            const sData = await sessionsRes.json();
+            allSessions = sData.sessions || [];
+        }
+
+        // Fetch leaderboard data if available
+        let lbMap = {};
+        if (typeof activeLeaderboardMap !== 'undefined' && activeLeaderboardMap) {
+             lbMap = activeLeaderboardMap;
+        }
+
+        // Merge
+        sessionsDataCache = teamsData.teams.map(t => {
+            const teamSessions = allSessions.filter(s => s.teamId === t.id);
+            const judgeSession = teamSessions.find(s => s.type === 'judging');
+            const mentorSession = teamSessions.find(s => s.type === 'mentoring');
+            
+            let assignmentStatus = "Unassigned";
+            if (judgeSession || mentorSession) {
+                let parts = [];
+                if (judgeSession) parts.push(`Judge: ${judgeSession.hostName || 'Y'}`);
+                if (mentorSession) parts.push(`Mentor: ${mentorSession.hostName || 'Y'}`);
+                
+                const time = judgeSession?.scheduledFor || mentorSession?.scheduledFor;
+                if (time) {
+                    const dt = new Date(time._seconds ? time._seconds * 1000 : time);
+                    parts.push(`Time: ${dt.getHours().toString().padStart(2, '0')}:${dt.getMinutes().toString().padStart(2, '0')}`);
+                }
+                assignmentStatus = parts.join(" / ");
+            }
+
+            return {
+                id: t.id,
+                teamName: t.teamName,
+                trackId: t.trackId || 'None',
+                leaderName: t.leaderName,
+                rank: lbMap[t.id]?.rank || 999,
+                assignmentStatus
+            };
+        });
+
+        renderSessionsTable();
+    } catch (e) {
+        console.error("Error refreshing sessions data", e);
+        const tbody = document.getElementById("sessionsTbody");
+        if (tbody) tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color: var(--blood);">Error loading data</td></tr>`;
+    }
+}
+
+function renderSessionsTable() {
+    const tbody = document.getElementById("sessionsTbody");
+    if (!tbody) return;
+
+    let filtered = sessionsDataCache;
+    if (currentSessionsFilter) {
+        filtered = filtered.filter(t => t.trackId === currentSessionsFilter);
+    }
+
+    filtered.sort((a, b) => {
+        let valA = a[currentSessionsSort.field];
+        let valB = b[currentSessionsSort.field];
+        
+        if (currentSessionsSort.field === 'name') { valA = a.teamName; valB = b.teamName; }
+        else if (currentSessionsSort.field === 'track') { valA = a.trackId; valB = b.trackId; }
+        else if (currentSessionsSort.field === 'leader') { valA = a.leaderName; valB = b.leaderName; }
+        else if (currentSessionsSort.field === 'rank') { valA = a.rank; valB = b.rank; }
+        else if (currentSessionsSort.field === 'assignment') { valA = a.assignmentStatus; valB = b.assignmentStatus; }
+
+        if (valA < valB) return currentSessionsSort.direction === 'asc' ? -1 : 1;
+        if (valA > valB) return currentSessionsSort.direction === 'asc' ? 1 : -1;
+        return 0;
+    });
+
+    tbody.innerHTML = "";
+    if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 20px;">No teams found</td></tr>`;
+        return;
+    }
+
+    filtered.forEach(t => {
+        const tr = document.createElement("tr");
+        const isSelected = selectedTeamIdsForSessions.has(t.id);
+        if (isSelected) tr.classList.add("selected-row");
+
+        tr.innerHTML = `
+            <td style="text-align: center;">
+                <input type="checkbox" class="row-checkbox" value="${t.id}" ${isSelected ? 'checked' : ''} />
+            </td>
+            <td><strong>${sanitizeHTML(t.teamName)}</strong></td>
+            <td><span class="status-badge status-draft">${sanitizeHTML(t.trackId)}</span></td>
+            <td>${sanitizeHTML(t.leaderName)}</td>
+            <td>${t.rank === 999 ? '-' : t.rank}</td>
+            <td><span style="font-size: 10px; font-family: var(--font-mono);">${sanitizeHTML(t.assignmentStatus)}</span></td>
+        `;
+
+        const cb = tr.querySelector(".row-checkbox");
+        cb.addEventListener("change", (e) => {
+            if (e.target.checked) {
+                selectedTeamIdsForSessions.add(t.id);
+                tr.classList.add("selected-row");
+            } else {
+                selectedTeamIdsForSessions.delete(t.id);
+                tr.classList.remove("selected-row");
+                document.getElementById("sessionsSelectAll").checked = false;
+            }
+            updateBulkAssignPanel();
+        });
+
+        tbody.appendChild(tr);
+    });
+
+    const allVisibleSelected = filtered.length > 0 && filtered.every(t => selectedTeamIdsForSessions.has(t.id));
+    const selectAllCb = document.getElementById("sessionsSelectAll");
+    if (selectAllCb) selectAllCb.checked = allVisibleSelected;
+}
+
+function updateBulkAssignPanel() {
+    const count = selectedTeamIdsForSessions.size;
+    const panel = document.getElementById("bulkAssignPanel");
+    const countSpan = document.getElementById("bulkAssignCount");
+    if (panel && countSpan) {
+        countSpan.textContent = count;
+        panel.style.display = count > 0 ? "block" : "none";
+    }
+}
+

@@ -268,15 +268,20 @@
                         <input type="url" id="demoLink" placeholder="LIVE DEMO URL (OPTIONAL)" class="w-full rounded-sm border border-border bg-surface-2 px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary font-mono hidden">
                         <input type="url" id="pptLink" placeholder="PRESENTATION DECK (PPT/PDF URL)" class="w-full rounded-sm border border-border bg-surface-2 px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary font-mono hidden">
                         <input type="url" id="prototypeLink" placeholder="PROTOTYPE URL (E.G. FIGMA, CODEPEN)" class="w-full rounded-sm border border-border bg-surface-2 px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary font-mono hidden">
+                        <input type="url" id="customLink" placeholder="SUBMISSION URL" class="w-full rounded-sm border border-border bg-surface-2 px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary font-mono hidden">
                         
                         <label id="noPrototypeLabel" class="flex items-center gap-2 cursor-pointer font-mono text-xs text-muted-foreground hidden mt-1">
                             <input type="checkbox" id="hasNoPrototype" class="accent-primary w-4 h-4 rounded border-border bg-surface-2">
                             <span>NO PROTOTYPE TO SUBMIT (TEXT OR CONCEPT ONLY)</span>
                         </label>
+
                         <button type="submit" id="submitMissionBtn" class="mt-2 w-max inline-flex items-center gap-2 rounded-sm bg-primary px-5 py-2.5 font-mono text-xs font-semibold uppercase tracking-[0.18em] text-primary-foreground transition-transform hover:brightness-110 active:scale-[0.98] cursor-pointer">
                             Submit Build <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-3.5 w-3.5"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
                         </button>
                     </form>
+                    <div id="adminAssignedMsg" class="font-mono text-sm text-muted-foreground hidden p-4 border border-border rounded-sm bg-surface-2/50">
+                        SESSION WILL BE ASSIGNED BY ADMIN
+                    </div>
                     <div id="submissionStatus" class="font-mono text-xs mt-3"></div>
                 </div>
             </div>

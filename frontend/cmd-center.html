@@ -553,6 +553,9 @@
             Dashboard
           </button>
           <button type="button" class="nav-item" data-tab="teams">Teams</button>
+          <button type="button" class="nav-item" data-tab="sessions">
+            Sessions
+          </button>
           <button type="button" class="nav-item" data-tab="users">Users</button>
           <button type="button" class="nav-item" data-tab="rounds">
             Rounds
@@ -940,6 +943,88 @@
         </div>
 
         <!-- TAB 4: Users -->
+        
+        <div id="panel-sessions" class="tab-panel">
+          <div class="glass-card">
+            <div class="card-title-section">
+              <h2 class="card-title">Bulk Session Assignment</h2>
+              <div style="display: flex; gap: 10px; align-items: center;">
+                <select id="sessionsTrackFilter" class="form-select" style="width: 150px; font-size: 10px;">
+                  <option value="">All Tracks</option>
+                  <!-- Populated dynamically -->
+                </select>
+                <button class="btn-outline" id="refreshSessionsBtn" title="Refresh Teams">↻</button>
+              </div>
+            </div>
+
+            <!-- Bulk Assign Panel (hidden by default) -->
+            <div id="bulkAssignPanel" style="display: none; background: rgba(0, 180, 216, 0.05); border: 1px solid var(--accent); padding: 16px; border-radius: 4px; margin-bottom: 20px;">
+              <h3 style="font-family: var(--font-mono); font-size: 10px; color: var(--accent); margin: 0 0 12px 0; text-transform: uppercase; letter-spacing: 0.1em;">
+                Assign Selected Teams (<span id="bulkAssignCount">0</span>)
+              </h3>
+              <form id="bulkAssignForm" class="dash-form">
+                <div class="form-row" style="grid-template-columns: 1fr 1fr 1fr 1fr;">
+                  <div class="form-group">
+                    <label class="form-label">Judge (Optional)</label>
+                    <select name="judgeUid" id="bulkJudgeSelect" class="form-select">
+                      <option value="">-- No Judge --</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Mentor (Optional)</label>
+                    <select name="mentorUid" id="bulkMentorSelect" class="form-select">
+                      <option value="">-- No Mentor --</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Round</label>
+                    <select name="roundId" id="bulkRoundSelect" class="form-select" required>
+                      <!-- populated dynamically -->
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Meet Link</label>
+                    <input type="url" name="meetLink" class="form-input" placeholder="https://meet.google.com/..." required />
+                  </div>
+                </div>
+                <div class="form-row" style="grid-template-columns: 1fr 1fr auto;">
+                  <div class="form-group">
+                    <label class="form-label">Start Time</label>
+                    <input type="datetime-local" name="startTime" class="form-input" required />
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Slot Duration (Mins)</label>
+                    <input type="number" name="slotDurationMinutes" class="form-input" value="15" min="5" max="120" required />
+                  </div>
+                  <div class="form-group" style="display: flex; align-items: flex-end;">
+                    <button type="submit" class="btn-primary" id="bulkPublishBtn" style="height: 35px; width: 100%;">PUBLISH BATCH</button>
+                  </div>
+                </div>
+              </form>
+            </div>
+
+            <div class="data-table-wrapper">
+              <table class="data-table" id="sessionsTable">
+                <thead>
+                  <tr>
+                    <th style="width: 40px; text-align: center;">
+                      <input type="checkbox" id="sessionsSelectAll" title="Select All Visible" />
+                    </th>
+                    <th class="sortable" data-sort="name">Team Name ↕</th>
+                    <th class="sortable" data-sort="track">Track ↕</th>
+                    <th class="sortable" data-sort="leader">Leader ↕</th>
+                    <th class="sortable" data-sort="rank">Leaderboard ↕</th>
+                    <th class="sortable" data-sort="assignment">Current Assignment ↕</th>
+                  </tr>
+                </thead>
+                <tbody id="sessionsTbody">
+                  <tr><td colspan="6" style="text-align:center; padding: 20px;">Loading teams...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
         <div id="panel-users" class="tab-panel">
           <div class="glass-card">
             <div class="card-title-section">
@@ -2212,6 +2297,74 @@
               style="flex: 1"
             >
               SAVE CHANGES
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Assign Team Modal (Hidden by default) -->
+    <div
+      id="assignTeamModal"
+      style="
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.85);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+        backdrop-filter: blur(4px);
+      "
+    >
+      <div class="glass-card" style="width: 440px; max-width: 95%; margin: 0">
+        <h3
+          style="
+            color: #fff;
+            margin-top: 0;
+            font-family: var(--font-display);
+            letter-spacing: 2px;
+            font-size: 14px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 12px;
+            margin-bottom: 20px;
+          "
+        >
+          ASSIGN JUDGES & MENTORS
+        </h3>
+        <form id="assignTeamForm" class="dash-form">
+          <input type="hidden" id="assign_team_id" />
+
+          <div class="form-group">
+            <label class="form-label">Judges</label>
+            <select id="assign_team_judges" multiple class="form-select" style="height: 100px;">
+              <!-- Populated dynamically -->
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Mentors</label>
+            <select id="assign_team_mentors" multiple class="form-select" style="height: 100px;">
+              <!-- Populated dynamically -->
+            </select>
+          </div>
+
+          <div style="display: flex; gap: 10px; margin-top: 12px">
+            <button
+              type="button"
+              id="closeAssignModalBtn"
+              class="btn-outline"
+              style="flex: 1; border-color: var(--border); color: #fff"
+            >
+              CANCEL
+            </button>
+            <button
+              type="submit"
+              id="saveAssignModalBtn"
+              class="btn-primary"
+              style="flex: 1"
+            >
+              SAVE
             </button>
           </div>
         </form>

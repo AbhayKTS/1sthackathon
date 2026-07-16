@@ -41,6 +41,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
             if (role === 'admin' || role === 'super_admin') {
                 window.location.href = '/cmd-center.html';
+            } else if (role === 'judge') {
+                window.location.href = '/judge-portal.html';
+            } else if (role === 'mentor') {
+                window.location.href = '/mentor-portal.html';
             } else {
                 window.location.href = '/dashboard.html';
             }

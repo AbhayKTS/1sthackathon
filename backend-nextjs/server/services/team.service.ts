@@ -63,7 +63,47 @@ export async function setTopFlags(
     actorRole: 'admin',
     targetId: teamId,
     targetType: 'teams',
-    metadata: { flags },
+    metadata: { field: 'topFlags', flags },
     ip: null,
   });
 }
+
+/**
+ * Admin-only: Assign judges and mentors to a team.
+ */
+export async function assignTeamJudgesMentors(
+  adminUid: string,
+  teamId: string,
+  assignments: { assignedJudgeUids?: string[]; assignedMentorUids?: string[] },
+): Promise<void> {
+  const db = getAdminDb();
+  const teamRef = db.collection('teams').doc(teamId);
+  const snap = await teamRef.get();
+  if (!snap.exists) throw Errors.notFound('Team not found.');
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const update: any = { updatedAt: FieldValue.serverTimestamp() };
+  if (assignments.assignedJudgeUids !== undefined) {
+    update.assignedJudgeUids = assignments.assignedJudgeUids;
+  }
+  if (assignments.assignedMentorUids !== undefined) {
+    update.assignedMentorUids = assignments.assignedMentorUids;
+  }
+
+  await teamRef.update(update);
+
+  await writeAuditLog({
+    action: 'team.updated',
+    actorUid: adminUid,
+    actorRole: 'admin',
+    targetId: teamId,
+    targetType: 'teams',
+    metadata: { 
+      actionType: 'assign_judges_mentors', 
+      assignedJudgeUids: assignments.assignedJudgeUids,
+      assignedMentorUids: assignments.assignedMentorUids
+    },
+    ip: null,
+  });
+}
+

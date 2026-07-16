@@ -412,66 +412,82 @@ function loadActiveRounds() {
         const demoInput = document.getElementById("demoLink");
         const pptInput = document.getElementById("pptLink");
         const prototypeInput = document.getElementById("prototypeLink");
+        const customInput = document.getElementById("customLink");
         const noPrototypeLabel = document.getElementById("noPrototypeLabel");
         const hasNoPrototypeCheckbox = document.getElementById("hasNoPrototype");
+        const submissionForm = document.getElementById("submissionForm");
+        const adminAssignedMsg = document.getElementById("adminAssignedMsg");
 
         // Hide all initially
-        if (githubInput) githubInput.classList.add("hidden");
-        if (demoInput) demoInput.classList.add("hidden");
-        if (pptInput) pptInput.classList.add("hidden");
-        if (prototypeInput) prototypeInput.classList.add("hidden");
-        if (noPrototypeLabel) noPrototypeLabel.classList.add("hidden");
-        
-        // Remove required
-        if (githubInput) githubInput.required = false;
-        if (demoInput) demoInput.required = false;
-        if (pptInput) pptInput.required = false;
-        if (prototypeInput) prototypeInput.required = false;
+        if (githubInput) { githubInput.classList.add("hidden"); githubInput.required = false; githubInput.value = ""; }
+        if (demoInput) { demoInput.classList.add("hidden"); demoInput.required = false; demoInput.value = ""; }
+        if (pptInput) { pptInput.classList.add("hidden"); pptInput.required = false; pptInput.value = ""; }
+        if (prototypeInput) { prototypeInput.classList.add("hidden"); prototypeInput.required = false; prototypeInput.value = ""; prototypeInput.disabled = false; }
+        if (customInput) { customInput.classList.add("hidden"); customInput.required = false; customInput.value = ""; }
+        if (noPrototypeLabel) { noPrototypeLabel.classList.add("hidden"); }
+        if (hasNoPrototypeCheckbox) { hasNoPrototypeCheckbox.checked = false; hasNoPrototypeCheckbox.disabled = false; }
+        if (submissionForm) { submissionForm.style.display = "flex"; }
+        if (adminAssignedMsg) { adminAssignedMsg.classList.add("hidden"); }
+        if (submitMissionBtn) { submitMissionBtn.innerHTML = `Submit Build <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-3.5 w-3.5"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>`; }
 
-        const roundType = roundData.type || 'general';
+        const submissionType = roundData.submissionType || 'Github'; // default to Github if undefined
 
-        if (roundType === 'ppt') {
+        if (submissionType === 'PPT') {
             if (pptInput) {
                 pptInput.classList.remove("hidden");
                 pptInput.required = true;
             }
-            if (hasNoPrototypeCheckbox) {
-                hasNoPrototypeCheckbox.parentElement.classList.remove("hidden");
-            }
             if (submitMissionBtn) {
-                submitMissionBtn.textContent = "Submit Prototype";
+                submitMissionBtn.innerHTML = `Submit Deck <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-3.5 w-3.5"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>`;
             }
-        } else if (roundType === 'mentoring_prototype') {
-            if (githubInput) {
-                githubInput.classList.remove("hidden");
-                githubInput.required = true;
-            }
+        } else if (submissionType === 'Prototype') {
             if (prototypeInput) {
                 prototypeInput.classList.remove("hidden");
                 prototypeInput.required = true;
             }
             if (noPrototypeLabel) {
                 noPrototypeLabel.classList.remove("hidden");
-                
-                // Toggle required on prototypeLink if checkbox changes
-                hasNoPrototypeCheckbox?.addEventListener("change", (e) => {
-                    if (prototypeInput) {
-                        prototypeInput.required = !e.target.checked;
-                        if (e.target.checked) prototypeInput.value = "";
-                        prototypeInput.disabled = e.target.checked;
-                    }
-                });
+                if (hasNoPrototypeCheckbox) {
+                    hasNoPrototypeCheckbox.onchange = (e) => {
+                        if (prototypeInput) {
+                            prototypeInput.required = !e.target.checked;
+                            if (e.target.checked) prototypeInput.value = "";
+                            prototypeInput.disabled = e.target.checked;
+                        }
+                    };
+                }
+            }
+            if (submitMissionBtn) {
+                submitMissionBtn.innerHTML = `Submit Prototype <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-3.5 w-3.5"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>`;
+            }
+        } else if (submissionType === 'Demo') {
+            if (demoInput) {
+                demoInput.classList.remove("hidden");
+                demoInput.required = true;
+                demoInput.placeholder = "LIVE DEMO URL";
+            }
+        } else if (submissionType === 'Custom') {
+            if (customInput) {
+                customInput.classList.remove("hidden");
+                customInput.required = true;
+            }
+        } else if (submissionType === 'None') {
+            if (submissionForm) {
+                submissionForm.style.display = "none";
+            }
+            if (adminAssignedMsg) {
+                adminAssignedMsg.classList.remove("hidden");
             }
         } else {
-            // General or other rounds - fallback to just github/demo links optionally
+            // Github or general
             if (githubInput) {
                 githubInput.classList.remove("hidden");
                 githubInput.required = true;
-                githubInput.placeholder = "SUBMISSION URL 1";
+                githubInput.placeholder = "GITHUB REPO URL";
             }
             if (demoInput) {
                 demoInput.classList.remove("hidden");
-                demoInput.placeholder = "SUBMISSION URL 2 (OPTIONAL)";
+                demoInput.placeholder = "LIVE DEMO URL (OPTIONAL)";
             }
         }
         
@@ -1069,9 +1085,9 @@ if (submissionForm) {
         
         const githubInput = document.getElementById("githubLink");
         const demoInput = document.getElementById("demoLink");
-        
         const pptInput = document.getElementById("pptLink");
         const prototypeInput = document.getElementById("prototypeLink");
+        const customInput = document.getElementById("customLink");
         const hasNoPrototypeCheckbox = document.getElementById("hasNoPrototype");
         
         const payload = {
@@ -1088,8 +1104,11 @@ if (submissionForm) {
         if (pptInput && !pptInput.classList.contains("hidden") && pptInput.value) {
             payload.pptLink = pptInput.value.trim();
         }
-        if (prototypeInput && !prototypeInput.classList.contains("hidden") && prototypeInput.value) {
+        if (prototypeInput && !prototypeInput.classList.contains("hidden") && !prototypeInput.disabled && prototypeInput.value) {
             payload.prototypeLink = prototypeInput.value.trim();
+        }
+        if (customInput && !customInput.classList.contains("hidden") && customInput.value) {
+            payload.customLink = customInput.value.trim();
         }
         if (hasNoPrototypeCheckbox && !hasNoPrototypeCheckbox.closest('label').classList.contains("hidden")) {
             payload.hasNoPrototype = hasNoPrototypeCheckbox.checked;
