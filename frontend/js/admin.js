@@ -632,7 +632,6 @@ async function initTeamsRealtime() {
 const editTeamModal = document.getElementById("editTeamModal");
 const editTeamForm = document.getElementById("editTeamForm");
 
-}
 
 async function openAssignModal(teamId) {
     try {
