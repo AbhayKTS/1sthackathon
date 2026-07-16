@@ -59,6 +59,44 @@ async function safeJson(response, label = 'API') {
     return response.json();
 }
 
+/**
+ * Universal date converter for Firestore fields.
+ * Handles: Firestore Timestamp (client SDK .toDate()), serialized {seconds},
+ * serialized {_seconds}, ISO strings, epoch ms numbers, and null/undefined.
+ * Returns a valid Date object, or null if the input is falsy / unparseable.
+ */
+function toSafeDate(val) {
+    if (!val) return null;
+    // Client SDK Timestamp instance (has .toDate method)
+    if (typeof val.toDate === 'function') return val.toDate();
+    // Serialized Firestore Timestamp from API {seconds, nanoseconds} or {_seconds, _nanoseconds}
+    if (typeof val.seconds === 'number') return new Date(val.seconds * 1000);
+    if (typeof val._seconds === 'number') return new Date(val._seconds * 1000);
+    // Already a Date
+    if (val instanceof Date) return val;
+    // ISO string or epoch number
+    const d = new Date(val);
+    return isNaN(d.getTime()) ? null : d;
+}
+
+/** Format a Firestore-sourced date value to a locale string, or return fallback. */
+function fmtDate(val, fallback = '—') {
+    const d = toSafeDate(val);
+    return d ? d.toLocaleString() : fallback;
+}
+
+/** Format to locale date only */
+function fmtDateOnly(val, fallback = '—') {
+    const d = toSafeDate(val);
+    return d ? d.toLocaleDateString() : fallback;
+}
+
+/** Format to locale time only */
+function fmtTime(val, fallback = '—') {
+    const d = toSafeDate(val);
+    return d ? d.toLocaleTimeString() : fallback;
+}
+
 // Global state variables
 let idToken = null;
 let currentAdminRole = null;
@@ -302,7 +340,7 @@ function initDashboardRealtime() {
         if (activeRound) {
             const data = activeRound.data();
             const deadlineObj = data.submissionDeadline || data.deadline;
-            const dl = deadlineObj ? new Date(deadlineObj.seconds * 1000).toLocaleString() : "No deadline set";
+            const dl = fmtDate(deadlineObj, "No deadline set");
             statusBox.innerHTML = `
                 <div style="font-weight: 600; color: #fff; margin-bottom: 4px;">ACTIVE ROUND: ${sanitizeHTML(data.title)}</div>
                 <div>Status: ${sanitizeHTML(data.status)}</div>
@@ -326,7 +364,7 @@ function initDashboardRealtime() {
         snap.docs.slice(0, 5).forEach(d => {
             const data = d.data();
             const tr = document.createElement("tr");
-            const time = data.submittedAt ? new Date(data.submittedAt.seconds * 1000).toLocaleTimeString() : "Just now";
+            const time = fmtTime(data.submittedAt, "Just now");
             tr.innerHTML = `
                 <td><strong>${sanitizeHTML(data.teamId.slice(0, 10))}...</strong></td>
                 <td>${sanitizeHTML(data.roundId)}</td>
@@ -348,7 +386,7 @@ function initDashboardRealtime() {
 
         snap.docs.slice(0, 4).forEach(d => {
             const data = d.data();
-            const time = data.timestamp ? new Date(data.timestamp.seconds * 1000).toLocaleDateString() : "";
+            const time = fmtDateOnly(data.timestamp, "");
             const div = document.createElement("div");
             div.style.cssText = "padding: 12px; border: 1px solid var(--border); border-radius: 4px; background: rgba(0,0,0,0.15);";
             div.innerHTML = `
@@ -870,12 +908,11 @@ async function fetchAndRenderRounds() {
             // Format deadline date for datetime-local value (YYYY-MM-DDTHH:MM)
             let deadlineVal = "";
             const deadlineField = r.submissionDeadline || r.deadline;
-            if (deadlineField) {
-                const date = new Date(typeof deadlineField.seconds === 'number' ? deadlineField.seconds * 1000 : deadlineField);
-                // Adjust to local timezone
-                const tzOffset = date.getTimezoneOffset() * 60000;
-                const localISOTime = new Date(date.getTime() - tzOffset).toISOString().slice(0, 16);
-                deadlineVal = localISOTime;
+            const deadlineDate = toSafeDate(deadlineField);
+            if (deadlineDate) {
+                // Adjust to local timezone for datetime-local input
+                const tzOffset = deadlineDate.getTimezoneOffset() * 60000;
+                deadlineVal = new Date(deadlineDate.getTime() - tzOffset).toISOString().slice(0, 16);
             }
 
             const statusClass = r.status === "Active" ? "badge-verified" : (r.status === "Locked" ? "badge-amber" : "badge-gray");
@@ -1051,7 +1088,7 @@ function initMentorSessions() {
         snap.docs.forEach(d => {
             const data = d.data();
             const tr = document.createElement("tr");
-            const time = data.scheduledFor ? new Date(data.scheduledFor.seconds * 1000).toLocaleString() : "N/A";
+            const time = fmtDate(data.scheduledFor, "N/A");
             tr.innerHTML = `
                 <td><strong>${sanitizeHTML(data.mentorName)}</strong></td>
                 <td>${sanitizeHTML(time)}</td>
@@ -1078,7 +1115,7 @@ function initSubmissionsRealtime() {
         snap.docs.forEach(d => {
             const data = d.data();
             const tr = document.createElement("tr");
-            const time = data.submittedAt ? new Date(data.submittedAt.seconds * 1000).toLocaleString() : "";
+            const time = fmtDate(data.submittedAt, "");
             tr.innerHTML = `
                 <td><strong>${sanitizeHTML(data.teamId.slice(0, 10))}...</strong></td>
                 <td>${sanitizeHTML(data.roundId)}</td>
@@ -1268,7 +1305,7 @@ async function initSheetsSyncQueue() {
 
             const timeEl = document.getElementById("sheetsLastSyncTime");
             if (timeEl) {
-                timeEl.textContent = stats.lastSync ? new Date(stats.lastSync).toLocaleString() : "Never";
+                timeEl.textContent = fmtDate(stats.lastSync, "Never");
             }
         }
 
@@ -1287,7 +1324,7 @@ async function initSheetsSyncQueue() {
             jobs.forEach(job => {
                 const tr = document.createElement("tr");
                 const dateObj = job.lastAttemptAt || job.createdAt;
-                const time = dateObj ? new Date(dateObj.seconds * 1000).toLocaleString() : "";
+                const time = fmtDate(dateObj, "");
                 
                 let badgeClass = "badge-amber";
                 let customStyle = "";
@@ -1376,7 +1413,7 @@ async function initActivityLogs() {
 
         logs.forEach(log => {
             const tr = document.createElement("tr");
-            const time = log.timestamp ? new Date(log.timestamp.seconds * 1000).toLocaleString() : "";
+            const time = fmtDate(log.timestamp, "");
             tr.innerHTML = `
                 <td><strong>${sanitizeHTML(log.actorUid || "SYSTEM")}</strong></td>
                 <td>${sanitizeHTML(log.action)}</td>
@@ -1511,7 +1548,7 @@ async function initAnnouncementsTab() {
             const isDeleted = data.isVisible === false;
             const statusText = isDeleted ? "Hidden (Deleted)" : "Visible";
             const statusClass = isDeleted ? "badge-gray" : "badge-verified";
-            const date = data.timestamp ? new Date(data.timestamp.seconds * 1000).toLocaleDateString() : "Just now";
+            const date = fmtDateOnly(data.timestamp, "Just now");
 
             const tr = document.createElement("tr");
             tr.innerHTML = `
@@ -1719,7 +1756,7 @@ async function initSystemHealth() {
                     statusEl.className = `role-tag ${worker.status === "PROCESSING" ? "badge-amber" : worker.status === "PAUSED" ? "badge-amber" : "badge-verified"}`;
                 }
                 if (lastRunEl) {
-                    lastRunEl.textContent = worker.lastRun ? new Date(typeof worker.lastRun.seconds === 'number' ? worker.lastRun.seconds * 1000 : worker.lastRun).toLocaleString() : "Never";
+                    lastRunEl.textContent = fmtDate(worker.lastRun, "Never");
                 }
                 if (processedEl) processedEl.textContent = worker.processed || 0;
                 if (failedEl) failedEl.textContent = worker.failed || 0;
@@ -1733,7 +1770,8 @@ async function initSystemHealth() {
             ['mail', 'sheets', 'scheduler'].forEach(wKey => {
                 const w = data[wKey] || {};
                 if (w.lastRun) {
-                    const timeMs = typeof w.lastRun.seconds === 'number' ? w.lastRun.seconds * 1000 : new Date(w.lastRun).getTime();
+                    const d = toSafeDate(w.lastRun);
+                    const timeMs = d ? d.getTime() : 0;
                     if (!w.lastError && (!latestSuccessfulTime || timeMs > latestSuccessfulTime)) {
                         latestSuccessfulTime = timeMs;
                     }
@@ -2487,8 +2525,8 @@ async function refreshSessionsData() {
                 
                 const time = judgeSession?.scheduledFor || mentorSession?.scheduledFor;
                 if (time) {
-                    const dt = new Date(time._seconds ? time._seconds * 1000 : time);
-                    parts.push(`Time: ${dt.getHours().toString().padStart(2, '0')}:${dt.getMinutes().toString().padStart(2, '0')}`);
+                    const dt = toSafeDate(time);
+                    if (dt) parts.push(`Time: ${dt.getHours().toString().padStart(2, '0')}:${dt.getMinutes().toString().padStart(2, '0')}`);
                 }
                 assignmentStatus = parts.join(" / ");
             }
