@@ -34,7 +34,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       throw Errors.validation('Invalid JSON payload.');
     });
 
-    const { displayName, role: teamRole, phone, college, github, whatsapp, course, gradYear, linkedin } = body;
+    const { displayName, role: teamRole, phone, college, github, whatsapp, course, gradYear, linkedin, members } = body;
 
     if (!displayName?.trim()) throw Errors.validation('displayName is required.');
     if (!teamRole?.trim()) throw Errors.validation('role (team role, e.g. "Developer") is required.');
@@ -47,7 +47,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const parsedGradYear = Number(gradYear);
     if (isNaN(parsedGradYear)) throw Errors.validation('graduation year must be a valid number.');
 
-    const input = {
+    const input: any = {
       displayName: displayName.trim(),
       role: teamRole.trim(),
       phone: phone.trim(),
@@ -60,6 +60,23 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     };
 
     if (token.role === 'participant_leader') {
+      if (!Array.isArray(members) || members.length === 0) {
+        throw Errors.validation('members list is required.');
+      }
+      for (let i = 0; i < members.length; i++) {
+        const m = members[i];
+        if (!m.name?.trim()) throw Errors.validation(`Member ${i + 1} name is required.`);
+        if (!m.email?.trim()) throw Errors.validation(`Member ${i + 1} email is required.`);
+        if (!m.phone?.trim()) throw Errors.validation(`Member ${i + 1} phone is required.`);
+        if (!m.whatsapp?.trim()) throw Errors.validation(`Member ${i + 1} whatsapp is required.`);
+        if (!m.college?.trim()) throw Errors.validation(`Member ${i + 1} college is required.`);
+        if (!m.course?.trim()) throw Errors.validation(`Member ${i + 1} course is required.`);
+        if (!m.gradYear) throw Errors.validation(`Member ${i + 1} graduation year is required.`);
+        const mGradYear = Number(m.gradYear);
+        if (isNaN(mGradYear)) throw Errors.validation(`Member ${i + 1} graduation year must be a valid number.`);
+        m.gradYear = mGradYear;
+      }
+      input.members = members;
       await completeLeaderProfile(token.uid, input);
     } else {
       await completeMemberProfile(token.uid, input);

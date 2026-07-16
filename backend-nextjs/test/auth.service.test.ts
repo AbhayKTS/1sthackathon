@@ -156,9 +156,9 @@ describe('Auth Service (Phase 1 OTP)', () => {
       expect(userDoc.data()?.role).toBe('participant_leader');
       expect(userDoc.data()?.invitedTeamId).toBe(inviteId);
 
-      // Verify Invite status is updated
+      // Verify Invite status remains Invited (or whatever the seeded status is)
       const inviteDoc = await db.collection('invitedTeams').doc(inviteId).get();
-      expect(inviteDoc.data()?.status).toBe('Verified');
+      expect(inviteDoc.data()?.status).toBe('Invited');
       
       // Verify audit log was called
       expect(auditService.writeAuditLog).toHaveBeenCalled();

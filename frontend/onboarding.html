@@ -67,6 +67,13 @@
                 grid-template-columns: 1fr 1fr 1fr;
             }
         }
+        .border-error {
+            border-color: #e50914 !important;
+            box-shadow: 0 0 0 1px #e50914 !important;
+        }
+        .hidden {
+            display: none !important;
+        }
     </style>
 </head>
 <body class="min-h-screen bg-background text-foreground relative grain dark flex items-center justify-center p-6">
@@ -78,119 +85,133 @@
     <main class="w-full max-w-3xl bg-card border border-border p-8 relative overflow-hidden">
         <div class="absolute inset-0 scanlines opacity-20 pointer-events-none"></div>
         
-        <div class="text-center mb-8 relative z-10">
-            <h1 class="font-display text-4xl tracking-widest mb-2" style="font-family: 'Zen Dots', sans-serif;">ASSEMBLE YOUR <span class="text-blood">SQUAD</span></h1>
-            <p class="font-mono text-sm text-muted-foreground" style="font-family: 'JetBrains Mono', monospace;">Provide your team details before accessing the dashboard. (2–4 members)</p>
-        </div>
-
-        <div id="rejectionNotesContainer" class="hidden relative z-10 mb-8 border border-strike-red bg-strike-red/10 p-4">
-            <h3 class="font-impact text-xl text-strike-red tracking-widest mb-2" style="font-family: 'Bebas Neue', sans-serif;">⚠️ CHANGES REQUESTED BY ADMIN</h3>
-            <p id="rejectionNotesText" class="font-mono text-sm text-white/80" style="font-family: 'JetBrains Mono', monospace;"></p>
-        </div>
-
-        <form id="onboardingForm" class="relative z-10 space-y-8">
-
-            <!-- ── TRACK SELECTION ────────────────────────────────── -->
-            <div class="space-y-4 border-l-2 border-blood pl-4">
-                <h2 class="font-impact text-2xl tracking-widest text-blood" style="font-family: 'Bebas Neue', sans-serif;">TRACK & MISSION</h2>
-                <div class="space-y-2">
-                    <label class="font-mono text-xs text-muted-foreground" style="font-family: 'JetBrains Mono', monospace;">SELECT YOUR TRACK *</label>
-                    <select id="trackSelect" required class="bg-input border border-border px-4 py-3 font-mono text-sm focus:outline-none focus:border-blood w-full" style="font-family: 'JetBrains Mono', monospace;">
-                        <option value="">-- CHOOSE TRACK --</option>
-                        <!-- Populated dynamically from data/tracks.json -->
-                    </select>
-                </div>
-                <div class="space-y-2">
-                    <div class="ps-note">
-                        💡 You may pick one of our listed problem statements from the dashboard, OR write your own custom problem statement here.
-                    </div>
-                    <label class="font-mono text-xs text-muted-foreground" style="font-family: 'JetBrains Mono', monospace;">PROBLEM STATEMENT *</label>
-                    <textarea
-                        id="problemStatement"
-                        required
-                        rows="4"
-                        placeholder="Describe your problem statement or the challenge you intend to solve..."
-                        class="bg-input border border-border px-4 py-3 font-mono text-sm focus:outline-none focus:border-blood w-full resize-none"
-                        style="font-family: 'JetBrains Mono', monospace;"
-                    ></textarea>
-                    <label class="field-note">
-                        <input type="checkbox" id="isCustomPS" class="mr-1"> This is my own custom problem statement (not from the listed ones)
-                    </label>
-                </div>
+        <!-- Onboarding Success Screen Container -->
+        <div id="successContainer" class="hidden text-center space-y-6 relative z-10 py-12">
+            <h1 class="font-display text-3xl tracking-widest text-success" style="font-family: 'Zen Dots', sans-serif; color: #22c55e;">TEAM REGISTRATION COMPLETED</h1>
+            <div class="inline-block bg-success/10 border border-success px-4 py-2 font-mono text-xs text-success" style="font-family: 'JetBrains Mono', monospace; border-color: #22c55e; color: #22c55e;">
+                STATUS: PENDING ADMIN REVIEW
             </div>
-
-            <!-- ── TEAM INFO ──────────────────────────────────────── -->
-            <div class="space-y-4 border-l-2 border-blood pl-4">
-                <h2 class="font-impact text-2xl tracking-widest text-blood" style="font-family: 'Bebas Neue', sans-serif;">TEAM DETAILS</h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <input type="text" id="teamName" placeholder="TEAM NAME *" required class="bg-input border border-border px-4 py-3 font-mono text-sm focus:outline-none focus:border-blood w-full" style="font-family: 'JetBrains Mono', monospace;">
-                    <input type="text" id="college" placeholder="COLLEGE / UNIVERSITY *" required class="bg-input border border-border px-4 py-3 font-mono text-sm focus:outline-none focus:border-blood w-full" style="font-family: 'JetBrains Mono', monospace;">
-                    <input type="text" id="year" placeholder="YEAR (e.g. 3rd Year)" class="bg-input border border-border px-4 py-3 font-mono text-sm focus:outline-none focus:border-blood w-full" style="font-family: 'JetBrains Mono', monospace;">
-                    <input type="text" id="state" placeholder="STATE" class="bg-input border border-border px-4 py-3 font-mono text-sm focus:outline-none focus:border-blood w-full" style="font-family: 'JetBrains Mono', monospace;">
-                    <input type="text" id="city" placeholder="CITY" class="bg-input border border-border px-4 py-3 font-mono text-sm focus:outline-none focus:border-blood w-full" style="font-family: 'JetBrains Mono', monospace;">
-                </div>
-            </div>
-
-            <!-- ── LEADER EXTRAS ─────────────────────────────────── -->
-            <div class="space-y-4 border-l-2 border-blood pl-4">
-                <h2 class="font-impact text-2xl tracking-widest text-blood" style="font-family: 'Bebas Neue', sans-serif;">LEADER PROFILE</h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <input type="text" id="leaderName" placeholder="LEADER FULL NAME *" required class="bg-input border border-border px-4 py-3 font-mono text-sm focus:outline-none focus:border-blood w-full" style="font-family: 'JetBrains Mono', monospace;">
-                    <div class="phone-wrapper">
-                        <span class="phone-prefix">+91</span>
-                        <input type="text" id="leaderPhone" placeholder="10-DIGIT PHONE *" required maxlength="10" pattern="\d{10}" class="bg-input border border-border px-3 py-3 font-mono text-sm focus:outline-none focus:border-blood w-full" style="font-family: 'JetBrains Mono', monospace;">
-                    </div>
-                    <div class="phone-wrapper">
-                        <span class="phone-prefix">+91</span>
-                        <input type="text" id="leaderWhatsapp" placeholder="10-DIGIT WHATSAPP *" required maxlength="10" pattern="\d{10}" class="bg-input border border-border px-3 py-3 font-mono text-sm focus:outline-none focus:border-blood w-full" style="font-family: 'JetBrains Mono', monospace;">
-                    </div>
-                    <input type="text" id="leaderCourse" placeholder="COURSE / BRANCH (e.g. B.Tech CSE) *" required class="bg-input border border-border px-4 py-3 font-mono text-sm focus:outline-none focus:border-blood w-full" style="font-family: 'JetBrains Mono', monospace;">
-                    <!-- College field: pre-filled + locked for leaders (from invitedTeam data); editable for members -->
-                    <input type="text" id="memberCollege" placeholder="COLLEGE / UNIVERSITY *" required class="bg-input border border-border px-4 py-3 font-mono text-sm focus:outline-none focus:border-blood w-full" style="font-family: 'JetBrains Mono', monospace;">
-                    <select id="leaderGradYear" required class="bg-input border border-border px-4 py-3 font-mono text-sm focus:outline-none focus:border-blood w-full" style="font-family: 'JetBrains Mono', monospace;">
-                        <option value="" disabled selected>GRADUATION YEAR *</option>
-                    </select>
-                    <select id="leaderRole" required class="bg-input border border-border px-4 py-3 font-mono text-sm focus:outline-none focus:border-blood w-full" style="font-family: 'JetBrains Mono', monospace;">
-                        <option value="" disabled selected>ROLE *</option>
-                        <option value="Team Lead">Team Lead</option>
-                        <option value="Backend Developer">Backend Developer</option>
-                        <option value="Frontend Developer">Frontend Developer</option>
-                        <option value="Full Stack Developer">Full Stack Developer</option>
-                        <option value="AI/ML Developer">AI/ML Developer</option>
-                        <option value="UI/UX Designer">UI/UX Designer</option>
-                        <option value="Cloud Developer">Cloud Developer</option>
-                        <option value="DevOps Engineer">DevOps Engineer</option>
-                        <option value="Researcher">Researcher</option>
-                        <option value="Presenter">Presenter</option>
-                        <option value="Other">Other</option>
-                    </select>
-                    <input type="text" id="leaderGithub" placeholder="GITHUB USERNAME (optional)" class="bg-input border border-border px-4 py-3 font-mono text-sm focus:outline-none focus:border-blood w-full" style="font-family: 'JetBrains Mono', monospace;">
-                    <input type="text" id="leaderLinkedin" placeholder="LINKEDIN URL (optional)" class="bg-input border border-border px-4 py-3 font-mono text-sm focus:outline-none focus:border-blood w-full" style="font-family: 'JetBrains Mono', monospace;">
-                </div>
-            </div>
-
-            <!-- ── ROSTER ─────────────────────────────────────────── -->
-            <div class="space-y-4 border-l-2 border-blood pl-4">
-                <div class="flex items-center justify-between">
-                    <h2 class="font-impact text-2xl tracking-widest text-blood" style="font-family: 'Bebas Neue', sans-serif;">ROSTER <span class="text-sm font-mono text-muted-foreground">(excluding you)</span></h2>
-                </div>
-                
-                <div id="membersContainer" class="space-y-4">
-                    <div class="font-mono text-xs text-muted-foreground" style="font-family: 'JetBrains Mono', monospace; padding: 12px; text-align: center;">Loading roster details...</div>
-                </div>
-            </div>
-
-            <div id="formError" class="font-mono text-xs text-blood text-center" style="font-family: 'JetBrains Mono', monospace;"></div>
-
-            <!-- Non-dismissible mandatory note -->
-            <div class="mandatory-note">
-                ⚠️ <strong>IMPORTANT:</strong> Filling all fields correctly and completely is compulsory — perks and eligibility are decided based on this data. Double-check before submitting.
-            </div>
-
-            <button type="submit" id="submitBtn" class="w-full font-impact tracking-widest text-lg px-6 py-4 bg-blood text-primary-foreground shadow-brutal hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all cursor-pointer" style="font-family: 'Bebas Neue', sans-serif;">
-                INITIATE TEAM PROFILE
+            <p class="font-mono text-sm text-foreground/80 max-w-md mx-auto" style="font-family: 'JetBrains Mono', monospace; line-height: 1.6;">
+                Your team has been successfully registered and is awaiting admin approval. You will receive further updates via email.
+            </p>
+            <button onclick="sessionStorage.clear(); window.location.href='/login.html'" class="px-6 py-3 bg-blood text-primary-foreground font-impact tracking-widest text-md shadow-brutal hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all cursor-pointer" style="font-family: 'Bebas Neue', sans-serif;">
+                LOGOUT
             </button>
-        </form>
+        </div>
+
+        <div id="formContainer">
+            <div class="text-center mb-8 relative z-10">
+                <h1 class="font-display text-4xl tracking-widest mb-2" style="font-family: 'Zen Dots', sans-serif;">ASSEMBLE YOUR <span class="text-blood">SQUAD</span></h1>
+                <p class="font-mono text-sm text-muted-foreground" style="font-family: 'JetBrains Mono', monospace;">Provide your team details before accessing the dashboard. (2–4 members)</p>
+            </div>
+
+            <div id="rejectionNotesContainer" class="hidden relative z-10 mb-8 border border-strike-red bg-strike-red/10 p-4">
+                <h3 class="font-impact text-xl text-strike-red tracking-widest mb-2" style="font-family: 'Bebas Neue', sans-serif;">⚠️ CHANGES REQUESTED BY ADMIN</h3>
+                <p id="rejectionNotesText" class="font-mono text-sm text-white/80" style="font-family: 'JetBrains Mono', monospace;"></p>
+            </div>
+
+            <form id="onboardingForm" class="relative z-10 space-y-8">
+
+                <!-- ── TRACK SELECTION ────────────────────────────────── -->
+                <div id="trackSelectionSection" class="space-y-4 border-l-2 border-blood pl-4">
+                    <h2 class="font-impact text-2xl tracking-widest text-blood" style="font-family: 'Bebas Neue', sans-serif;">TRACK & MISSION</h2>
+                    <div class="space-y-2">
+                        <label class="font-mono text-xs text-muted-foreground" style="font-family: 'JetBrains Mono', monospace;">SELECT YOUR TRACK *</label>
+                        <select id="trackSelect" required class="bg-input border border-border px-4 py-3 font-mono text-sm focus:outline-none focus:border-blood w-full" style="font-family: 'JetBrains Mono', monospace;">
+                            <option value="">-- CHOOSE TRACK --</option>
+                            <!-- Populated dynamically from data/tracks.json -->
+                        </select>
+                    </div>
+                    <div class="space-y-2">
+                        <div class="ps-note">
+                            💡 You may pick one of our listed problem statements from the dashboard, OR write your own custom problem statement here.
+                        </div>
+                        <label class="font-mono text-xs text-muted-foreground" style="font-family: 'JetBrains Mono', monospace;">PROBLEM STATEMENT *</label>
+                        <textarea
+                            id="problemStatement"
+                            required
+                            rows="4"
+                            placeholder="Describe your problem statement or the challenge you intend to solve..."
+                            class="bg-input border border-border px-4 py-3 font-mono text-sm focus:outline-none focus:border-blood w-full resize-none"
+                            style="font-family: 'JetBrains Mono', monospace;"
+                        ></textarea>
+                        <label class="field-note">
+                            <input type="checkbox" id="isCustomPS" class="mr-1"> This is my own custom problem statement (not from the listed ones)
+                        </label>
+                    </div>
+                </div>
+
+                <!-- ── TEAM INFO ──────────────────────────────────────── -->
+                <div id="teamInfoSection" class="space-y-4 border-l-2 border-blood pl-4">
+                    <h2 class="font-impact text-2xl tracking-widest text-blood" style="font-family: 'Bebas Neue', sans-serif;">TEAM DETAILS</h2>
+                    <div class="grid grid-cols-1 gap-4">
+                        <input type="text" id="teamName" placeholder="TEAM NAME *" required class="bg-input border border-border px-4 py-3 font-mono text-sm focus:outline-none focus:border-blood w-full" style="font-family: 'JetBrains Mono', monospace;">
+                    </div>
+                </div>
+
+                <!-- ── LEADER PROFILE ─────────────────────────────────── -->
+                <div class="space-y-4 border-l-2 border-blood pl-4">
+                    <h2 class="font-impact text-2xl tracking-widest text-blood" style="font-family: 'Bebas Neue', sans-serif;">LEADER PROFILE</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <input type="text" id="leaderName" placeholder="LEADER FULL NAME *" required class="bg-input border border-border px-4 py-3 font-mono text-sm focus:outline-none focus:border-blood w-full" style="font-family: 'JetBrains Mono', monospace;">
+                        <div class="phone-wrapper">
+                            <span class="phone-prefix">+91</span>
+                            <input type="text" id="leaderPhone" placeholder="10-DIGIT PHONE *" required maxlength="10" pattern="\d{10}" class="bg-input border border-border px-3 py-3 font-mono text-sm focus:outline-none focus:border-blood w-full" style="font-family: 'JetBrains Mono', monospace;">
+                        </div>
+                        <div class="space-y-1">
+                            <div class="phone-wrapper">
+                                <span class="phone-prefix">+91</span>
+                                <input type="text" id="leaderWhatsapp" placeholder="10-DIGIT WHATSAPP *" required maxlength="10" pattern="\d{10}" class="bg-input border border-border px-3 py-3 font-mono text-sm focus:outline-none focus:border-blood w-full" style="font-family: 'JetBrains Mono', monospace;">
+                            </div>
+                            <label class="field-note flex items-center gap-1 cursor-pointer" style="margin-top: 4px; user-select: none;">
+                                <input type="checkbox" id="leaderSameAsPhone"> Same as Phone Number
+                            </label>
+                        </div>
+                        <input type="text" id="leaderCourse" placeholder="COURSE / BRANCH (e.g. B.Tech CSE) *" required class="bg-input border border-border px-4 py-3 font-mono text-sm focus:outline-none focus:border-blood w-full" style="font-family: 'JetBrains Mono', monospace;">
+                        <input type="text" id="memberCollege" placeholder="COLLEGE / UNIVERSITY *" required class="bg-input border border-border px-4 py-3 font-mono text-sm focus:outline-none focus:border-blood w-full" style="font-family: 'JetBrains Mono', monospace;">
+                        <select id="leaderGradYear" required class="bg-input border border-border px-4 py-3 font-mono text-sm focus:outline-none focus:border-blood w-full" style="font-family: 'Zen Dots', monospace; font-family: 'JetBrains Mono', monospace;">
+                            <option value="" disabled selected>GRADUATION YEAR *</option>
+                        </select>
+                        <input type="hidden" id="leaderRole" value="Team Lead">
+                        <input type="text" id="leaderGithub" placeholder="GITHUB USERNAME (optional)" class="bg-input border border-border px-4 py-3 font-mono text-sm focus:outline-none focus:border-blood w-full" style="font-family: 'JetBrains Mono', monospace;">
+                        <input type="text" id="leaderLinkedin" placeholder="LINKEDIN URL (optional)" class="bg-input border border-border px-4 py-3 font-mono text-sm focus:outline-none focus:border-blood w-full" style="font-family: 'JetBrains Mono', monospace;">
+                    </div>
+                </div>
+
+                <!-- ── TEAM SIZE ──────────────────────────────────────── -->
+                <div id="teamSizeSection" class="space-y-4 border-l-2 border-blood pl-4">
+                    <h2 class="font-impact text-2xl tracking-widest text-blood" style="font-family: 'Bebas Neue', sans-serif;">TEAM SIZE</h2>
+                    <div class="space-y-2">
+                        <label class="font-mono text-xs text-muted-foreground" style="font-family: 'JetBrains Mono', monospace;">SELECT TEAM SIZE (LEADER + MEMBERS) *</label>
+                        <select id="teamSize" required class="bg-input border border-border px-4 py-3 font-mono text-sm focus:outline-none focus:border-blood w-full" style="font-family: 'JetBrains Mono', monospace;">
+                            <option value="" disabled selected>-- SELECT TEAM SIZE --</option>
+                            <option value="2">2 Members (Leader + 1 Member)</option>
+                            <option value="3">3 Members (Leader + 2 Members)</option>
+                            <option value="4">4 Members (Leader + 3 Members)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- ── MEMBER DETAILS ─────────────────────────────────── -->
+                <div id="memberDetailsSection" class="space-y-4 border-l-2 border-blood pl-4 hidden">
+                    <h2 class="font-impact text-2xl tracking-widest text-blood" style="font-family: 'Bebas Neue', sans-serif;">MEMBER DETAILS</h2>
+                    <div id="membersContainer" class="space-y-6">
+                        <!-- Dynamically generated member forms -->
+                    </div>
+                </div>
+
+                <div id="formError" class="font-mono text-xs text-blood text-center" style="font-family: 'JetBrains Mono', monospace; color: #e50914;"></div>
+
+                <!-- Non-dismissible mandatory note -->
+                <div class="mandatory-note">
+                    ⚠️ <strong>IMPORTANT:</strong> Filling all fields correctly and completely is compulsory — perks and eligibility are decided based on this data. Double-check before submitting.
+                </div>
+
+                <button type="submit" id="submitBtn" class="w-full font-impact tracking-widest text-lg px-6 py-4 bg-blood text-primary-foreground shadow-brutal hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all cursor-pointer" style="font-family: 'Bebas Neue', sans-serif;">
+                    COMPLETE TEAM REGISTRATION
+                </button>
+            </form>
+        </div>
     </main>
 
     <script type="module" src="js/onboarding.js"></script>

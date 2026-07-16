@@ -18,7 +18,7 @@
  */
 
 import { FieldValue } from 'firebase-admin/firestore';
-import { getAdminDb } from '@/lib/firebase-admin';
+import { getAdminAuth, getAdminDb } from '@/lib/firebase-admin';
 import { Errors } from '@/lib/errors';
 import { writeAuditLog } from './audit.service';
 import { createMailJobs } from './mail-queue.service';
@@ -39,6 +39,23 @@ export interface OnboardingProfileInput {
   linkedin: string | null;
   trackId?: string;
   problemStatement?: string;
+}
+
+export interface MemberOnboardingInput {
+  name: string;
+  email: string;
+  phone: string;
+  whatsapp: string;
+  college: string;
+  course: string;
+  gradYear: number;
+  role: string;
+  github: string | null;
+  linkedin: string | null;
+}
+
+export interface CompleteRegistrationInput extends OnboardingProfileInput {
+  members: MemberOnboardingInput[];
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -84,14 +101,14 @@ async function assertRegistrationsNotPaused(db: FirebaseFirestore.Firestore) {
 
 export async function completeLeaderProfile(
   uid: string,
-  input: OnboardingProfileInput,
+  input: CompleteRegistrationInput,
 ): Promise<void> {
   const db = getAdminDb();
   await assertRegistrationsNotPaused(db);
 
-  // 1. Validate phone
-  const normalisedPhone = normalisePhone(input.phone, 'Mobile number');
-  const normalisedWhatsapp = normalisePhone(input.whatsapp, 'WhatsApp number');
+  // 1. Validate phone/whatsapp for leader
+  const normalisedLeaderPhone = normalisePhone(input.phone, 'Leader mobile number');
+  const normalisedLeaderWhatsapp = normalisePhone(input.whatsapp, 'Leader WhatsApp number');
 
   // 2. Load user doc
   const userRef = db.collection('users').doc(uid);
@@ -120,7 +137,22 @@ export async function completeLeaderProfile(
     throw Errors.forbidden('Registration is permanently locked and cannot be modified.');
   }
 
-  // 4. Check if a Teams doc already exists for this invite
+  // 4. Validate members array
+  if (!input.members || input.members.length < 1 || input.members.length > 3) {
+    throw Errors.validation('Roster must contain 1 to 3 members (in addition to the team leader).');
+  }
+
+  const leaderEmailLower = (userData['email'] as string).toLowerCase().trim();
+  if (input.members.some(m => m.email.toLowerCase().trim() === leaderEmailLower)) {
+    throw Errors.validation('Leader cannot be added as a team member.');
+  }
+
+  const memberEmailsSet = new Set(input.members.map(m => m.email.toLowerCase().trim()));
+  if (memberEmailsSet.size !== input.members.length) {
+    throw Errors.validation('Duplicate emails detected in members roster.');
+  }
+
+  // 5. Check if a Teams doc already exists for this invite
   const teamSnap = await db
     .collection('teams')
     .where('invitedTeamId', '==', invitedTeamId)
@@ -128,54 +160,115 @@ export async function completeLeaderProfile(
     .get();
 
   const isFirstSubmission = teamSnap.empty;
+  const existingTeamId = isFirstSubmission ? null : teamSnap.docs[0]!.id;
+
+  // Verify that none of the members are already registered in another team
+  for (const m of input.members) {
+    const normEmail = m.email.toLowerCase().trim();
+    const userDocs = await db.collection('users').where('email', '==', normEmail).limit(1).get();
+    if (!userDocs.empty) {
+      const uDoc = userDocs.docs[0]!.data();
+      if (uDoc.teamId && uDoc.teamId !== existingTeamId) {
+        throw Errors.conflict(`Member email "${m.email}" is already registered on another team.`);
+      }
+    }
+  }
+
+  // 6. Resolve/Create Firebase Auth Users for members BEFORE the transaction
+  const adminAuth = getAdminAuth();
+  const memberUids: string[] = [];
+  for (const m of input.members) {
+    const normEmail = m.email.toLowerCase().trim();
+    let memberUid = '';
+    try {
+      const existingUser = await adminAuth.getUserByEmail(normEmail);
+      memberUid = existingUser.uid;
+    } catch {
+      const newUser = await adminAuth.createUser({
+        email: normEmail,
+        emailVerified: true,
+      });
+      memberUid = newUser.uid;
+    }
+    memberUids.push(memberUid);
+  }
+
   let teamId = '';
 
   await db.runTransaction(async (tx) => {
-    // Update Users doc
+    let resolvedTeamId = '';
+    let teamRef;
+    if (isFirstSubmission) {
+      teamRef = db.collection('teams').doc();
+      resolvedTeamId = teamRef.id;
+    } else {
+      teamRef = teamSnap.docs[0]!.ref;
+      resolvedTeamId = teamRef.id;
+    }
+    teamId = resolvedTeamId;
+
+    // Update Leader User doc
     tx.update(userRef, {
       displayName: input.displayName.trim(),
-      phone: normalisedPhone,
+      phone: normalisedLeaderPhone,
       college: input.college.trim(),
       github: input.github?.trim() || null,
-      whatsapp: normalisedWhatsapp,
+      whatsapp: normalisedLeaderWhatsapp,
       course: input.course.trim(),
       gradYear: input.gradYear,
       linkedin: input.linkedin?.trim() || null,
       roleInTeam: 'Team Lead',
       onboardingStatus: 'complete',
+      teamId: resolvedTeamId,
       updatedAt: FieldValue.serverTimestamp(),
     });
 
-    // Build initial members array from invitedTeams.members
-    const prePopulatedMembers = (inviteData['members'] || []) as Array<{
-      name: string; email: string; role: string; college: string;
-    }>;
+    // Create/update Member User docs
+    for (let i = 0; i < input.members.length; i++) {
+      const m = input.members[i]!;
+      const mUid = memberUids[i]!;
+      const normEmail = m.email.toLowerCase().trim();
+      const mPhone = normalisePhone(m.phone, `${m.name}'s phone`);
+      const mWhatsapp = normalisePhone(m.whatsapp, `${m.name}'s WhatsApp`);
 
-    // HARDENING: Verify constraints before creating the team
-    if (prePopulatedMembers.length > 3) {
-      throw Errors.validation('Invalid roster size. Team cannot have more than 3 members in addition to the leader.');
+      const mUserRef = db.collection('users').doc(mUid);
+      tx.set(mUserRef, {
+        uid: mUid,
+        email: normEmail,
+        role: 'participant_member',
+        displayName: m.name.trim(),
+        phone: mPhone,
+        whatsapp: mWhatsapp,
+        college: m.college.trim(),
+        course: m.course.trim(),
+        gradYear: m.gradYear,
+        github: m.github?.trim() || null,
+        linkedin: m.linkedin?.trim() || null,
+        roleInTeam: m.role.trim(),
+        onboardingStatus: 'complete',
+        teamId: resolvedTeamId,
+        invitedTeamId,
+        isActive: true,
+        createdAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+      }, { merge: true });
     }
 
-    const leaderEmailLower = (userData['email'] as string).toLowerCase();
-    const leaderInRoster = prePopulatedMembers.some(m => m.email.toLowerCase() === leaderEmailLower);
-    if (leaderInRoster) {
-      throw Errors.validation('Duplicate leader architecture detected: Leader cannot exist in the members array.');
-    }
-
-    const membersArray = prePopulatedMembers.map((m) => ({
-      uid: null,
-      name: m.name,
-      email: m.email.toLowerCase(),
-      phone: '',
-      role: m.role,
-      college: m.college,
-      github: null,
-      whatsapp: '',
-      course: '',
-      gradYear: 0,
-      linkedin: null,
-      onboardingComplete: false,
-      joinedAt: null,
+    // Build complete members array
+    const membersArray = input.members.map((m, idx) => ({
+      uid: memberUids[idx]!,
+      name: m.name.trim(),
+      email: m.email.toLowerCase().trim(),
+      phone: normalisePhone(m.phone, `${m.name}'s phone`),
+      whatsapp: normalisePhone(m.whatsapp, `${m.name}'s WhatsApp`),
+      college: m.college.trim(),
+      course: m.course.trim(),
+      gradYear: m.gradYear,
+      role: m.role.trim(),
+      github: m.github?.trim() || null,
+      linkedin: m.linkedin?.trim() || null,
+      onboardingComplete: true,
+      joinedAt: FieldValue.serverTimestamp(),
     }));
 
     const teamData = {
@@ -188,17 +281,18 @@ export async function completeLeaderProfile(
       leaderId: uid,
       leaderName: input.displayName.trim(),
       leaderEmail: userData['email'] as string,
-      leaderPhone: normalisedPhone,
+      leaderPhone: normalisedLeaderPhone,
       leaderGithub: input.github?.trim() || null,
       leaderCollege: input.college.trim(),
-      leaderWhatsapp: normalisedWhatsapp,
+      leaderWhatsapp: normalisedLeaderWhatsapp,
       leaderCourse: input.course.trim(),
       leaderGradYear: input.gradYear,
       leaderLinkedin: input.linkedin?.trim() || null,
       members: membersArray,
       memberEmails: membersArray.map((m) => m.email),
-      status: 'Draft',
-      registrationLocked: false,
+      status: 'Verified', // Locks state waiting for admin approval
+      registrationLocked: true,
+      registrationLockedAt: FieldValue.serverTimestamp(),
       adminNotes: null,
       isTimeLeapEligible: false,
       isTimeLeapQualified: false,
@@ -207,83 +301,37 @@ export async function completeLeaderProfile(
     };
 
     if (isFirstSubmission) {
-      const teamRef = db.collection('teams').doc();
-      teamId = teamRef.id;
       tx.set(teamRef, {
         ...teamData,
         createdAt: FieldValue.serverTimestamp(),
         verifiedAt: null,
-        registrationLockedAt: null,
       });
-
-      // Link user to team
-      tx.update(userRef, { teamId: teamRef.id });
     } else {
-      // Update existing team doc
-      const existingTeamRef = teamSnap.docs[0]!.ref;
-      teamId = existingTeamRef.id;
-      tx.update(existingTeamRef, teamData);
+      tx.update(teamRef, teamData);
     }
 
     // Update invited team status
     tx.update(inviteRef, {
-      status: 'LeaderRegistered' as InvitedTeamStatus,
+      status: 'Verified' as InvitedTeamStatus,
       leaderRegisteredAt: FieldValue.serverTimestamp(),
+      allMembersRegisteredAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),
     });
   });
 
-  // 5. Audit log
+  // 7. Audit log
   await writeAuditLog({
-    action: 'team.leader_registered',
+    action: 'team.registration_locked',
     actorUid: uid,
     actorRole: 'participant_leader',
     targetId: invitedTeamId,
     targetType: 'invitedTeams',
-    metadata: { invitedTeamId },
+    metadata: { invitedTeamId, lockedBy: 'leader_registration_complete' },
     ip: null,
   });
 
-  // 6. Queue member invitation emails (only on first submission)
-  if (isFirstSubmission) {
-    const prePopulatedMembers = (inviteData['members'] || []) as Array<{
-      name: string; email: string; role: string; college: string;
-    }>;
-
-    const loginUrl = `${getPortalBaseUrl()}/login`;
-    const memberEmailJobs = prePopulatedMembers.map((m) => ({
-      to: m.email,
-      template: 'member_invitation' as const,
-      variables: {
-        memberName: m.name,
-        teamName: inviteData['teamName'] as string,
-        leaderName: input.displayName.trim(),
-        loginUrl,
-      },
-      priority: 'high' as const,
-      createdBy: uid,
-    }));
-
-    if (memberEmailJobs.length > 0) {
-      await createMailJobs(memberEmailJobs);
-
-      // Update invitedTeams status to MembersInvited
-      await db.collection('invitedTeams').doc(invitedTeamId).update({
-        status: 'MembersInvited' as InvitedTeamStatus,
-        updatedAt: FieldValue.serverTimestamp(),
-      });
-
-      await writeAuditLog({
-        action: 'team.members_invited',
-        actorUid: uid,
-        actorRole: 'participant_leader',
-        targetId: invitedTeamId,
-        targetType: 'invitedTeams',
-        metadata: { memberCount: memberEmailJobs.length },
-        ip: null,
-      });
-    }
-  }
+  // 8. Trigger onboarding sync
+  await triggerOnboardingSync(teamId);
 }
 
 // ─── Member Onboarding ────────────────────────────────────────────────────────

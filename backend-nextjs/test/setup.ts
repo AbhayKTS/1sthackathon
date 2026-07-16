@@ -17,3 +17,20 @@ process.env.NEXT_PHASE = 'phase-production-build'; // Bypass some env checks if 
 process.env.FIRESTORE_EMULATOR_HOST = '127.0.0.1:8080';
 process.env.FIREBASE_AUTH_EMULATOR_HOST = '127.0.0.1:9099';
 process.env.GCLOUD_PROJECT = 'demo-revengershack';
+process.env.CRON_SECRET = 'mock-cron-secret';
+
+import { beforeEach } from 'vitest';
+
+beforeEach(async () => {
+  // Clear Firestore emulator data
+  await fetch(
+    'http://127.0.0.1:8080/emulator/v1/projects/demo-revengershack/databases/(default)/documents',
+    { method: 'DELETE' }
+  ).catch(() => {});
+
+  // Clear Auth emulator data
+  await fetch(
+    'http://127.0.0.1:9099/emulator/v1/projects/demo-revengershack/accounts',
+    { method: 'DELETE' }
+  ).catch(() => {});
+});

@@ -141,8 +141,8 @@ describe('Operational & Reliability Audit', () => {
       expect(snap1.data()?.status).toBe('retry');
       expect(snap1.data()?.attempts).toBe(1);
 
-      // Set attempts to max attempts (e.g. 3) to trigger DLQ migration
-      await mailJobRef.update({ attempts: 3 });
+      // Set attempts to max attempts (e.g. 3) and reset scheduledFor to null to bypass backoff
+      await mailJobRef.update({ attempts: 3, scheduledFor: null });
       
       const res2 = await processMailQueue();
       expect(res2.processed).toBe(1);
@@ -168,6 +168,9 @@ describe('Operational & Reliability Audit', () => {
       const promises = Array.from({ length: 5 }).map(() => {
         const req = new NextRequest('http://localhost/api/internal/scheduler-worker', {
           method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${process.env.CRON_SECRET}`,
+          },
         });
         return POST(req);
       });

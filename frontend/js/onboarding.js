@@ -1,10 +1,4 @@
-import { auth, API_BASE, onAuthStateChanged, db, doc, getDoc } from "./firebase-init.js";
-
-// ─── Constants ────────────────────────────────────────────────────────────────
-// The leader is now excluded from the members array in the UI.
-// The roster displays only non-leader member slots.
-const MAX_MEMBERS = 3; 
-const MIN_MEMBERS = 1;
+import { auth, API_BASE, onAuthStateChanged, db, doc, getDoc, signOut } from "./firebase-init.js";
 
 // ─── DOM Refs ─────────────────────────────────────────────────────────────────
 const form             = document.getElementById("onboardingForm");
@@ -12,16 +6,21 @@ const membersContainer = document.getElementById("membersContainer");
 const errorEl          = document.getElementById("formError");
 const submitBtn        = document.getElementById("submitBtn");
 const trackSelect      = document.getElementById("trackSelect");
+const formContainer    = document.getElementById("formContainer");
+const successContainer = document.getElementById("successContainer");
 
 const leaderName       = document.getElementById("leaderName");
 const leaderPhone      = document.getElementById("leaderPhone");
 const leaderWhatsapp   = document.getElementById("leaderWhatsapp");
+const leaderSameAsPhone = document.getElementById("leaderSameAsPhone");
 const leaderCourse     = document.getElementById("leaderCourse");
 const leaderGradYear   = document.getElementById("leaderGradYear");
 const leaderGithub     = document.getElementById("leaderGithub");
 const leaderLinkedin   = document.getElementById("leaderLinkedin");
 const leaderRole       = document.getElementById("leaderRole");
 const memberCollege    = document.getElementById("memberCollege");
+const teamSizeSelect   = document.getElementById("teamSize");
+const memberDetailsSection = document.getElementById("memberDetailsSection");
 
 // ─── Graduation Year populator ────────────────────────────────────────────────
 function populateGradYears(selectEl) {
@@ -44,6 +43,7 @@ populateGradYears(leaderGradYear);
 
 // ─── Track dropdown: populate from data/tracks.json ──────────────────────────
 async function loadTracks() {
+    if (!trackSelect) return;
     try {
         const res = await fetch("/data/tracks.json");
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -57,17 +57,10 @@ async function loadTracks() {
         });
     } catch (e) {
         console.error("Could not load tracks.json:", e);
-        // Add a fallback "General" option so the form remains submittable
         const fallback = document.createElement("option");
         fallback.value = "general";
         fallback.textContent = "General Track";
         trackSelect.appendChild(fallback);
-        // Show a visible notice below the dropdown
-        const notice = document.createElement("p");
-        notice.className = "field-note";
-        notice.style.color = "#f59e0b";
-        notice.textContent = "⚠ Track list could not be loaded. 'General Track' selected by default. Contact support if this persists.";
-        trackSelect.parentNode.appendChild(notice);
     }
 }
 loadTracks();
@@ -79,8 +72,12 @@ if (notesJson) {
         const history = JSON.parse(notesJson);
         if (history && history.length > 0) {
             const latestNote = history[history.length - 1].notes || history[history.length - 1].note;
-            document.getElementById("rejectionNotesContainer").classList.remove("hidden");
-            document.getElementById("rejectionNotesText").textContent = latestNote;
+            const container = document.getElementById("rejectionNotesContainer");
+            const textEl = document.getElementById("rejectionNotesText");
+            if (container && textEl) {
+                container.classList.remove("hidden");
+                textEl.textContent = latestNote;
+            }
         }
     } catch (e) {
         console.error(e);
@@ -107,13 +104,6 @@ function attachPhoneGuard(input) {
             e.preventDefault();
         }
     });
-}
-
-function validatePhone(digits, label) {
-    if (!/^\d{10}$/.test(digits)) {
-        return `${label}: must be exactly 10 digits (got "${digits}")`;
-    }
-    return null;
 }
 
 function sanitizeHTML(str) {
@@ -147,13 +137,12 @@ onAuthStateChanged(auth, async (user) => {
         currentUserRole = userData.role;
 
         if (currentUserRole === "participant_leader") {
-            // Setup Leader view
+            // Setup Leader onboarding flow
             setupLeaderUI(user, userData);
         } else if (currentUserRole === "participant_member") {
-            // Setup Member view
-            setupMemberUI(user, userData);
+            // Member is already onboarded by the leader
+            window.location.href = "/dashboard.html";
         } else {
-            // Admin role or invalid participant role
             signOut(auth);
             window.location.href = "/login.html";
         }
@@ -167,12 +156,21 @@ async function setupLeaderUI(user, userData) {
     attachPhoneGuard(leaderPhone);
     attachPhoneGuard(leaderWhatsapp);
 
-    // Leader role is locked to Team Lead
-    if (leaderRole) {
-        leaderRole.value = "Team Lead";
-        leaderRole.disabled = true;
-        leaderRole.style.opacity = "0.7";
-    }
+    // leaderSameAsPhone behavior
+    leaderPhone.addEventListener("input", () => {
+        if (leaderSameAsPhone.checked) {
+            leaderWhatsapp.value = leaderPhone.value;
+        }
+    });
+    leaderSameAsPhone.addEventListener("change", () => {
+        if (leaderSameAsPhone.checked) {
+            leaderWhatsapp.value = leaderPhone.value;
+            leaderWhatsapp.disabled = true;
+            leaderWhatsapp.classList.remove("border-error");
+        } else {
+            leaderWhatsapp.disabled = false;
+        }
+    });
 
     // Fetch prefill data
     try {
@@ -184,26 +182,17 @@ async function setupLeaderUI(user, userData) {
             const data = await res.json();
             currentPrefillData = data?.data?.prefill;
             if (currentPrefillData) {
-                // Prefill team inputs
+                // Prefill team details section
                 document.getElementById("teamName").value = currentPrefillData.teamName || "";
                 document.getElementById("teamName").disabled = true;
                 document.getElementById("teamName").style.opacity = "0.7";
 
-                document.getElementById("college").value = currentPrefillData.college || "";
-                document.getElementById("college").disabled = true;
-                document.getElementById("college").style.opacity = "0.7";
-
-                // Pre-fill and lock the memberCollege field (leaders get it from invitedTeam)
-                if (memberCollege) {
-                    memberCollege.value = currentPrefillData.college || "";
-                    memberCollege.disabled = true;
-                    memberCollege.style.opacity = "0.7";
-                }
-
+                // Prefill leader profile fields
                 leaderName.value = currentPrefillData.leaderName || userData.displayName || "";
                 leaderPhone.value = (currentPrefillData.leaderPhone || userData.phone || "").replace(/^\+91/, "");
                 leaderWhatsapp.value = (currentPrefillData.leaderWhatsapp || userData.whatsapp || "").replace(/^\+91/, "");
                 leaderCourse.value = currentPrefillData.leaderCourse || userData.course || "";
+                memberCollege.value = currentPrefillData.college || userData.college || "";
                 if (currentPrefillData.leaderGradYear || userData.gradYear) {
                     leaderGradYear.value = currentPrefillData.leaderGradYear || userData.gradYear;
                 }
@@ -232,42 +221,12 @@ async function setupLeaderUI(user, userData) {
                     }
                 }
 
-                // Render pre-populated members list as read-only Roster
-                const members = currentPrefillData.members || [];
-                membersContainer.innerHTML = "";
-                
-                if (members.length === 0) {
-                    membersContainer.innerHTML = `<div class="font-mono text-xs text-blood" style="font-family: 'JetBrains Mono', monospace; padding: 12px; text-align: center;">Critical Error: Invalid Roster! Minimum team size is 2 (Leader + 1 Member). Please contact support.</div>`;
-                    submitBtn.disabled = true;
-                    submitBtn.style.opacity = "0.5";
-                } else {
-                    members.forEach((m, idx) => {
-                        const row = document.createElement("div");
-                        row.className = "member-row bg-black/40 p-4 border border-border/50 relative mt-4";
-                        
-                        const badge = document.createElement("div");
-                        badge.className = "absolute -top-2 -left-2 bg-card text-muted-foreground font-mono text-[10px] px-2 py-0.5 border border-border";
-                        badge.style.fontFamily = "'JetBrains Mono', monospace";
-                        badge.textContent = `MEMBER ${idx + 1}`;
-                        row.appendChild(badge);
-                        
-                        const grid = document.createElement("div");
-                        grid.className = "member-row-grid";
-                        grid.innerHTML = `
-                            <div class="space-y-1"><label class="text-[9px] text-muted-foreground font-mono">NAME</label><input type="text" readonly value="${sanitizeHTML(m.name)}" class="bg-input border border-border px-3 py-2 font-mono text-xs focus:outline-none w-full opacity-70 cursor-not-allowed"></div>
-                            <div class="space-y-1"><label class="text-[9px] text-muted-foreground font-mono">EMAIL</label><input type="email" readonly value="${sanitizeHTML(m.email)}" class="bg-input border border-border px-3 py-2 font-mono text-xs focus:outline-none w-full opacity-70 cursor-not-allowed"></div>
-                            <div class="space-y-1"><label class="text-[9px] text-muted-foreground font-mono">PHONE</label><input type="text" readonly value="${sanitizeHTML(m.phone || 'Pending')}" class="bg-input border border-border px-3 py-2 font-mono text-xs focus:outline-none w-full opacity-70 cursor-not-allowed"></div>
-                            <div class="space-y-1"><label class="text-[9px] text-muted-foreground font-mono">WHATSAPP</label><input type="text" readonly value="${sanitizeHTML(m.whatsapp || 'Pending')}" class="bg-input border border-border px-3 py-2 font-mono text-xs focus:outline-none w-full opacity-70 cursor-not-allowed"></div>
-                            <div class="space-y-1"><label class="text-[9px] text-muted-foreground font-mono">COURSE</label><input type="text" readonly value="${sanitizeHTML(m.course || 'Pending')}" class="bg-input border border-border px-3 py-2 font-mono text-xs focus:outline-none w-full opacity-70 cursor-not-allowed"></div>
-                            <div class="space-y-1"><label class="text-[9px] text-muted-foreground font-mono">GRAD YEAR</label><input type="text" readonly value="${sanitizeHTML(m.gradYear || 'Pending')}" class="bg-input border border-border px-3 py-2 font-mono text-xs focus:outline-none w-full opacity-70 cursor-not-allowed"></div>
-                            <div class="space-y-1"><label class="text-[9px] text-muted-foreground font-mono">ROLE</label><input type="text" readonly value="${sanitizeHTML(m.role || 'Member')}" class="bg-input border border-border px-3 py-2 font-mono text-xs focus:outline-none w-full opacity-70 cursor-not-allowed"></div>
-                            <div class="space-y-1"><label class="text-[9px] text-muted-foreground font-mono">COLLEGE</label><input type="text" readonly value="${sanitizeHTML(m.college)}" class="bg-input border border-border px-3 py-2 font-mono text-xs focus:outline-none w-full opacity-70 cursor-not-allowed"></div>
-                            <div class="space-y-1"><label class="text-[9px] text-muted-foreground font-mono">GITHUB</label><input type="text" readonly value="${sanitizeHTML(m.github || 'N/A')}" class="bg-input border border-border px-3 py-2 font-mono text-xs focus:outline-none w-full opacity-70 cursor-not-allowed"></div>
-                            <div class="space-y-1"><label class="text-[9px] text-muted-foreground font-mono">LINKEDIN</label><input type="text" readonly value="${sanitizeHTML(m.linkedin || 'N/A')}" class="bg-input border border-border px-3 py-2 font-mono text-xs focus:outline-none w-full opacity-70 cursor-not-allowed"></div>
-                        `;
-                        row.appendChild(grid);
-                        membersContainer.appendChild(row);
-                    });
+                // If prefilled members exist, auto-select team size
+                if (currentPrefillData.members && currentPrefillData.members.length > 0) {
+                    const totalSize = currentPrefillData.members.length + 1; // leader + members
+                    teamSizeSelect.value = totalSize;
+                    // Trigger change to generate forms
+                    teamSizeSelect.dispatchEvent(new Event("change"));
                 }
             }
         }
@@ -276,78 +235,114 @@ async function setupLeaderUI(user, userData) {
     }
 }
 
-// ─── Setup UI for Member ──────────────────────────────────────────────────────
-function setupMemberUI(user, userData) {
-    // Hide sections that are Team/Leader level
-    const hideSection = (selector) => {
-        const sections = document.querySelectorAll(selector);
-        sections.forEach(s => {
-            s.style.display = "none";
-            // Remove 'required' from hidden inputs to prevent HTML5 validation errors on submit
-            const inputs = s.querySelectorAll('[required]');
-            inputs.forEach(input => input.removeAttribute('required'));
-        });
-    };
-
-    // Hide Track & Mission, Team Details, Roster
-    hideSection("form > div:nth-of-type(1)"); // Track & Mission
-    hideSection("form > div:nth-of-type(2)"); // Team Details
-    hideSection("form > div:nth-of-type(4)"); // Roster (excluding you)
-
-    // Re-purpose the Leader Profile section as "Member Profile"
-    const leaderHeader = document.querySelector("form > div:nth-of-type(3) h2");
-    if (leaderHeader) {
-        leaderHeader.textContent = "COMPLETE YOUR PROFILE";
+// ─── Team Size Select Listener ────────────────────────────────────────────────
+teamSizeSelect.addEventListener("change", () => {
+    const size = parseInt(teamSizeSelect.value);
+    if (!size || size < 2) {
+        memberDetailsSection.classList.add("hidden");
+        membersContainer.innerHTML = "";
+        return;
     }
 
-    // Configure role select dropdown for member
-    if (leaderRole) {
-        leaderRole.disabled = false;
-        leaderRole.style.opacity = "1";
-        // Hide "Team Lead" option for members
-        const teamLeadOpt = leaderRole.querySelector('option[value="Team Lead"]');
-        if (teamLeadOpt) teamLeadOpt.style.display = "none";
+    memberDetailsSection.classList.remove("hidden");
+    membersContainer.innerHTML = "";
+
+    const numMembers = size - 1; // Excluding leader
+    for (let idx = 0; idx < numMembers; idx++) {
+        const memberDiv = document.createElement("div");
+        memberDiv.className = "member-form bg-black/40 p-6 border border-border/50 relative space-y-4";
         
-        if (userData.roleInTeam || userData.role) {
-            leaderRole.value = userData.roleInTeam || userData.role;
+        const badge = document.createElement("div");
+        badge.className = "absolute -top-2.5 -left-2.5 bg-card text-muted-foreground font-mono text-[10px] px-2 py-0.5 border border-border";
+        badge.style.fontFamily = "'JetBrains Mono', monospace";
+        badge.textContent = `MEMBER ${idx + 1}`;
+        memberDiv.appendChild(badge);
+
+        // Get prefill data if exists
+        const prefill = currentPrefillData?.members?.[idx] || {};
+
+        memberDiv.innerHTML += `
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                <input type="text" id="member_${idx}_name" placeholder="MEMBER ${idx + 1} FULL NAME *" required value="${sanitizeHTML(prefill.name || '')}" class="bg-input border border-border px-4 py-3 font-mono text-sm focus:outline-none focus:border-blood w-full" style="font-family: 'JetBrains Mono', monospace;">
+                <input type="email" id="member_${idx}_email" placeholder="MEMBER ${idx + 1} EMAIL *" required value="${sanitizeHTML(prefill.email || '')}" class="bg-input border border-border px-4 py-3 font-mono text-sm focus:outline-none focus:border-blood w-full" style="font-family: 'JetBrains Mono', monospace;">
+                
+                <div class="phone-wrapper">
+                    <span class="phone-prefix">+91</span>
+                    <input type="text" id="member_${idx}_phone" placeholder="MEMBER ${idx + 1} PHONE *" required maxlength="10" pattern="\\d{10}" class="bg-input border border-border px-3 py-3 font-mono text-sm focus:outline-none focus:border-blood w-full" style="font-family: 'JetBrains Mono', monospace;">
+                </div>
+                
+                <div class="space-y-1">
+                    <div class="phone-wrapper">
+                        <span class="phone-prefix">+91</span>
+                        <input type="text" id="member_${idx}_whatsapp" placeholder="MEMBER ${idx + 1} WHATSAPP *" required maxlength="10" pattern="\\d{10}" class="bg-input border border-border px-3 py-3 font-mono text-sm focus:outline-none focus:border-blood w-full" style="font-family: 'JetBrains Mono', monospace;">
+                    </div>
+                    <label class="field-note flex items-center gap-1 cursor-pointer" style="margin-top: 4px; user-select: none;">
+                        <input type="checkbox" id="member_${idx}_sameAsPhone"> Same as Phone Number
+                    </label>
+                </div>
+                
+                <input type="text" id="member_${idx}_college" placeholder="COLLEGE / UNIVERSITY *" required value="${sanitizeHTML(prefill.college || currentPrefillData?.college || '')}" class="bg-input border border-border px-4 py-3 font-mono text-sm focus:outline-none focus:border-blood w-full" style="font-family: 'JetBrains Mono', monospace;">
+                <input type="text" id="member_${idx}_course" placeholder="COURSE / BRANCH *" required class="bg-input border border-border px-4 py-3 font-mono text-sm focus:outline-none focus:border-blood w-full" style="font-family: 'JetBrains Mono', monospace;">
+                
+                <select id="member_${idx}_gradYear" required class="bg-input border border-border px-4 py-3 font-mono text-sm focus:outline-none focus:border-blood w-full" style="font-family: 'JetBrains Mono', monospace;">
+                    <option value="" disabled selected>GRADUATION YEAR *</option>
+                </select>
+                
+                <select id="member_${idx}_role" required class="bg-input border border-border px-4 py-3 font-mono text-sm focus:outline-none focus:border-blood w-full" style="font-family: 'JetBrains Mono', monospace;">
+                    <option value="" disabled selected>ROLE IN TEAM *</option>
+                    <option value="Backend Developer">Backend Developer</option>
+                    <option value="Frontend Developer">Frontend Developer</option>
+                    <option value="Full Stack Developer">Full Stack Developer</option>
+                    <option value="AI/ML Developer">AI/ML Developer</option>
+                    <option value="UI/UX Designer">UI/UX Designer</option>
+                    <option value="Cloud Developer">Cloud Developer</option>
+                    <option value="DevOps Engineer">DevOps Engineer</option>
+                    <option value="Researcher">Researcher</option>
+                    <option value="Presenter">Presenter</option>
+                    <option value="Other">Other</option>
+                </select>
+                
+                <input type="text" id="member_${idx}_github" placeholder="GITHUB USERNAME (optional)" class="bg-input border border-border px-4 py-3 font-mono text-sm focus:outline-none focus:border-blood w-full" style="font-family: 'JetBrains Mono', monospace;">
+                <input type="text" id="member_${idx}_linkedin" placeholder="LINKEDIN URL (optional)" class="bg-input border border-border px-4 py-3 font-mono text-sm focus:outline-none focus:border-blood w-full" style="font-family: 'JetBrains Mono', monospace;">
+            </div>
+        `;
+        membersContainer.appendChild(memberDiv);
+
+        // Populate graduation year options
+        const mGradYearSelect = document.getElementById(`member_${idx}_gradYear`);
+        populateGradYears(mGradYearSelect);
+
+        // Prefill role if matches options
+        const mRoleSelect = document.getElementById(`member_${idx}_role`);
+        if (prefill.role && mRoleSelect) {
+            mRoleSelect.value = prefill.role;
         }
+
+        // Wire inputs and sameAsPhone checkbox
+        const mPhoneInput = document.getElementById(`member_${idx}_phone`);
+        const mWhatsappInput = document.getElementById(`member_${idx}_whatsapp`);
+        const mSameAsPhoneCheck = document.getElementById(`member_${idx}_sameAsPhone`);
+
+        attachPhoneGuard(mPhoneInput);
+        attachPhoneGuard(mWhatsappInput);
+
+        mPhoneInput.addEventListener("input", () => {
+            if (mSameAsPhoneCheck.checked) {
+                mWhatsappInput.value = mPhoneInput.value;
+            }
+        });
+
+        mSameAsPhoneCheck.addEventListener("change", () => {
+            if (mSameAsPhoneCheck.checked) {
+                mWhatsappInput.value = mPhoneInput.value;
+                mWhatsappInput.disabled = true;
+                mWhatsappInput.classList.remove("border-error");
+            } else {
+                mWhatsappInput.disabled = false;
+            }
+        });
     }
-
-    // Setup input values and listeners
-    leaderName.placeholder = "YOUR FULL NAME *";
-    leaderName.value = userData.displayName || "";
-
-    leaderPhone.placeholder = "YOUR 10-DIGIT PHONE *";
-    leaderPhone.value = (userData.phone || "").replace(/^\+91/, "");
-    attachPhoneGuard(leaderPhone);
-
-    leaderWhatsapp.placeholder = "YOUR 10-DIGIT WHATSAPP *";
-    leaderWhatsapp.value = (userData.whatsapp || "").replace(/^\+91/, "");
-    attachPhoneGuard(leaderWhatsapp);
-
-    leaderCourse.placeholder = "YOUR COURSE / BRANCH *";
-    leaderCourse.value = userData.course || "";
-
-    if (userData.gradYear) {
-        leaderGradYear.value = userData.gradYear;
-    }
-
-    leaderGithub.placeholder = "YOUR GITHUB USERNAME (optional)";
-    leaderGithub.value = userData.github || "";
-
-    leaderLinkedin.placeholder = "YOUR LINKEDIN URL (optional)";
-    leaderLinkedin.value = userData.linkedin || "";
-    leaderLinkedin.style.display = "block"; // Members have LinkedIn too now
-
-    // Show and configure college input for members
-    // Members must enter their own college — it is not pre-filled from invitedTeam
-    if (memberCollege) {
-        memberCollege.placeholder = "YOUR COLLEGE / UNIVERSITY *";
-        memberCollege.value = userData.college || "";
-        memberCollege.disabled = false;
-        memberCollege.required = true;
-    }
-}
+});
 
 // ─── Form Submit ──────────────────────────────────────────────────────────────
 form.addEventListener("submit", async (e) => {
@@ -360,72 +355,119 @@ form.addEventListener("submit", async (e) => {
         return;
     }
 
+    // Reset validation border highlights
+    document.querySelectorAll(".border-error").forEach(el => el.classList.remove("border-error"));
+
+    let firstInvalidEl = null;
+    const errors = [];
+
+    const invalidateField = (el, msg) => {
+        el.classList.add("border-error");
+        if (!firstInvalidEl) firstInvalidEl = el;
+        errors.push(msg);
+    };
+
+    // 1. Validate Leader Fields
+    const lName = leaderName.value.trim();
+    const lPhone = leaderPhone.value.trim();
+    const lWhatsapp = leaderWhatsapp.value.trim();
+    const lCourse = leaderCourse.value.trim();
+    const lCollege = memberCollege.value.trim();
+    const lGradYear = leaderGradYear.value;
+    const lGithub = leaderGithub.value.trim() || null;
+    const lLinkedin = leaderLinkedin.value.trim() || null;
+
+    if (!lName) invalidateField(leaderName, "Leader Full Name is required");
+    if (!/^\d{10}$/.test(lPhone)) invalidateField(leaderPhone, "Leader Phone must be exactly 10 digits");
+    if (!/^\d{10}$/.test(lWhatsapp)) invalidateField(leaderWhatsapp, "Leader Whatsapp must be exactly 10 digits");
+    if (!lCourse) invalidateField(leaderCourse, "Leader Course/Branch is required");
+    if (!lCollege) invalidateField(memberCollege, "Leader College/University is required");
+    if (!lGradYear) invalidateField(leaderGradYear, "Leader Graduation Year is required");
+
+    // 2. Validate Team Size
+    const size = parseInt(teamSizeSelect.value);
+    if (!size || size < 2 || size > 4) {
+        invalidateField(teamSizeSelect, "Please select a valid Team Size (2 to 4 members)");
+    }
+
+    // 3. Validate Member Fields
+    const members = [];
+    const numMembers = size - 1;
+
+    for (let idx = 0; idx < numMembers; idx++) {
+        const mNameInput = document.getElementById(`member_${idx}_name`);
+        const mEmailInput = document.getElementById(`member_${idx}_email`);
+        const mPhoneInput = document.getElementById(`member_${idx}_phone`);
+        const mWhatsappInput = document.getElementById(`member_${idx}_whatsapp`);
+        const mCollegeInput = document.getElementById(`member_${idx}_college`);
+        const mCourseInput = document.getElementById(`member_${idx}_course`);
+        const mGradYearSelect = document.getElementById(`member_${idx}_gradYear`);
+        const mRoleSelect = document.getElementById(`member_${idx}_role`);
+        const mGithubInput = document.getElementById(`member_${idx}_github`);
+        const mLinkedinInput = document.getElementById(`member_${idx}_linkedin`);
+
+        const mName = mNameInput.value.trim();
+        const mEmail = mEmailInput.value.trim();
+        const mPhone = mPhoneInput.value.trim();
+        const mWhatsapp = mWhatsappInput.value.trim();
+        const mCollege = mCollegeInput.value.trim();
+        const mCourse = mCourseInput.value.trim();
+        const mGradYear = mGradYearSelect.value;
+        const mRole = mRoleSelect.value;
+        const mGithub = mGithubInput.value.trim() || null;
+        const mLinkedin = mLinkedinInput.value.trim() || null;
+
+        if (!mName) invalidateField(mNameInput, `Member ${idx + 1} Name is required`);
+        if (!mEmail || !mEmail.includes("@")) invalidateField(mEmailInput, `Member ${idx + 1} Email must be a valid email`);
+        if (!/^\d{10}$/.test(mPhone)) invalidateField(mPhoneInput, `Member ${idx + 1} Phone must be exactly 10 digits`);
+        if (!/^\d{10}$/.test(mWhatsapp)) invalidateField(mWhatsappInput, `Member ${idx + 1} Whatsapp must be exactly 10 digits`);
+        if (!mCollege) invalidateField(mCollegeInput, `Member ${idx + 1} College/University is required`);
+        if (!mCourse) invalidateField(mCourseInput, `Member ${idx + 1} Course/Branch is required`);
+        if (!mGradYear) invalidateField(mGradYearSelect, `Member ${idx + 1} Graduation Year is required`);
+        if (!mRole) invalidateField(mRoleSelect, `Member ${idx + 1} Role is required`);
+
+        members.push({
+            name: mName,
+            email: mEmail,
+            phone: mPhone,
+            whatsapp: mWhatsapp,
+            college: mCollege,
+            course: mCourse,
+            gradYear: Number(mGradYear),
+            role: mRole,
+            github: mGithub,
+            linkedin: mLinkedin
+        });
+    }
+
+    // Scroll to first invalid field and show errors
+    if (firstInvalidEl) {
+        firstInvalidEl.focus();
+        firstInvalidEl.scrollIntoView({ behavior: "smooth", block: "center" });
+        errorEl.textContent = errors.join(" | ");
+        return;
+    }
+
+    // Submit payload
     submitBtn.disabled = true;
     submitBtn.textContent = "TRANSMITTING...";
 
     try {
         const token = await user.getIdToken();
-        let payload = {};
-
-        const nameVal       = leaderName.value.trim();
-        const phoneVal      = leaderPhone.value.trim();
-        const whatsappVal   = leaderWhatsapp.value.trim();
-        const courseVal     = leaderCourse.value.trim();
-        const gradYearVal   = leaderGradYear.value;
-        const githubVal     = leaderGithub.value.trim() || null;
-        const linkedinVal   = leaderLinkedin.value.trim() || null;
-
-        if (!nameVal) throw new Error("Full name is required.");
-        
-        const phoneErr = validatePhone(phoneVal, "Mobile number");
-        if (phoneErr) throw new Error(phoneErr);
-
-        const whatsappErr = validatePhone(whatsappVal, "WhatsApp number");
-        if (whatsappErr) throw new Error(whatsappErr);
-
-        if (!courseVal) throw new Error("Course/Branch is required.");
-        if (!gradYearVal) throw new Error("Graduation Year is required.");
-
-        if (currentUserRole === "participant_leader") {
-            const college = (memberCollege && memberCollege.value.trim()) ||
-                currentPrefillData?.college ||
-                document.getElementById("college")?.value?.trim();
-            if (!college) throw new Error("College is required.");
-
-            payload = {
-                displayName: nameVal,
-                role: "Team Lead",
-                phone: phoneVal,
-                whatsapp: whatsappVal,
-                course: courseVal,
-                gradYear: Number(gradYearVal),
-                github: githubVal,
-                linkedin: linkedinVal,
-                college: college,
-                trackId: document.getElementById("trackSelect")?.value || undefined,
-                problemStatement: document.getElementById("problemStatement")?.value || undefined,
-            };
-        } else if (currentUserRole === "participant_member") {
-            // Fetch member's role from role select
-            const roleVal = leaderRole.value;
-            if (!roleVal) throw new Error("Role in team is required.");
-
-            // Read college from the memberCollege input field (member fills it in)
-            const college = memberCollege ? memberCollege.value.trim() : "";
-            if (!college) throw new Error("College / University is required.");
-
-            payload = {
-                displayName: nameVal,
-                role: roleVal,
-                phone: phoneVal,
-                whatsapp: whatsappVal,
-                course: courseVal,
-                gradYear: Number(gradYearVal),
-                github: githubVal,
-                linkedin: linkedinVal,
-                college: college,
-            };
-        }
+        const payload = {
+            displayName: lName,
+            role: "Team Lead",
+            phone: lPhone,
+            whatsapp: lWhatsapp,
+            college: lCollege,
+            course: lCourse,
+            gradYear: Number(lGradYear),
+            github: lGithub,
+            linkedin: lLinkedin,
+            trackId: document.getElementById("trackSelect")?.value || undefined,
+            problemStatement: document.getElementById("problemStatement")?.value || undefined,
+            members: members
+        };
 
         const res = await fetch(`${API_BASE}/onboarding/complete`, {
             method: "POST",
@@ -438,15 +480,17 @@ form.addEventListener("submit", async (e) => {
 
         const data = await res.json();
         if (!res.ok) {
-            throw new Error(data.error?.message || "Failed to submit onboarding profile.");
+            throw new Error(data.error?.message || "Failed to complete team registration.");
         }
 
         // Successfully completed onboarding
-        window.location.href = "/dashboard.html";
+        formContainer.classList.add("hidden");
+        successContainer.classList.remove("hidden");
+        window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (error) {
         console.error("Submission error:", error);
         errorEl.textContent = error.message;
         submitBtn.disabled = false;
-        submitBtn.textContent = "INITIATE TEAM PROFILE";
+        submitBtn.textContent = "COMPLETE TEAM REGISTRATION";
     }
 });

@@ -164,6 +164,20 @@ describe('Security Hardening Service Tests', () => {
         course: 'Computer Science',
         gradYear: 2026,
         linkedin: 'https://linkedin.com/in/leader',
+        members: [
+          {
+            name: 'Member Name',
+            email: 'member@test.com',
+            phone: '9999999991',
+            whatsapp: '9999999991',
+            college: 'Stanford University',
+            course: 'Computer Science',
+            gradYear: 2026,
+            role: 'Developer',
+            github: null,
+            linkedin: null,
+          }
+        ]
       };
 
       await expect(completeLeaderProfile('user-id-not-existing', input)).rejects.toThrowError(
@@ -197,6 +211,9 @@ describe('Security Hardening Service Tests', () => {
       
       const req = new NextRequest('http://localhost/api/internal/scheduler-worker', {
         method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.CRON_SECRET}`,
+        },
       });
 
       const res = await POST(req);
