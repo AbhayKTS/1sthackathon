@@ -2371,12 +2371,19 @@ async function initSessionsTab() {
     try {
         const roundSelect = document.getElementById("bulkRoundSelect");
         if (roundSelect) {
-            Object.values(roundsCache).filter(r => r.status === 'Active' || r.status === 'draft' || r.status === 'Published').forEach(r => {
-                const opt = document.createElement("option");
-                opt.value = r.roundId;
-                opt.textContent = r.roundName;
-                roundSelect.appendChild(opt);
+            const roundsRes = await fetch(`${API_BASE}/admin/rounds`, {
+                headers: { Authorization: `Bearer ${idToken}` }
             });
+            if (roundsRes.ok) {
+                const roundsResult = await roundsRes.json();
+                const allRounds = roundsResult.data?.rounds || [];
+                allRounds.filter(r => r.status === 'Active' || r.status === 'draft' || r.status === 'Published').forEach(r => {
+                    const opt = document.createElement("option");
+                    opt.value = r.id;
+                    opt.textContent = r.title || r.id;
+                    roundSelect.appendChild(opt);
+                });
+            }
         }
     } catch (e) {
         console.warn("Failed to load rounds for session tab", e);
