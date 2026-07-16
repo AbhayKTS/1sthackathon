@@ -52,7 +52,20 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         const data = firstDoc.data();
         const syncedAt = data.syncedAt;
         if (syncedAt) {
-          lastSync = typeof (syncedAt as any).toDate === 'function' ? (syncedAt as any).toDate().toISOString() : new Date((syncedAt as any).seconds * 1000).toISOString();
+          try {
+            if (typeof (syncedAt as any).toDate === 'function') {
+              lastSync = (syncedAt as any).toDate().toISOString();
+            } else if (typeof (syncedAt as any).seconds === 'number') {
+              lastSync = new Date((syncedAt as any).seconds * 1000).toISOString();
+            } else if (typeof (syncedAt as any)._seconds === 'number') {
+              lastSync = new Date((syncedAt as any)._seconds * 1000).toISOString();
+            } else if (typeof syncedAt === 'string' || typeof syncedAt === 'number') {
+              const d = new Date(syncedAt);
+              if (!isNaN(d.getTime())) lastSync = d.toISOString();
+            }
+          } catch (e) {
+            console.warn('[SheetsStats] Invalid syncedAt date', syncedAt);
+          }
         }
       }
     }

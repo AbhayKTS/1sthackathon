@@ -188,12 +188,12 @@ export async function importInvitations(
 
     // 3. Member Validation
     const members = extractMembersFromRow(record);
-    if (members.length < 1 || members.length > 3) {
+    if (members.length > 3) {
       result.failed++;
       result.errors.push({
         row: idx + 2,
         email: data.leaderEmail,
-        reason: `Team must have between 2 and 4 members total (leader + 1-3 members). Got members: ${members.length + 1}`
+        reason: `Team cannot have more than 4 members total (leader + up to 3 members). Got members: ${members.length + 1}`
       });
       return;
     }
@@ -337,8 +337,8 @@ export async function editDraftTeam(
   if (input.problemStatement !== undefined) update.problemStatement = input.problemStatement.trim();
   if (input.isCustomPS !== undefined) update.isCustomPS = input.isCustomPS;
   if (input.members !== undefined) {
-    if (input.members.length < 1 || input.members.length > 3) {
-      throw Errors.validation('Team must have between 2 and 4 members total (leader + 1-3 members).');
+    if (input.members.length > 3) {
+      throw Errors.validation('Team cannot have more than 4 members total (leader + up to 3 members).');
     }
     update.members = input.members.map((m) => ({
       name: m.name.trim(),

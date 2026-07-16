@@ -109,12 +109,18 @@ service cloud.firestore {
     // Writes via API only.
 
     match /submissions/{submissionId} {
-      allow read: if isAdmin() ||
-        (isAuth() && resource.data.submittedBy == request.auth.uid) ||
-        (isAuth() && (
+      // Admin check FIRST — avoids expensive get() calls for admin reads
+      allow read: if isAdmin();
+      // Submitter can read their own
+      allow read: if isAuth() && resource.data.submittedBy == request.auth.uid;
+      // Assigned judges/mentors can read submissions for their teams
+      allow read: if isAuth() &&
+        resource.data.keys().hasAny(['teamId']) &&
+        exists(/databases/$(database)/documents/teams/$(resource.data.teamId)) &&
+        (
           (get(/databases/$(database)/documents/teams/$(resource.data.teamId)).data.keys().hasAny(['assignedJudgeUids']) && request.auth.uid in get(/databases/$(database)/documents/teams/$(resource.data.teamId)).data.assignedJudgeUids) ||
           (get(/databases/$(database)/documents/teams/$(resource.data.teamId)).data.keys().hasAny(['assignedMentorUids']) && request.auth.uid in get(/databases/$(database)/documents/teams/$(resource.data.teamId)).data.assignedMentorUids)
-        ));
+        );
       allow write: if false; // Admin SDK only
     }
 
@@ -259,8 +265,24 @@ service cloud.firestore {
       allow update: if false; // Replies via Admin SDK
     }
 
+    // ─── Sessions ──────────────────────────────────────────────────────────────
+    // Admin read only. Created via Admin SDK (bulk-assign).
+
+    match /sessions/{sessionId} {
+      allow read: if isAdmin();
+      allow write: if false; // Admin SDK only
+    }
+
+    // ─── Mentor Slots ─────────────────────────────────────────────────────────
+    // Admin read only. Created via Admin SDK.
+
+    match /mentorSlots/{slotId} {
+      allow read: if isAdmin();
+      allow write: if false; // Admin SDK only
+    }
+
     // ─── Catch-all: deny all other reads/writes ────────────────────────────────
-    // This covers all removed collections: sessions, mentorSlots, AuditLogs (capital A),
+    // This covers all removed collections: AuditLogs (capital A),
     // hackathondata, teamData2 — they are fully blocked for client SDK access.
     // Existing data in those collections is accessible only via Admin SDK.
     match /{document=**} {
