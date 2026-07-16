@@ -821,7 +821,7 @@ async function initUserAccounts() {
             headers: { Authorization: `Bearer ${idToken}` }
         });
         const teamsResult = await safeJson(teamsRes, 'Teams');
-        const allTeams = teamsResult.data || [];
+        const allTeams = teamsResult.data?.teams ?? [];
 
         const tbody = document.getElementById("usersTableBody");
         tbody.innerHTML = "";
@@ -912,7 +912,10 @@ async function fetchAndRenderRounds() {
             if (deadlineDate) {
                 // Adjust to local timezone for datetime-local input
                 const tzOffset = deadlineDate.getTimezoneOffset() * 60000;
-                deadlineVal = new Date(deadlineDate.getTime() - tzOffset).toISOString().slice(0, 16);
+                const adjustedTime = deadlineDate.getTime() - tzOffset;
+                if (!isNaN(adjustedTime)) {
+                    deadlineVal = new Date(adjustedTime).toISOString().slice(0, 16);
+                }
             }
 
             const statusClass = r.status === "Active" ? "badge-verified" : (r.status === "Locked" ? "badge-amber" : "badge-gray");
@@ -1029,6 +1032,7 @@ async function fetchAndRenderRounds() {
                 saveBtn.textContent = "Saving...";
                 try {
                     const timeDate = new Date(deadlineStr);
+                    if (isNaN(timeDate.getTime())) throw new Error("Invalid deadline date format.");
                     const response = await fetch(`${API_BASE}/admin/rounds`, {
                         method: "PATCH",
                         headers: {
@@ -1170,6 +1174,7 @@ async function initMailQueue() {
         });
         const result = await response.json();
         const tbody = document.getElementById("emailQueueTableBody");
+        if (!tbody) return;
         tbody.innerHTML = "";
 
         const jobs = result.data?.jobs ?? [];
@@ -1315,6 +1320,7 @@ async function initSheetsSyncQueue() {
         });
         const result = await response.json();
         const tbody = document.getElementById("sheetsSyncTableBody");
+        if (!tbody) return;
         tbody.innerHTML = "";
 
         const jobs = result.data?.jobs ?? [];
@@ -2519,7 +2525,7 @@ async function refreshSessionsData() {
         }
 
         // Merge
-        sessionsDataCache = teamsData.teams.map(t => {
+        sessionsDataCache = (teamsData.teams ?? []).map(t => {
             const teamSessions = allSessions.filter(s => s.teamId === t.id);
             const judgeSession = teamSessions.find(s => s.type === 'judging');
             const mentorSession = teamSessions.find(s => s.type === 'mentoring');
