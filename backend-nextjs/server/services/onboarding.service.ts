@@ -152,8 +152,8 @@ export async function completeLeaderProfile(
     }>;
 
     // HARDENING: Verify constraints before creating the team
-    if (prePopulatedMembers.length < 1 || prePopulatedMembers.length > 3) {
-      throw Errors.validation('Invalid roster size. Team must have between 1 and 3 members in addition to the leader.');
+    if (prePopulatedMembers.length > 3) {
+      throw Errors.validation('Invalid roster size. Team cannot have more than 3 members in addition to the leader.');
     }
 
     const leaderEmailLower = (userData['email'] as string).toLowerCase();
@@ -320,7 +320,7 @@ export async function completeMemberProfile(
     .get();
 
   if (teamSnap.empty) {
-    throw Errors.validation('No team found for this member email.');
+    throw Errors.validation('No active team found for your email. If you were recently invited, your Team Leader MUST complete their profile first before you can register.');
   }
 
   const teamDoc = teamSnap.docs[0]!;
