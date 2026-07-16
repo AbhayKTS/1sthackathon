@@ -72,9 +72,9 @@ export async function bulkAssignSessions(
       .where('scheduledFor', '<', endTimestamp);
       
     const snap = await q.get();
-    if (!snap.empty) {
-      const conflict = snap.docs[0].data();
-      const conflictTime = conflict.scheduledFor?.toDate().toLocaleTimeString() || 'unknown time';
+    if (!snap.empty && snap.docs.length > 0) {
+      const conflict = snap.docs[0]?.data();
+      const conflictTime = conflict?.scheduledFor?.toDate().toLocaleTimeString() || 'unknown time';
       throw Errors.conflict(`Overlap detected: ${role} is already assigned a session at ${conflictTime}.`);
     }
   }

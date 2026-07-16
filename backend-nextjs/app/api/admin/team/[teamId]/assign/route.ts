@@ -6,7 +6,7 @@
  */
 
 import { type NextRequest, NextResponse } from 'next/server';
-import { apiSuccess, apiError, handleOptions, requireRole, withAuth } from '@/lib/api-helpers';
+import { apiSuccess, apiError, handleOptions, requireRole, withAuth, applyCorsHeaders } from '@/lib/api-helpers';
 import { assignTeamJudgesMentors } from '@/server/services/team.service';
 
 type Params = { params: Promise<{ teamId: string }> };
@@ -31,7 +31,8 @@ export async function PATCH(request: NextRequest, { params }: Params): Promise<N
       assignedMentorUids
     });
 
-    return apiSuccess({ success: true, message: 'Assignments updated successfully.' }, origin);
+    const response = apiSuccess({ success: true, message: 'Assignments updated successfully.' });
+    return applyCorsHeaders(response, origin);
   } catch (error: any) {
     return apiError(error, origin);
   }

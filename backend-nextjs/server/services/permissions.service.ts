@@ -52,6 +52,24 @@ const DEFAULT_PERMISSIONS: Record<UserRole, Omit<PermissionsDoc, 'userId' | 'gra
     canSendEmails: false,
     canViewLogs: false,
   },
+  judge: {
+    role: 'judge',
+    canEditScores: false,
+    canPublishScores: false,
+    canManageRounds: false,
+    canManageTeams: false,
+    canSendEmails: false,
+    canViewLogs: false,
+  },
+  mentor: {
+    role: 'mentor',
+    canEditScores: false,
+    canPublishScores: false,
+    canManageRounds: false,
+    canManageTeams: false,
+    canSendEmails: false,
+    canViewLogs: false,
+  },
 };
 
 // ─── Operations ───────────────────────────────────────────────────────────────

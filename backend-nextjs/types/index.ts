@@ -19,7 +19,9 @@ export type UserRole =
   | 'super_admin'
   | 'admin'
   | 'participant_leader'
-  | 'participant_member';
+  | 'participant_member'
+  | 'judge'
+  | 'mentor';
 
 export const ADMIN_ROLES: UserRole[] = ['super_admin', 'admin'];
 export const PARTICIPANT_ROLES: UserRole[] = ['participant_leader', 'participant_member'];
@@ -460,6 +462,7 @@ export type AuditAction =
   | 'mail.job_processed'
   | 'mail.job_failed'
   // Admin Operations
+  | 'sessions.bulk_assign'
   | 'admin.created'
   | 'admin.role_changed'
   | 'admin.permission_changed'
