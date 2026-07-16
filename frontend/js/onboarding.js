@@ -281,7 +281,12 @@ function setupMemberUI(user, userData) {
     // Hide sections that are Team/Leader level
     const hideSection = (selector) => {
         const sections = document.querySelectorAll(selector);
-        sections.forEach(s => s.style.display = "none");
+        sections.forEach(s => {
+            s.style.display = "none";
+            // Remove 'required' from hidden inputs to prevent HTML5 validation errors on submit
+            const inputs = s.querySelectorAll('[required]');
+            inputs.forEach(input => input.removeAttribute('required'));
+        });
     };
 
     // Hide Track & Mission, Team Details, Roster
