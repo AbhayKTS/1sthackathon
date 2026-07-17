@@ -255,6 +255,8 @@ export async function completeLeaderProfile(
     }
 
     // Build complete members array
+    // NOTE: FieldValue.serverTimestamp() is NOT allowed inside array elements in Firestore.
+    // Use new Date() for timestamps within array objects.
     const membersArray = input.members.map((m, idx) => ({
       uid: memberUids[idx]!,
       name: m.name.trim(),
@@ -268,7 +270,7 @@ export async function completeLeaderProfile(
       github: m.github?.trim() || null,
       linkedin: m.linkedin?.trim() || null,
       onboardingComplete: true,
-      joinedAt: FieldValue.serverTimestamp(),
+      joinedAt: new Date(),
     }));
 
     const teamData = {
