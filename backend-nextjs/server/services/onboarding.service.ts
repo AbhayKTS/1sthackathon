@@ -292,7 +292,7 @@ export async function completeLeaderProfile(
       leaderLinkedin: input.linkedin?.trim() || null,
       members: membersArray,
       memberEmails: membersArray.map((m) => m.email),
-      status: 'Verified', // Locks state waiting for admin approval
+      status: 'Approved', // Auto-approved — team was already shortlisted/invited by admin
       registrationLocked: true,
       registrationLockedAt: FieldValue.serverTimestamp(),
       adminNotes: null,
@@ -312,9 +312,9 @@ export async function completeLeaderProfile(
       tx.update(teamRef, teamData);
     }
 
-    // Update invited team status
+    // Update invited team status — Locked is the final state for invitedTeams
     tx.update(inviteRef, {
-      status: 'Verified' as InvitedTeamStatus,
+      status: 'Locked' as InvitedTeamStatus,
       leaderRegisteredAt: FieldValue.serverTimestamp(),
       allMembersRegisteredAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),
@@ -431,16 +431,16 @@ export async function completeMemberProfile(
     if (allComplete) {
       teamUpdate['registrationLocked'] = true;
       teamUpdate['registrationLockedAt'] = FieldValue.serverTimestamp();
-      teamUpdate['status'] = 'Verified';
+      teamUpdate['status'] = 'Approved'; // Auto-approved — already shortlisted
     }
 
     tx.update(teamDoc.ref, teamUpdate);
 
-    // Update invitedTeams if all complete
+    // Update invitedTeams if all complete — Locked is the final state
     if (allComplete && teamData['invitedTeamId']) {
       const inviteRef = db.collection('invitedTeams').doc(teamData['invitedTeamId'] as string);
       tx.update(inviteRef, {
-        status: 'Verified' as InvitedTeamStatus,
+        status: 'Locked' as InvitedTeamStatus,
         allMembersRegisteredAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),
       });
