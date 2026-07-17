@@ -19,6 +19,43 @@ import { apiSuccess, apiError, applyCorsHeaders, handleOptions, withAuth, requir
 import { Errors } from '@/lib/errors';
 import { completeLeaderProfile, completeMemberProfile } from '@/server/services/onboarding.service';
 import { writeActivityLog } from '@/server/services/activity-log.service';
+import { z } from 'zod';
+
+const phoneRegex = /^(\+?91|91)?[-\s\.]?[0-9]{10}$/;
+const phoneSchema = z.string().regex(phoneRegex, {
+  message: 'Must be a valid 10-digit phone number, optionally prefixed with +91/91.'
+});
+
+const optionalUrlSchema = z.string().url().or(z.literal('')).nullable().optional();
+
+const baseOnboardingSchema = z.object({
+  displayName: z.string().min(1).max(100),
+  role: z.string().min(1).max(100),
+  phone: phoneSchema,
+  college: z.string().min(1).max(100),
+  whatsapp: phoneSchema,
+  course: z.string().min(1).max(100),
+  gradYear: z.coerce.number(),
+  github: optionalUrlSchema,
+  linkedin: optionalUrlSchema,
+});
+
+const leaderOnboardingSchema = baseOnboardingSchema.extend({
+  members: z.array(
+    z.object({
+      name: z.string().min(1).max(100),
+      email: z.string().email(),
+      phone: phoneSchema,
+      whatsapp: phoneSchema,
+      college: z.string().min(1).max(100),
+      course: z.string().min(1).max(100),
+      gradYear: z.coerce.number(),
+      role: z.string().min(1).max(100),
+      github: optionalUrlSchema,
+      linkedin: optionalUrlSchema,
+    })
+  ).min(1),
+});
 
 export function OPTIONS(request: NextRequest): NextResponse {
   return handleOptions(request);
@@ -33,6 +70,24 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const body = await request.json().catch(() => {
       throw Errors.validation('Invalid JSON payload.');
     });
+
+    const isLeader = token.role === 'participant_leader';
+    const schema = isLeader ? leaderOnboardingSchema : baseOnboardingSchema;
+    const parsed = schema.safeParse(body);
+    if (!parsed.success) {
+      const response = NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Validation failed.',
+            details: parsed.error.flatten().fieldErrors,
+          },
+        },
+        { status: 400 }
+      );
+      return applyCorsHeaders(response, origin);
+    }
 
     const { displayName, role: teamRole, phone, college, github, whatsapp, course, gradYear, linkedin, members } = body;
 

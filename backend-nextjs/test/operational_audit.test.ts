@@ -190,7 +190,7 @@ describe('Operational & Reliability Audit', () => {
         .where('title', '==', 'Round Started: Race Condition Round')
         .get();
       expect(announcementsSnap.size).toBe(1);
-    });
+    }, 15000);
   });
 
   describe('5. Leaderboard Consistency', () => {

@@ -64,7 +64,8 @@ let activeRoundId = null;
 
 // Firebase real-time listener unsubscribers to prevent memory leaks and duplicate queries
 let roundsUnsubscribers = [];
-let announcementsUnsubscriber = null;
+const roundStates = {};
+let announcementsInterval = null;
 let leaderboardUnsubscriber = null;
 let leaderboardDocUnsub = null;
 let notificationsUnsubscriber = null;
@@ -74,9 +75,9 @@ let countdownInterval = null;
 function cleanupListeners() {
     roundsUnsubscribers.forEach(unsub => unsub());
     roundsUnsubscribers = [];
-    if (announcementsUnsubscriber) {
-        announcementsUnsubscriber();
-        announcementsUnsubscriber = null;
+    if (announcementsInterval) {
+        clearInterval(announcementsInterval);
+        announcementsInterval = null;
     }
     if (leaderboardUnsubscriber) {
         leaderboardUnsubscriber();
@@ -292,233 +293,230 @@ const heroVerticalText = document.getElementById("heroVerticalText");
 const heroExtraBox = document.getElementById("heroExtraBox");
 const heroFooterText = document.getElementById("heroFooterText");
 
-// Load Active Rounds - listen to rounds collection
+// Load Active Rounds
 function loadActiveRounds() {
-    // Clear any previous active rounds listeners
-    roundsUnsubscribers.forEach(unsub => unsub());
-    roundsUnsubscribers = [];
+    startSharedRoundsListener();
+}
 
-    // Track state per round
-    const roundStates = {};
+function renderActiveRound() {
+    const activeEntry = Object.entries(roundStates).find(([, data]) => data && data.status === 'Active');
 
-    function renderActiveRound() {
-        const activeEntry = Object.entries(roundStates).find(([, data]) => data && data.status === 'Active');
+    const closedRounds = Object.entries(roundStates).filter(([, data]) => data && ['Locked', 'Evaluation', 'Completed', 'Archived'].includes(data.status));
+    const closedMissionsContainer = document.getElementById("closedMissionsContainer");
+    const closedMissionsList = document.getElementById("closedMissionsList");
 
-        const closedRounds = Object.entries(roundStates).filter(([, data]) => data && ['Locked', 'Evaluation', 'Completed', 'Archived'].includes(data.status));
-        const closedMissionsContainer = document.getElementById("closedMissionsContainer");
-        const closedMissionsList = document.getElementById("closedMissionsList");
-
-        if (closedMissionsContainer && closedMissionsList) {
-            if (closedRounds.length > 0) {
-                closedMissionsContainer.style.display = "block";
-                closedMissionsList.innerHTML = closedRounds.map(([id, data]) => `
-                    <div class="rounded bg-surface-2 p-3 border border-border">
-                        <div class="font-mono text-[11px] font-bold text-muted-foreground uppercase tracking-wider">${data.title || id}</div>
-                        <div class="font-sans text-[11px] text-muted-foreground mt-1">${data.description || 'Closed round'}</div>
-                    </div>
-                `).join('');
-            } else {
-                closedMissionsContainer.style.display = "none";
-            }
-        }
-
-        if (!activeEntry) {
-            // No active round — show waiting state
-            activeRoundId = null;
-            if (noActiveRoundMsg) noActiveRoundMsg.style.display = "block";
-            if (activeRoundFormContainer) activeRoundFormContainer.style.display = "none";
-            if (heroRoundBadge) heroRoundBadge.textContent = "STANDBY // NO ACTIVE ROUND";
-            if (heroRoundTitle) heroRoundTitle.innerHTML = `AWAIT<br /><span class="text-primary">YOUR ORDERS</span>`;
-            if (heroRoundDesc) heroRoundDesc.textContent = "Central command has not activated a round yet. Stay sharp.";
-            if (heroRequirementsList) heroRequirementsList.innerHTML = "";
-            if (heroRequirementsTitle) heroRequirementsTitle.textContent = "";
-            if (heroImageBg) heroImageBg.src = new URL('../assets/images/round1img.png', import.meta.url).href;
-
-            // Clear countdown
-            if (countdownInterval) { clearInterval(countdownInterval); countdownInterval = null; }
-            const displayEl = document.getElementById("countdownDisplay");
-            if (displayEl) displayEl.innerHTML = `<span style="font-size:1.5rem; color: var(--muted-foreground); letter-spacing: 0.2em;">AWAITING</span>`;
-            const progressEl = document.getElementById("countdownProgress");
-            if (progressEl) progressEl.style.width = "0%";
-            return;
-        }
-
-        const [rid, roundData] = activeEntry;
-        activeRoundId = rid;
-
-        if (noActiveRoundMsg) noActiveRoundMsg.style.display = "none";
-        if (activeRoundFormContainer) activeRoundFormContainer.style.display = "block";
-        if (teamStatusBadge) teamStatusBadge.style.display = "inline-block";
-        
-        if (activeRoundTitle) activeRoundTitle.textContent = roundData.title || "Active Round";
-        if (activeRoundDesc) activeRoundDesc.textContent = roundData.description || "Submit your payload below.";
-        
-        let topText = "AWAITING";
-        let bottomText = "NEXT ROUND";
-        
-        let t = (roundData.title || "").toLowerCase();
-        
-        if (t.includes("1") || t.includes("one")) {
-            if (heroImageBg) heroImageBg.src = new URL('../assets/images/round1img.png', import.meta.url).href;
-            if (heroRoundBadge) heroRoundBadge.textContent = `LIVE // ROUND 01`;
-            if (heroRoundDesc) {
-                heroRoundDesc.innerHTML = `This is your first move.<br />Submit your problem statements and<br />presentation decks that define your vision,<br />your approach, and your edge.`;
-            }
-            if (heroRequirementsTitle) heroRequirementsTitle.textContent = "WHAT TO SUBMIT";
-            if (heroRequirementsList) {
-                heroRequirementsList.innerHTML = `
-                    <span class="inline-flex items-center gap-2 rounded-sm border border-border bg-surface-2/70 px-3 py-1.5">
-                      <span class="text-accent"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-3.5 w-3.5"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg></span>
-                      <span class="font-mono text-[11px] uppercase tracking-[0.16em] text-foreground">Problem Statement</span>
-                    </span>
-                    <span class="inline-flex items-center gap-2 rounded-sm border border-border bg-surface-2/70 px-3 py-1.5">
-                      <span class="text-accent"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-3.5 w-3.5"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></span>
-                      <span class="font-mono text-[11px] uppercase tracking-[0.16em] text-foreground">Presentation Deck (PPT)</span>
-                    </span>
-                `;
-            }
-            topText = "SHOW US"; bottomText = "WHAT YOU GOT";
-        } else if (t.includes("2") || t.includes("two")) {
-            if (heroImageBg) heroImageBg.src = new URL('../assets/images/row2-bg.jpg', import.meta.url).href;
-            if (heroRoundBadge) heroRoundBadge.textContent = `LIVE // ROUND 02`;
-            if (heroRoundDesc) heroRoundDesc.innerHTML = `The underground waits for no one. Lock in your code, defend your turf, and take the throne.`;
-            if (heroRequirementsTitle) heroRequirementsTitle.textContent = "WHAT TO SUBMIT";
-            if (heroRequirementsList) {
-                heroRequirementsList.innerHTML = `
-                    <span class="inline-flex items-center gap-2 rounded-sm border border-border bg-surface-2/70 px-3 py-1.5">
-                      <span class="text-accent"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-3.5 w-3.5"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg></span>
-                      <span class="font-mono text-[11px] uppercase tracking-[0.16em] text-foreground">Source Code (GitHub)</span>
-                    </span>
-                    <span class="inline-flex items-center gap-2 rounded-sm border border-border bg-surface-2/70 px-3 py-1.5">
-                      <span class="text-accent"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-3.5 w-3.5"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></span>
-                      <span class="font-mono text-[11px] uppercase tracking-[0.16em] text-foreground">Live Demo Link</span>
-                    </span>
-                `;
-            }
-            topText = "WE RIDE"; bottomText = "AT MIDNIGHT";
-        } else if (t.includes("3") || t.includes("three")) {
-            if (heroImageBg) heroImageBg.src = new URL('../assets/images/round3img.png', import.meta.url).href;
-            if (heroRoundBadge) heroRoundBadge.textContent = `LIVE // ROUND 03 - FINALE`;
-            if (heroRoundDesc) {
-                heroRoundDesc.innerHTML = `This is it. The final showdown.<br />Every idea. Every line of code. Every late night.<br />Now it decides.<br /><br /><span class="text-primary">Only one will rise.</span><br /><span class="text-primary">Only one will win.</span>`;
-            }
-            if (heroRequirementsTitle) heroRequirementsTitle.textContent = "WHAT DECIDES THE WINNER?";
-            topText = "SEEK THE"; bottomText = "WAY IN OR OUT";
-        }
- 
-        if (heroRoundTitle) heroRoundTitle.innerHTML = `${topText}<br /><span class="text-primary" style="animation: flicker 4s infinite">${bottomText}</span>`;
-        
-        const githubInput = document.getElementById("githubLink");
-        const demoInput = document.getElementById("demoLink");
-        const pptInput = document.getElementById("pptLink");
-        const prototypeInput = document.getElementById("prototypeLink");
-        const customInput = document.getElementById("customLink");
-        const noPrototypeLabel = document.getElementById("noPrototypeLabel");
-        const hasNoPrototypeCheckbox = document.getElementById("hasNoPrototype");
-        const submissionForm = document.getElementById("submissionForm");
-        const adminAssignedMsg = document.getElementById("adminAssignedMsg");
-
-        // Hide all initially
-        if (githubInput) { githubInput.classList.add("hidden"); githubInput.required = false; githubInput.value = ""; }
-        if (demoInput) { demoInput.classList.add("hidden"); demoInput.required = false; demoInput.value = ""; }
-        if (pptInput) { pptInput.classList.add("hidden"); pptInput.required = false; pptInput.value = ""; }
-        if (prototypeInput) { prototypeInput.classList.add("hidden"); prototypeInput.required = false; prototypeInput.value = ""; prototypeInput.disabled = false; }
-        if (customInput) { customInput.classList.add("hidden"); customInput.required = false; customInput.value = ""; }
-        if (noPrototypeLabel) { noPrototypeLabel.classList.add("hidden"); }
-        if (hasNoPrototypeCheckbox) { hasNoPrototypeCheckbox.checked = false; hasNoPrototypeCheckbox.disabled = false; }
-        if (submissionForm) { submissionForm.style.display = "flex"; }
-        if (adminAssignedMsg) { adminAssignedMsg.classList.add("hidden"); }
-        if (submitMissionBtn) { submitMissionBtn.innerHTML = `Submit Build <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-3.5 w-3.5"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>`; }
-
-        const submissionType = roundData.submissionType || 'Github'; // default to Github if undefined
-
-        if (submissionType === 'PPT') {
-            if (pptInput) {
-                pptInput.classList.remove("hidden");
-                pptInput.required = true;
-            }
-            if (submitMissionBtn) {
-                submitMissionBtn.innerHTML = `Submit Deck <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-3.5 w-3.5"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>`;
-            }
-        } else if (submissionType === 'Prototype') {
-            if (prototypeInput) {
-                prototypeInput.classList.remove("hidden");
-                prototypeInput.required = true;
-            }
-            if (noPrototypeLabel) {
-                noPrototypeLabel.classList.remove("hidden");
-                if (hasNoPrototypeCheckbox) {
-                    hasNoPrototypeCheckbox.onchange = (e) => {
-                        if (prototypeInput) {
-                            prototypeInput.required = !e.target.checked;
-                            if (e.target.checked) prototypeInput.value = "";
-                            prototypeInput.disabled = e.target.checked;
-                        }
-                    };
-                }
-            }
-            if (submitMissionBtn) {
-                submitMissionBtn.innerHTML = `Submit Prototype <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-3.5 w-3.5"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>`;
-            }
-        } else if (submissionType === 'Demo') {
-            if (demoInput) {
-                demoInput.classList.remove("hidden");
-                demoInput.required = true;
-                demoInput.placeholder = "LIVE DEMO URL";
-            }
-        } else if (submissionType === 'Custom') {
-            if (customInput) {
-                customInput.classList.remove("hidden");
-                customInput.required = true;
-            }
-        } else if (submissionType === 'None') {
-            if (submissionForm) {
-                submissionForm.style.display = "none";
-            }
-            if (adminAssignedMsg) {
-                adminAssignedMsg.classList.remove("hidden");
-            }
+    if (closedMissionsContainer && closedMissionsList) {
+        if (closedRounds.length > 0) {
+            closedMissionsContainer.style.display = "block";
+            closedMissionsList.innerHTML = closedRounds.map(([id, data]) => `
+                <div class="rounded bg-surface-2 p-3 border border-border">
+                    <div class="font-mono text-[11px] font-bold text-muted-foreground uppercase tracking-wider">${data.title || id}</div>
+                    <div class="font-sans text-[11px] text-muted-foreground mt-1">${data.description || 'Closed round'}</div>
+                </div>
+            `).join('');
         } else {
-            // Github or general
-            if (githubInput) {
-                githubInput.classList.remove("hidden");
-                githubInput.required = true;
-                githubInput.placeholder = "GITHUB REPO URL";
-            }
-            if (demoInput) {
-                demoInput.classList.remove("hidden");
-                demoInput.placeholder = "LIVE DEMO URL (OPTIONAL)";
-            }
-        }
-        
-        listenToTeamSubmission(currentTeamId, rid);
-        
-        // Initialize countdown target from Firestore deadline
-        let targetTime = null;
-        
-        if (roundData.submissionDeadline) {
-            const deadlineMs = roundData.submissionDeadline.toMillis ? roundData.submissionDeadline.toMillis() : roundData.submissionDeadline.seconds ? roundData.submissionDeadline.seconds * 1000 : null;
-            if (deadlineMs) targetTime = deadlineMs;
-        } else if (roundData.updatedAt) {
-            // Fallback to 24h after activation if no deadline is set
-            const updatedMs = roundData.updatedAt.toMillis ? roundData.updatedAt.toMillis() : roundData.updatedAt.seconds ? roundData.updatedAt.seconds * 1000 : Date.now();
-            targetTime = updatedMs + 24 * 60 * 60 * 1000;
-        }
-        
-        if (targetTime) {
-            startCountdown(targetTime);
-        } else {
-            const displayEl = document.getElementById("countdownDisplay");
-            if (displayEl) displayEl.innerHTML = `<span class="text-primary text-3xl">TBA</span>`;
-            const progressEl = document.getElementById("countdownProgress");
-            if (progressEl) progressEl.style.width = "0%";
+            closedMissionsContainer.style.display = "none";
         }
     }
 
-    // Listen to rounds collection
+    if (!activeEntry) {
+        // No active round — show waiting state
+        activeRoundId = null;
+        if (noActiveRoundMsg) noActiveRoundMsg.style.display = "block";
+        if (activeRoundFormContainer) activeRoundFormContainer.style.display = "none";
+        if (heroRoundBadge) heroRoundBadge.textContent = "STANDBY // NO ACTIVE ROUND";
+        if (heroRoundTitle) heroRoundTitle.innerHTML = `AWAIT<br /><span class="text-primary">YOUR ORDERS</span>`;
+        if (heroRoundDesc) heroRoundDesc.textContent = "Central command has not activated a round yet. Stay sharp.";
+        if (heroRequirementsList) heroRequirementsList.innerHTML = "";
+        if (heroRequirementsTitle) heroRequirementsTitle.textContent = "";
+        if (heroImageBg) heroImageBg.src = new URL('../assets/images/round1img.png', import.meta.url).href;
+
+        // Clear countdown
+        if (countdownInterval) { clearInterval(countdownInterval); countdownInterval = null; }
+        const displayEl = document.getElementById("countdownDisplay");
+        if (displayEl) displayEl.innerHTML = `<span style="font-size:1.5rem; color: var(--muted-foreground); letter-spacing: 0.2em;">AWAITING</span>`;
+        const progressEl = document.getElementById("countdownProgress");
+        if (progressEl) progressEl.style.width = "0%";
+        return;
+    }
+
+    const [rid, roundData] = activeEntry;
+    activeRoundId = rid;
+
+    if (noActiveRoundMsg) noActiveRoundMsg.style.display = "none";
+    if (activeRoundFormContainer) activeRoundFormContainer.style.display = "block";
+    if (teamStatusBadge) teamStatusBadge.style.display = "inline-block";
+    
+    if (activeRoundTitle) activeRoundTitle.textContent = roundData.title || "Active Round";
+    if (activeRoundDesc) activeRoundDesc.textContent = roundData.description || "Submit your payload below.";
+    
+    let topText = "AWAITING";
+    let bottomText = "NEXT ROUND";
+    
+    let t = (roundData.title || "").toLowerCase();
+    
+    if (t.includes("1") || t.includes("one")) {
+        if (heroImageBg) heroImageBg.src = new URL('../assets/images/round1img.png', import.meta.url).href;
+        if (heroRoundBadge) heroRoundBadge.textContent = `LIVE // ROUND 01`;
+        if (heroRoundDesc) {
+            heroRoundDesc.innerHTML = `This is your first move.<br />Submit your problem statements and<br />presentation decks that define your vision,<br />your approach, and your edge.`;
+        }
+        if (heroRequirementsTitle) heroRequirementsTitle.textContent = "WHAT TO SUBMIT";
+        if (heroRequirementsList) {
+            heroRequirementsList.innerHTML = `
+                <span class="inline-flex items-center gap-2 rounded-sm border border-border bg-surface-2/70 px-3 py-1.5">
+                  <span class="text-accent"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-3.5 w-3.5"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg></span>
+                  <span class="font-mono text-[11px] uppercase tracking-[0.16em] text-foreground">Problem Statement</span>
+                </span>
+                <span class="inline-flex items-center gap-2 rounded-sm border border-border bg-surface-2/70 px-3 py-1.5">
+                  <span class="text-accent"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-3.5 w-3.5"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></span>
+                  <span class="font-mono text-[11px] uppercase tracking-[0.16em] text-foreground">Presentation Deck (PPT)</span>
+                </span>
+            `;
+        }
+        topText = "SHOW US"; bottomText = "WHAT YOU GOT";
+    } else if (t.includes("2") || t.includes("two")) {
+        if (heroImageBg) heroImageBg.src = new URL('../assets/images/row2-bg.jpg', import.meta.url).href;
+        if (heroRoundBadge) heroRoundBadge.textContent = `LIVE // ROUND 02`;
+        if (heroRoundDesc) heroRoundDesc.innerHTML = `The underground waits for no one. Lock in your code, defend your turf, and take the throne.`;
+        if (heroRequirementsTitle) heroRequirementsTitle.textContent = "WHAT TO SUBMIT";
+        if (heroRequirementsList) {
+            heroRequirementsList.innerHTML = `
+                <span class="inline-flex items-center gap-2 rounded-sm border border-border bg-surface-2/70 px-3 py-1.5">
+                  <span class="text-accent"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-3.5 w-3.5"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg></span>
+                  <span class="font-mono text-[11px] uppercase tracking-[0.16em] text-foreground">Source Code (GitHub)</span>
+                </span>
+                <span class="inline-flex items-center gap-2 rounded-sm border border-border bg-surface-2/70 px-3 py-1.5">
+                  <span class="text-accent"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-3.5 w-3.5"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></span>
+                  <span class="font-mono text-[11px] uppercase tracking-[0.16em] text-foreground">Live Demo Link</span>
+                </span>
+            `;
+        }
+        topText = "WE RIDE"; bottomText = "AT MIDNIGHT";
+    } else if (t.includes("3") || t.includes("three")) {
+        if (heroImageBg) heroImageBg.src = new URL('../assets/images/round3img.png', import.meta.url).href;
+        if (heroRoundBadge) heroRoundBadge.textContent = `LIVE // ROUND 03 - FINALE`;
+        if (heroRoundDesc) {
+            heroRoundDesc.innerHTML = `This is it. The final showdown.<br />Every idea. Every line of code. Every late night.<br />Now it decides.<br /><br /><span class="text-primary">Only one will rise.</span><br /><span class="text-primary">Only one will win.</span>`;
+        }
+        if (heroRequirementsTitle) heroRequirementsTitle.textContent = "WHAT DECIDES THE WINNER?";
+        topText = "SEEK THE"; bottomText = "WAY IN OR OUT";
+    }
+
+    if (heroRoundTitle) heroRoundTitle.innerHTML = `${topText}<br /><span class="text-primary" style="animation: flicker 4s infinite">${bottomText}</span>`;
+    
+    const githubInput = document.getElementById("githubLink");
+    const demoInput = document.getElementById("demoLink");
+    const pptInput = document.getElementById("pptLink");
+    const prototypeInput = document.getElementById("prototypeLink");
+    const customInput = document.getElementById("customLink");
+    const noPrototypeLabel = document.getElementById("noPrototypeLabel");
+    const hasNoPrototypeCheckbox = document.getElementById("hasNoPrototype");
+    const submissionForm = document.getElementById("submissionForm");
+    const adminAssignedMsg = document.getElementById("adminAssignedMsg");
+
+    // Hide all initially
+    if (githubInput) { githubInput.classList.add("hidden"); githubInput.required = false; githubInput.value = ""; }
+    if (demoInput) { demoInput.classList.add("hidden"); demoInput.required = false; demoInput.value = ""; }
+    if (pptInput) { pptInput.classList.add("hidden"); pptInput.required = false; pptInput.value = ""; }
+    if (prototypeInput) { prototypeInput.classList.add("hidden"); prototypeInput.required = false; prototypeInput.value = ""; prototypeInput.disabled = false; }
+    if (customInput) { customInput.classList.add("hidden"); customInput.required = false; customInput.value = ""; }
+    if (noPrototypeLabel) { noPrototypeLabel.classList.add("hidden"); }
+    if (hasNoPrototypeCheckbox) { hasNoPrototypeCheckbox.checked = false; hasNoPrototypeCheckbox.disabled = false; }
+    if (submissionForm) { submissionForm.style.display = "flex"; }
+    if (adminAssignedMsg) { adminAssignedMsg.classList.add("hidden"); }
+    if (submitMissionBtn) { submitMissionBtn.innerHTML = `Submit Build <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-3.5 w-3.5"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>`; }
+
+    const submissionType = roundData.submissionType || 'Github'; // default to Github if undefined
+
+    if (submissionType === 'PPT') {
+        if (pptInput) {
+            pptInput.classList.remove("hidden");
+            pptInput.required = true;
+        }
+        if (submitMissionBtn) {
+            submitMissionBtn.innerHTML = `Submit Deck <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-3.5 w-3.5"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>`;
+        }
+    } else if (submissionType === 'Prototype') {
+        if (prototypeInput) {
+            prototypeInput.classList.remove("hidden");
+            prototypeInput.required = true;
+        }
+        if (noPrototypeLabel) {
+            noPrototypeLabel.classList.remove("hidden");
+            if (hasNoPrototypeCheckbox) {
+                hasNoPrototypeCheckbox.onchange = (e) => {
+                    if (prototypeInput) {
+                        prototypeInput.required = !e.target.checked;
+                        if (e.target.checked) prototypeInput.value = "";
+                        prototypeInput.disabled = e.target.checked;
+                    }
+                };
+            }
+        }
+        if (submitMissionBtn) {
+            submitMissionBtn.innerHTML = `Submit Prototype <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-3.5 w-3.5"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>`;
+        }
+    } else if (submissionType === 'Demo') {
+        if (demoInput) {
+            demoInput.classList.remove("hidden");
+            demoInput.required = true;
+            demoInput.placeholder = "LIVE DEMO URL";
+        }
+    } else if (submissionType === 'Custom') {
+        if (customInput) {
+            customInput.classList.remove("hidden");
+            customInput.required = true;
+        }
+    } else if (submissionType === 'None') {
+        if (submissionForm) {
+            submissionForm.style.display = "none";
+        }
+        if (adminAssignedMsg) {
+            adminAssignedMsg.classList.remove("hidden");
+        }
+    } else {
+        // Github or general
+        if (githubInput) {
+            githubInput.classList.remove("hidden");
+            githubInput.required = true;
+            githubInput.placeholder = "GITHUB REPO URL";
+        }
+        if (demoInput) {
+            demoInput.classList.remove("hidden");
+            demoInput.placeholder = "LIVE DEMO URL (OPTIONAL)";
+        }
+    }
+    
+    listenToTeamSubmission(currentTeamId, rid);
+    
+    // Initialize countdown target from Firestore deadline
+    let targetTime = null;
+    
+    if (roundData.submissionDeadline) {
+        const deadlineMs = roundData.submissionDeadline.toMillis ? roundData.submissionDeadline.toMillis() : roundData.submissionDeadline.seconds ? roundData.submissionDeadline.seconds * 1000 : null;
+        if (deadlineMs) targetTime = deadlineMs;
+    } else if (roundData.updatedAt) {
+        // Fallback to 24h after activation if no deadline is set
+        const updatedMs = roundData.updatedAt.toMillis ? roundData.updatedAt.toMillis() : roundData.updatedAt.seconds ? roundData.updatedAt.seconds * 1000 : Date.now();
+        targetTime = updatedMs + 24 * 60 * 60 * 1000;
+    }
+    
+    if (targetTime) {
+        startCountdown(targetTime);
+    } else {
+        const displayEl = document.getElementById("countdownDisplay");
+        if (displayEl) displayEl.innerHTML = `<span class="text-primary text-3xl">TBA</span>`;
+        const progressEl = document.getElementById("countdownProgress");
+        if (progressEl) progressEl.style.width = "0%";
+    }
+}
+
+function startSharedRoundsListener() {
+    if (roundsUnsubscribers.length > 0) return;
+
     const roundsRef = collection(db, "rounds");
     const unsub = onSnapshot(roundsRef, (snap) => {
-        // Reset states
         Object.keys(roundStates).forEach(k => delete roundStates[k]);
         
         snap.forEach(docSnap => {
@@ -526,6 +524,7 @@ function loadActiveRounds() {
         });
         
         renderActiveRound();
+        updateLeaderboardActiveRound();
     }, (error) => {
         const roundsStatus = document.getElementById("roundsStatusMessage");
         if (roundsStatus) roundsStatus.textContent = "Round data unavailable.";
@@ -578,13 +577,12 @@ function startCountdown(targetTime) {
 }
 
 // Listen to Announcements
-function listenToAnnouncements() {
-    if (announcementsUnsubscriber) announcementsUnsubscriber();
-
-    const annRef = collection(db, "announcements");
-    const q = query(annRef, orderBy("timestamp", "desc"), limit(20));
-    
-    announcementsUnsubscriber = onSnapshot(q, async (snapshot) => {
+async function fetchAnnouncements() {
+    try {
+        const annRef = collection(db, "announcements");
+        const q = query(annRef, orderBy("timestamp", "desc"), limit(20));
+        const snapshot = await getDocs(q);
+        
         // filter out soft-deleted announcements
         const visibleDocs = snapshot.docs.filter(docSnap => docSnap.data().isVisible !== false);
 
@@ -667,10 +665,21 @@ function listenToAnnouncements() {
             announcementsFeed.appendChild(item);
         }
         updateUnreadBadge(newUnreadCount);
-    }, (error) => {
+    } catch (error) {
+        console.error("Error fetching announcements:", error);
         const announcementsStatus = document.getElementById("announcementsStatusMessage");
         if (announcementsStatus) announcementsStatus.textContent = "Announcements unavailable.";
-    });
+    }
+}
+
+function listenToAnnouncements() {
+    if (announcementsInterval) {
+        clearInterval(announcementsInterval);
+        announcementsInterval = null;
+    }
+
+    fetchAnnouncements();
+    announcementsInterval = setInterval(fetchAnnouncements, 30000);
 }
 
 function updateUnreadBadge(count) {
@@ -687,10 +696,6 @@ function updateUnreadBadge(count) {
 // Load Leaderboard from teams collection
 // Load Leaderboard from backend endpoint
 async function loadLeaderboard() {
-    if (leaderboardUnsubscriber) {
-        leaderboardUnsubscriber();
-        leaderboardUnsubscriber = null;
-    }
     if (leaderboardDocUnsub) {
         leaderboardDocUnsub();
         leaderboardDocUnsub = null;
@@ -700,104 +705,109 @@ async function loadLeaderboard() {
     const leaderboardTableBody = document.getElementById("leaderboardTableBody");
     if (!leaderboardTableBody) return;
     
-    const roundsRef = collection(db, "rounds");
-    leaderboardUnsubscriber = onSnapshot(roundsRef, async (snap) => {
-        try {
-            const rounds = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            const activeRound = rounds.find(r => r.status === "Active");
-            if (!activeRound) {
-                if (leaderboardDocUnsub) {
-                    leaderboardDocUnsub();
-                    leaderboardDocUnsub = null;
-                }
-                activeRoundId = null;
-                leaderboardTableBody.innerHTML = `<li class="p-6 text-center text-sm text-muted-foreground">No active round.</li>`;
-                return;
-            }
+    startSharedRoundsListener();
+    updateLeaderboardActiveRound();
+}
 
-            const roundId = activeRound.roundId || activeRound.id;
+async function updateLeaderboardActiveRound() {
+    const leaderboardTableBody = document.getElementById("leaderboardTableBody");
+    if (!leaderboardTableBody) return;
 
-            if (activeRoundId === roundId && leaderboardDocUnsub) {
-                return;
-            }
-            activeRoundId = roundId;
-
+    try {
+        const rounds = Object.entries(roundStates).map(([id, data]) => ({ id, ...data }));
+        const activeRound = rounds.find(r => r.status === "Active");
+        if (!activeRound) {
             if (leaderboardDocUnsub) {
                 leaderboardDocUnsub();
                 leaderboardDocUnsub = null;
             }
-
-            const lbDocRef = doc(db, "leaderboard", roundId);
-            leaderboardDocUnsub = onSnapshot(lbDocRef, async (lbSnap) => {
-                try {
-                    const idToken = await auth.currentUser.getIdToken();
-
-                    const lbResponse = await fetch(`${API_BASE}/leaderboard/${roundId}`, {
-                        headers: {
-                            Authorization: `Bearer ${idToken}`
-                        }
-                    });
-                    if (!lbResponse.ok) throw new Error("Failed to fetch leaderboard.");
-                    const lbResult = await lbResponse.json();
-                    const lbData = lbResult.data ?? {};
-
-                    if (!lbData.isPublished) {
-                        leaderboardTableBody.innerHTML = `<li class="p-6 text-center text-sm text-muted-foreground">Leaderboard not published.</li>`;
-                        return;
-                    }
-
-                    const standings = lbData.standings ?? [];
-                    if (standings.length === 0) {
-                        leaderboardTableBody.innerHTML = `<li class="p-6 text-center text-sm text-muted-foreground">No standings recorded yet.</li>`;
-                        return;
-                    }
-
-                    standings.sort((a, b) => (a.rank ?? 9999) - (b.rank ?? 9999));
-
-                    leaderboardTableBody.innerHTML = "";
-                    standings.forEach((team) => {
-                        const li = document.createElement("li");
-                        const rank = team.rank ?? 99;
-                        
-                        let rankColor = "text-muted-foreground";
-                        let borderColor = "border-l-transparent";
-                        
-                        if (rank === 1) {
-                            rankColor = "text-[color:var(--color-gold)]";
-                            borderColor = "border-l-[color:var(--color-gold)]";
-                        } else if (rank === 2) {
-                            rankColor = "text-[color:var(--color-silver)]";
-                            borderColor = "border-l-[color:var(--color-silver)]";
-                        } else if (rank === 3) {
-                            rankColor = "text-[color:var(--color-bronze)]";
-                            borderColor = "border-l-[color:var(--color-bronze)]";
-                        }
-                        
-                        li.className = `grid grid-cols-[80px_1fr_120px] items-center gap-4 border-b border-border border-l-2 ${borderColor} px-6 py-4 transition-colors last:border-b-0 hover:bg-surface-2`;
-                        
-                        const rankStr = String(rank).padStart(2, '0');
-                        const scoreVal = typeof team.score === 'number' ? team.score : 0;
-                        
-                        li.innerHTML = `
-                            <span class="font-mono text-sm font-bold tabular-nums ${rankColor}">${rankStr}</span>
-                            <span class="text-sm font-semibold text-foreground truncate">${sanitizeHTML(team.teamName || "Unnamed Team")}</span>
-                            <span class="text-right font-mono text-sm font-semibold text-accent tabular-nums">${scoreVal.toLocaleString()}</span>
-                        `;
-                        leaderboardTableBody.appendChild(li);
-                    });
-
-                    const leaderboardStatus = document.getElementById("leaderboardStatusMessage");
-                    if (leaderboardStatus) leaderboardStatus.textContent = "";
-
-                } catch (error) {
-                    console.error("Error loading leaderboard standings:", error);
-                    leaderboardTableBody.innerHTML = `<li class="p-6 text-center text-sm text-muted-foreground">Failed to load leaderboard.</li>`;
-                }
-            });
-        } catch (error) {
-            console.error("Error in rounds listener:", error);
+            activeRoundId = null;
+            leaderboardTableBody.innerHTML = `<li class="p-6 text-center text-sm text-muted-foreground">No active round.</li>`;
+            return;
         }
-    });
+
+        const roundId = activeRound.roundId || activeRound.id;
+
+        if (activeRoundId === roundId && leaderboardDocUnsub) {
+            return;
+        }
+        activeRoundId = roundId;
+
+        if (leaderboardDocUnsub) {
+            leaderboardDocUnsub();
+            leaderboardDocUnsub = null;
+        }
+
+        const lbDocRef = doc(db, "leaderboard", roundId);
+        leaderboardDocUnsub = onSnapshot(lbDocRef, async (lbSnap) => {
+            try {
+                const idToken = await auth.currentUser.getIdToken();
+
+                const lbResponse = await fetch(`${API_BASE}/leaderboard/${roundId}`, {
+                    headers: {
+                        Authorization: `Bearer ${idToken}`
+                    }
+                });
+                if (!lbResponse.ok) throw new Error("Failed to fetch leaderboard.");
+                const lbResult = await lbResponse.json();
+                const lbData = lbResult.data ?? {};
+
+                if (!lbData.isPublished) {
+                    leaderboardTableBody.innerHTML = `<li class="p-6 text-center text-sm text-muted-foreground">Leaderboard not published.</li>`;
+                    return;
+                }
+
+                const standings = lbData.standings ?? [];
+                if (standings.length === 0) {
+                    leaderboardTableBody.innerHTML = `<li class="p-6 text-center text-sm text-muted-foreground">No standings recorded yet.</li>`;
+                    return;
+                }
+
+                standings.sort((a, b) => (a.rank ?? 9999) - (b.rank ?? 9999));
+
+                leaderboardTableBody.innerHTML = "";
+                standings.forEach((team) => {
+                    const li = document.createElement("li");
+                    const rank = team.rank ?? 99;
+                    
+                    let rankColor = "text-muted-foreground";
+                    let borderColor = "border-l-transparent";
+                    
+                    if (rank === 1) {
+                        rankColor = "text-[color:var(--color-gold)]";
+                        borderColor = "border-l-[color:var(--color-gold)]";
+                    } else if (rank === 2) {
+                        rankColor = "text-[color:var(--color-silver)]";
+                        borderColor = "border-l-[color:var(--color-silver)]";
+                    } else if (rank === 3) {
+                        rankColor = "text-[color:var(--color-bronze)]";
+                        borderColor = "border-l-[color:var(--color-bronze)]";
+                    }
+                    
+                    li.className = `grid grid-cols-[80px_1fr_120px] items-center gap-4 border-b border-border border-l-2 ${borderColor} px-6 py-4 transition-colors last:border-b-0 hover:bg-surface-2`;
+                    
+                    const rankStr = String(rank).padStart(2, '0');
+                    const scoreVal = typeof team.score === 'number' ? team.score : 0;
+                    
+                    li.innerHTML = `
+                        <span class="font-mono text-sm font-bold tabular-nums ${rankColor}">${rankStr}</span>
+                        <span class="text-sm font-semibold text-foreground truncate">${sanitizeHTML(team.teamName || "Unnamed Team")}</span>
+                        <span class="text-right font-mono text-sm font-semibold text-accent tabular-nums">${scoreVal.toLocaleString()}</span>
+                    `;
+                    leaderboardTableBody.appendChild(li);
+                });
+
+                const leaderboardStatus = document.getElementById("leaderboardStatusMessage");
+                if (leaderboardStatus) leaderboardStatus.textContent = "";
+
+            } catch (error) {
+                console.error("Error loading leaderboard standings:", error);
+                leaderboardTableBody.innerHTML = `<li class="p-6 text-center text-sm text-muted-foreground">Failed to load leaderboard.</li>`;
+            }
+        });
+    } catch (error) {
+        console.error("Error in updateLeaderboardActiveRound:", error);
+    }
 }
 
 // Handle Submissions — guard: submissionForm only exists in the DOM when a round is active
