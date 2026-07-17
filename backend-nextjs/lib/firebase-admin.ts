@@ -103,7 +103,11 @@ export function getAdminDb(): Firestore {
   if (!_db) {
     _db = getFirestore(getAdminApp());
     // Use ISO timestamp serialization so dates are consistent across environments
-    _db.settings({ ignoreUndefinedProperties: true });
+    try {
+      _db.settings({ ignoreUndefinedProperties: true });
+    } catch (e) {
+      // settings() might throw if settings were already initialized on this instance across hot-reloads
+    }
   }
   return _db;
 }
