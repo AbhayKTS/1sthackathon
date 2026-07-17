@@ -26,7 +26,8 @@ const phoneSchema = z.string().regex(phoneRegex, {
   message: 'Must be a valid 10-digit phone number, optionally prefixed with +91/91.'
 });
 
-const optionalUrlSchema = z.string().url().or(z.literal('')).nullable().optional();
+// Accept any non-empty string for github/linkedin — usernames or full URLs both valid
+const optionalUrlSchema = z.string().max(300).or(z.literal('')).nullable().optional();
 
 const baseOnboardingSchema = z.object({
   displayName: z.string().min(1).max(100),
