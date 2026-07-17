@@ -269,7 +269,7 @@ service cloud.firestore {
     // Admin read only. Created via Admin SDK (bulk-assign).
 
     match /sessions/{sessionId} {
-      allow read: if isAdmin();
+      allow read: if isAdmin() || (isAuth() && resource.data.hostUid == request.auth.uid && getRole() == 'mentor');
       allow write: if false; // Admin SDK only
     }
 

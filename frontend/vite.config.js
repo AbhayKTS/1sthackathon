@@ -40,7 +40,10 @@ export default defineConfig({
         onboarding: resolve(__dirname, 'onboarding.html'),
         profile: resolve(__dirname, 'profile.html'),
         leaderboard: resolve(__dirname, 'leaderboard.html'),
-        discord: resolve(__dirname, 'discord.html')
+        discord: resolve(__dirname, 'discord.html'),
+        mentor: resolve(__dirname, 'mentor-portal.html'),
+        judge: resolve(__dirname, 'judge-portal.html'),
+        support: resolve(__dirname, 'support.html')
       }
     }
   }

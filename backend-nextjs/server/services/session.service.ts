@@ -95,6 +95,7 @@ export async function bulkAssignSessions(
       batch.set(ref, {
         sessionId: docId,
         teamId: team.id,
+        teamName: team.teamName,
         roundId: input.roundId,
         type: 'judging',
         hostName: judgeName,
@@ -104,6 +105,10 @@ export async function bulkAssignSessions(
         updatedAt: FieldValue.serverTimestamp(),
         updatedBy: token.uid
       });
+      batch.update(db.collection('teams').doc(team.id), {
+        assignedJudgeUids: FieldValue.arrayUnion(input.judgeUid),
+        updatedAt: FieldValue.serverTimestamp()
+      });
     }
 
     if (input.mentorUid) {
@@ -112,6 +117,7 @@ export async function bulkAssignSessions(
       batch.set(ref, {
         sessionId: docId,
         teamId: team.id,
+        teamName: team.teamName,
         roundId: input.roundId,
         type: 'mentoring',
         hostName: mentorName,
@@ -120,6 +126,10 @@ export async function bulkAssignSessions(
         scheduledFor,
         updatedAt: FieldValue.serverTimestamp(),
         updatedBy: token.uid
+      });
+      batch.update(db.collection('teams').doc(team.id), {
+        assignedMentorUids: FieldValue.arrayUnion(input.mentorUid),
+        updatedAt: FieldValue.serverTimestamp()
       });
     }
   });
