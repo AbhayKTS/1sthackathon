@@ -987,17 +987,13 @@ async function fetchAndRenderRounds() {
                 actBtn.disabled = true;
                 actBtn.textContent = "Activating...";
                 try {
-                    const response = await fetch(`${API_BASE}/admin/rounds/activate`, {
+                    const response = await fetch(`${API_BASE}/admin/rounds/${r.id}/transition`, {
                         method: "POST",
                         headers: {
                             "Content-Type": "application/json",
                             Authorization: `Bearer ${idToken}`
                         },
-                        body: JSON.stringify({
-                            roundId: r.id,
-                            roundTitle: r.title,
-                            roundDesc: r.description || "Active Round"
-                        })
+                        body: JSON.stringify({ to: "Active" })
                     });
                     if (!response.ok) throw new Error("Failed to activate round.");
                     showToast(`Round ${r.title} activated successfully!`);

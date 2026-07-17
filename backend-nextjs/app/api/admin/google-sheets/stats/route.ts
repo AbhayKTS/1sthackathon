@@ -25,48 +25,44 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
     const db = getAdminDb();
 
-    // 2. Query stats efficiently using count()
-    const [pendingCountSnap, retryCountSnap, failedCountSnap, syncedCountSnap] = await Promise.all([
-      db.collection('googleSheets').where('status', '==', 'pending').count().get(),
-      db.collection('googleSheets').where('status', '==', 'retry').count().get(),
-      db.collection('googleSheets').where('status', '==', 'failed').count().get(),
-      db.collection('googleSheets').where('status', '==', 'synced').count().get(),
-    ]);
+    // 2. Query stats — use .get() to avoid requiring composite Firestore indexes
+    const allJobsSnap = await db.collection('googleSheets').get();
+    const allJobs = allJobsSnap.docs.map(d => d.data());
 
-    const pending = pendingCountSnap.data().count;
-    const retry = retryCountSnap.data().count;
-    const failed = failedCountSnap.data().count;
-    const synced = syncedCountSnap.data().count;
+    const pending = allJobs.filter(j => j.status === 'pending').length;
+    const retry   = allJobs.filter(j => j.status === 'retry').length;
+    const failed  = allJobs.filter(j => j.status === 'failed').length;
+    const synced  = allJobs.filter(j => j.status === 'synced').length;
 
-    // 3. Find last sync timestamp
-    const latestSyncedSnap = await db.collection('googleSheets')
-      .where('status', '==', 'synced')
-      .orderBy('syncedAt', 'desc')
-      .limit(1)
-      .get();
+    // 3. Find last sync timestamp — sort in JS, no index needed
+    const syncedJobs = allJobs
+      .filter(j => j.status === 'synced' && j.syncedAt)
+      .sort((a, b) => {
+        const toMs = (v: unknown) => {
+          if (!v) return 0;
+          if (typeof (v as any).toMillis === 'function') return (v as any).toMillis();
+          if (typeof (v as any).seconds === 'number') return (v as any).seconds * 1000;
+          return new Date(v as any).getTime() || 0;
+        };
+        return toMs(b.syncedAt) - toMs(a.syncedAt);
+      });
+
+    const latestSynced = syncedJobs[0];
 
     let lastSync: string | null = null;
-    if (!latestSyncedSnap.empty) {
-      const firstDoc = latestSyncedSnap.docs[0];
-      if (firstDoc) {
-        const data = firstDoc.data();
-        const syncedAt = data.syncedAt;
-        if (syncedAt) {
-          try {
-            if (typeof (syncedAt as any).toDate === 'function') {
-              lastSync = (syncedAt as any).toDate().toISOString();
-            } else if (typeof (syncedAt as any).seconds === 'number') {
-              lastSync = new Date((syncedAt as any).seconds * 1000).toISOString();
-            } else if (typeof (syncedAt as any)._seconds === 'number') {
-              lastSync = new Date((syncedAt as any)._seconds * 1000).toISOString();
-            } else if (typeof syncedAt === 'string' || typeof syncedAt === 'number') {
-              const d = new Date(syncedAt);
-              if (!isNaN(d.getTime())) lastSync = d.toISOString();
-            }
-          } catch (e) {
-            console.warn('[SheetsStats] Invalid syncedAt date', syncedAt);
-          }
+    if (latestSynced) {
+      const syncedAt = latestSynced.syncedAt;
+      try {
+        if (typeof (syncedAt as any).toDate === 'function') {
+          lastSync = (syncedAt as any).toDate().toISOString();
+        } else if (typeof (syncedAt as any).seconds === 'number') {
+          lastSync = new Date((syncedAt as any).seconds * 1000).toISOString();
+        } else if (typeof syncedAt === 'string' || typeof syncedAt === 'number') {
+          const d = new Date(syncedAt);
+          if (!isNaN(d.getTime())) lastSync = d.toISOString();
         }
+      } catch (e) {
+        console.warn('[SheetsStats] Invalid syncedAt date', syncedAt);
       }
     }
 
