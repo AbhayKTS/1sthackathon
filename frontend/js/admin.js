@@ -293,23 +293,33 @@ async function precacheRounds() {
 function initDashboardRealtime() {
     // Stat counters
     registerListener(onSnapshot(collection(db, "invitedTeams"), (snap) => {
-        document.getElementById("statInvited").textContent = snap.size;
+        const el = document.getElementById("statInvited");
+        if (!el) return;
+        el.textContent = snap.size;
     }));
     registerListener(onSnapshot(collection(db, "users"), (snap) => {
-        document.getElementById("statUsers").textContent = snap.size;
+        const el = document.getElementById("statUsers");
+        if (!el) return;
+        el.textContent = snap.size;
     }));
     registerListener(onSnapshot(collection(db, "submissions"), (snap) => {
-        document.getElementById("statSubmitted").textContent = snap.size;
+        const el = document.getElementById("statSubmitted");
+        if (!el) return;
+        el.textContent = snap.size;
     }));
     registerListener(onSnapshot(query(collection(db, "teams")), (snap) => {
+        const el = document.getElementById("statApproved");
+        if (!el) return;
         const approvedCount = snap.docs.filter(d => d.data().status === "Approved").length;
-        document.getElementById("statApproved").textContent = approvedCount;
+        el.textContent = approvedCount;
     }));
 
     // Active Round Widget
     registerListener(onSnapshot(collection(db, "rounds"), (snap) => {
-        const activeRound = snap.docs.find(d => d.data().status === "Active");
         const statusBox = document.getElementById("activeRoundStatus");
+        if (!statusBox) return;
+
+        const activeRound = snap.docs.find(d => d.data().status === "Active");
         
         // Also populate select dropdowns
         const roundSelect = document.getElementById("roundSelect");
@@ -354,6 +364,7 @@ function initDashboardRealtime() {
     // Recent Submissions Feed
     registerListener(onSnapshot(query(collection(db, "submissions"), orderBy("submittedAt", "desc")), (snap) => {
         const recentSubmissionsBody = document.getElementById("recentSubmissionsBody");
+        if (!recentSubmissionsBody) return;
         recentSubmissionsBody.innerHTML = "";
         
         if (snap.empty) {
@@ -377,6 +388,7 @@ function initDashboardRealtime() {
     // Announcements Feed
     registerListener(onSnapshot(query(collection(db, "announcements"), orderBy("timestamp", "desc")), (snap) => {
         const announcementFeedBody = document.getElementById("announcementFeedBody");
+        if (!announcementFeedBody) return;
         announcementFeedBody.innerHTML = "";
         
         if (snap.empty) {
@@ -501,6 +513,7 @@ async function initTeamsRealtime() {
     // Teams List
     registerListener(onSnapshot(collection(db, "teams"), (snap) => {
         const tbody = document.getElementById("teamsTableBody");
+        if (!tbody) return;
         tbody.innerHTML = "";
 
         if (snap.empty) {
@@ -609,6 +622,7 @@ async function initTeamsRealtime() {
     // Invited Drafts List
     registerListener(onSnapshot(collection(db, "invitedTeams"), (snap) => {
         const tbody = document.getElementById("invitedTeamsTableBody");
+        if (!tbody) return;
         tbody.innerHTML = "";
 
         if (snap.empty) {
@@ -1082,6 +1096,7 @@ async function initRoundsTab() {
 function initMentorSessions() {
     registerListener(onSnapshot(collection(db, "mentorSlots"), (snap) => {
         const tbody = document.getElementById("mentorSessionsTableBody");
+        if (!tbody) return;
         tbody.innerHTML = "";
 
         if (snap.empty) {
@@ -1109,6 +1124,7 @@ function initMentorSessions() {
 function initSubmissionsRealtime() {
     registerListener(onSnapshot(collection(db, "submissions"), (snap) => {
         const tbody = document.getElementById("submissionsTableBody");
+        if (!tbody) return;
         tbody.innerHTML = "";
 
         if (snap.empty) {
@@ -1136,6 +1152,7 @@ function initSubmissionsRealtime() {
 function initEvaluations() {
     registerListener(onSnapshot(collection(db, "teams"), (snap) => {
         const tbody = document.getElementById("scoresTableBody");
+        if (!tbody) return;
         tbody.innerHTML = "";
 
         if (snap.empty) {
