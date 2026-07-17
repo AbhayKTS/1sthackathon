@@ -558,7 +558,7 @@ async function initTeamsRealtime() {
             tr.innerHTML = `
                 <td>
                     <div style="font-weight: 600; color: #fff;">${sanitizeHTML(data.teamName)}</div>
-                    <div style="font-size: 10px; color: var(--muted-foreground);">Track: ${sanitizeHTML(data.track || "Not selected")}</div>
+                    <div style="font-size: 10px; color: var(--muted-foreground);">Track: ${sanitizeHTML(data.trackId || data.track || "Not selected")}</div>
                     ${assignsHtml ? `<div style="margin-top: 4px;">${assignsHtml}</div>` : ''}
                 </td>
                 <td>
@@ -2510,7 +2510,7 @@ async function refreshSessionsData() {
                 tracks.forEach(t => {
                     const opt = document.createElement("option");
                     opt.value = t.id;
-                    opt.textContent = t.name;
+                    opt.textContent = t.title || t.name || t.id;
                     filterSelect.appendChild(opt);
                 });
             }
@@ -2524,6 +2524,8 @@ async function refreshSessionsData() {
 
         if (!teamsRes.ok) throw new Error("Failed to load teams");
         const teamsData = await teamsRes.json();
+        // API returns { success, data: { data: [...], teams: [...] } }
+        const teamsList = teamsData.data?.teams ?? teamsData.teams ?? [];
         
         let allSessions = [];
         if (sessionsRes.ok) {
@@ -2538,7 +2540,7 @@ async function refreshSessionsData() {
         }
 
         // Merge
-        sessionsDataCache = (teamsData.teams ?? []).map(t => {
+        sessionsDataCache = teamsList.map(t => {
             const teamSessions = allSessions.filter(s => s.teamId === t.id);
             const judgeSession = teamSessions.find(s => s.type === 'judging');
             const mentorSession = teamSessions.find(s => s.type === 'mentoring');
