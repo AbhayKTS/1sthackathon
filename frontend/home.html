@@ -239,300 +239,520 @@
         </div>
     </section>
 
-    <!-- ===== MAP TIMELINE SECTION ===== -->
-    <section class="map-timeline" id="schedule">
-        <div class="map-bg">
-            <img src="assets/images/round3img.webp" alt="Tokyo Revengers Map" class="map-img" loading="lazy">
-            <div class="map-dark-overlay"></div>
+        <!-- ===== TIMELINE SECTION ===== -->
+    <section id="schedule" class="tl-section" aria-label="Mission Timeline">
+      <div id="tl-sticky" class="tl-sticky">
+
+        <!-- LEFT RAIL: single line + circular dots -->
+        <div class="tl-rail" aria-hidden="true">
+          <div class="tl-rail__line"></div>
+
+          <!-- dot 01 -->
+          <div class="tl-dot" data-dot="0" style="--dot-pos: 0%">
+            <div class="tl-dot__ring"></div>
+            <div class="tl-dot__fill"></div>
+            <span class="tl-dot__label">01</span>
+          </div>
+          <!-- dot 02 -->
+          <div class="tl-dot" data-dot="1" style="--dot-pos: 16.67%">
+            <div class="tl-dot__ring"></div>
+            <div class="tl-dot__fill"></div>
+            <span class="tl-dot__label">02</span>
+          </div>
+          <!-- dot 03 -->
+          <div class="tl-dot" data-dot="2" style="--dot-pos: 33.33%">
+            <div class="tl-dot__ring"></div>
+            <div class="tl-dot__fill"></div>
+            <span class="tl-dot__label">03</span>
+          </div>
+          <!-- dot 04 -->
+          <div class="tl-dot" data-dot="3" style="--dot-pos: 50%">
+            <div class="tl-dot__ring"></div>
+            <div class="tl-dot__fill"></div>
+            <span class="tl-dot__label">04</span>
+          </div>
+          <!-- dot 05 -->
+          <div class="tl-dot" data-dot="4" style="--dot-pos: 66.67%">
+            <div class="tl-dot__ring"></div>
+            <div class="tl-dot__fill"></div>
+            <span class="tl-dot__label">05</span>
+          </div>
+          <!-- dot 06 -->
+          <div class="tl-dot" data-dot="5" style="--dot-pos: 83.33%">
+            <div class="tl-dot__ring"></div>
+            <div class="tl-dot__fill"></div>
+            <span class="tl-dot__label">06</span>
+          </div>
+          <!-- dot FINAL -->
+          <div class="tl-dot" data-dot="6" style="--dot-pos: 100%">
+            <div class="tl-dot__ring"></div>
+            <div class="tl-dot__fill"></div>
+            <span class="tl-dot__label">FINAL</span>
+          </div>
         </div>
 
-        <!-- AAA Game HUD overlays -->
-        <div class="hud-grid" aria-hidden="true"></div>
-        <div class="hud-scanlines" aria-hidden="true"></div>
-        <div class="hud-vignette" aria-hidden="true"></div>
-        <div class="hud-radar-sweep" aria-hidden="true"></div>
-        <div class="hud-fog" aria-hidden="true"></div>
+        <!-- CARD STAGE: all cards stacked, only one visible -->
+        <div class="tl-stage" id="tl-stage">
 
-        <!-- Drifting Sakura Petals, Embers, and floating Tokyo Revengers Kanji -->
-        <div class="hud-petal-container" aria-hidden="true">
-            <div class="hud-petal petal-1"></div>
-            <div class="hud-petal petal-2"></div>
-            <div class="hud-petal petal-3"></div>
-            <div class="hud-petal petal-4"></div>
-            <div class="hud-petal petal-5"></div>
+          <!-- CARD 01 -->
+          <article class="tl-card" data-index="0" data-progress="15" data-status="STANDBY"
+            data-date="20 AUG 2026" data-time="08:00 AM" data-sector="01 / 07" data-checkpoint="1 / 7">
+            <div class="tl-card__inner">
+              <div class="tl-card__header">
+                <div class="tl-card__level">
+                  <span class="tl-card__level-text">LEVEL <strong>01</strong></span>
+                  <span class="tl-card__sep">//</span>
+                  <span class="tl-card__file">FILE&nbsp;&nbsp;OP-001</span>
+                </div>
+                <div class="tl-card__status-badge">
+                  <span class="tl-status-dot"></span>
+                  <span class="tl-status-label">STANDBY</span>
+                </div>
+              </div>
 
-            <div class="hud-ember ember-1"></div>
-            <div class="hud-ember ember-2"></div>
-            <div class="hud-ember ember-3"></div>
-            <div class="hud-ember ember-4"></div>
-            <div class="hud-ember ember-5"></div>
+              <h2 class="tl-card__title">Registration &amp;<br>PPT Submission</h2>
+              <div class="tl-card__divider"></div>
 
+              <p class="tl-card__desc">
+                The gates open. Submit your presentations and secure your spot before time runs out.
+              </p>
 
+              <div class="tl-card__meta">
+                <div class="tl-meta-item">
+                  <svg class="tl-meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+                  <div><div class="tl-meta-label">DATE</div><div class="tl-meta-value">20 AUG 2026</div></div>
+                </div>
+                <div class="tl-meta-item">
+                  <svg class="tl-meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+                  <div><div class="tl-meta-label">TIME</div><div class="tl-meta-value">08:00 AM</div></div>
+                </div>
+                <div class="tl-meta-item">
+                  <svg class="tl-meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path d="M12 3v9l5 2"/></svg>
+                  <div><div class="tl-meta-label">SECTOR</div><div class="tl-meta-value">01 / 07</div></div>
+                </div>
+              </div>
+
+              <div class="tl-card__footer">
+                <div class="tl-foot-item">
+                  <div class="tl-foot-header">
+                    <span class="tl-foot-label">MISSION PROGRESS</span>
+                    <span class="tl-foot-val">15%</span>
+                  </div>
+                  <div class="tl-progress-track"><div class="tl-progress-bar" style="--prog: 15%"></div></div>
+                </div>
+                <div class="tl-foot-item">
+                  <div class="tl-foot-header">
+                    <span class="tl-foot-label">SIGNAL STRENGTH</span>
+                  </div>
+                  <div class="tl-signal">
+                    <span class="tl-sig tl-sig--on"></span><span class="tl-sig tl-sig--on"></span><span class="tl-sig tl-sig--on"></span><span class="tl-sig tl-sig--on"></span><span class="tl-sig tl-sig--on"></span><span class="tl-sig"></span><span class="tl-sig"></span><span class="tl-sig"></span><span class="tl-sig"></span><span class="tl-sig"></span><span class="tl-sig"></span><span class="tl-sig"></span><span class="tl-sig"></span><span class="tl-sig"></span>
+                  </div>
+                </div>
+                <div class="tl-foot-item">
+                  <div class="tl-foot-header">
+                    <span class="tl-foot-label">CHECKPOINT</span>
+                  </div>
+                  <div class="tl-checkpoint">1 / 7</div>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <!-- CARD 02 -->
+          <article class="tl-card" data-index="1" data-progress="30" data-status="IN PROGRESS"
+            data-date="22 AUG 2026" data-time="08:00 AM" data-sector="02 / 07" data-checkpoint="2 / 7">
+            <div class="tl-card__inner">
+              <div class="tl-card__header">
+                <div class="tl-card__level">
+                  <span class="tl-card__level-text">LEVEL <strong>02</strong></span>
+                  <span class="tl-card__sep">//</span>
+                  <span class="tl-card__file">FILE&nbsp;&nbsp;OP-002</span>
+                </div>
+                <div class="tl-card__status-badge tl-card__status-badge--active">
+                  <span class="tl-status-dot tl-status-dot--pulse"></span>
+                  <span class="tl-status-label">IN PROGRESS</span>
+                </div>
+              </div>
+
+              <h2 class="tl-card__title">PPT Evaluation<br>Results</h2>
+              <div class="tl-card__divider"></div>
+
+              <p class="tl-card__desc">
+                The evaluation is complete. Find out if your vision made the cut for the ultimate showdown.
+              </p>
+
+              <div class="tl-card__meta">
+                <div class="tl-meta-item">
+                  <svg class="tl-meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+                  <div><div class="tl-meta-label">DATE</div><div class="tl-meta-value">22 AUG 2026</div></div>
+                </div>
+                <div class="tl-meta-item">
+                  <svg class="tl-meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+                  <div><div class="tl-meta-label">TIME</div><div class="tl-meta-value">08:00 AM</div></div>
+                </div>
+                <div class="tl-meta-item">
+                  <svg class="tl-meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path d="M12 3v9l5 2"/></svg>
+                  <div><div class="tl-meta-label">SECTOR</div><div class="tl-meta-value">02 / 07</div></div>
+                </div>
+              </div>
+
+              <div class="tl-card__footer">
+                <div class="tl-foot-item">
+                  <div class="tl-foot-header">
+                    <span class="tl-foot-label">MISSION PROGRESS</span>
+                    <span class="tl-foot-val">30%</span>
+                  </div>
+                  <div class="tl-progress-track"><div class="tl-progress-bar" style="--prog: 30%"></div></div>
+                </div>
+                <div class="tl-foot-item">
+                  <div class="tl-foot-header">
+                    <span class="tl-foot-label">SIGNAL STRENGTH</span>
+                  </div>
+                  <div class="tl-signal">
+                    <span class="tl-sig tl-sig--on"></span><span class="tl-sig tl-sig--on"></span><span class="tl-sig tl-sig--on"></span><span class="tl-sig tl-sig--on"></span><span class="tl-sig tl-sig--on"></span><span class="tl-sig tl-sig--on"></span><span class="tl-sig tl-sig--on"></span><span class="tl-sig tl-sig--on"></span><span class="tl-sig"></span><span class="tl-sig"></span><span class="tl-sig"></span><span class="tl-sig"></span><span class="tl-sig"></span><span class="tl-sig"></span>
+                  </div>
+                </div>
+                <div class="tl-foot-item">
+                  <div class="tl-foot-header">
+                    <span class="tl-foot-label">CHECKPOINT</span>
+                  </div>
+                  <div class="tl-checkpoint">2 / 7</div>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <!-- CARD 03 -->
+          <article class="tl-card" data-index="2" data-progress="45" data-status="STANDBY"
+            data-date="22 AUG 2026" data-time="09:00 – 12:00" data-sector="03 / 07" data-checkpoint="3 / 7">
+            <div class="tl-card__inner">
+              <div class="tl-card__header">
+                <div class="tl-card__level">
+                  <span class="tl-card__level-text">LEVEL <strong>03</strong></span>
+                  <span class="tl-card__sep">//</span>
+                  <span class="tl-card__file">FILE&nbsp;&nbsp;OP-003</span>
+                </div>
+                <div class="tl-card__status-badge">
+                  <span class="tl-status-dot"></span>
+                  <span class="tl-status-label">STANDBY</span>
+                </div>
+              </div>
+
+              <h2 class="tl-card__title">Team Briefing</h2>
+              <div class="tl-card__divider"></div>
+
+              <p class="tl-card__desc">
+                Get briefed on the mission. Prepare your team for the challenges ahead. Official start of the hackathon.
+              </p>
+
+              <div class="tl-card__meta">
+                <div class="tl-meta-item">
+                  <svg class="tl-meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+                  <div><div class="tl-meta-label">DATE</div><div class="tl-meta-value">22 AUG 2026</div></div>
+                </div>
+                <div class="tl-meta-item">
+                  <svg class="tl-meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+                  <div><div class="tl-meta-label">TIME</div><div class="tl-meta-value">09:00 – 12:00</div></div>
+                </div>
+                <div class="tl-meta-item">
+                  <svg class="tl-meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path d="M12 3v9l5 2"/></svg>
+                  <div><div class="tl-meta-label">SECTOR</div><div class="tl-meta-value">03 / 07</div></div>
+                </div>
+              </div>
+
+              <div class="tl-card__footer">
+                <div class="tl-foot-item">
+                  <div class="tl-foot-header">
+                    <span class="tl-foot-label">MISSION PROGRESS</span>
+                    <span class="tl-foot-val">45%</span>
+                  </div>
+                  <div class="tl-progress-track"><div class="tl-progress-bar" style="--prog: 45%"></div></div>
+                </div>
+                <div class="tl-foot-item">
+                  <div class="tl-foot-header">
+                    <span class="tl-foot-label">SIGNAL STRENGTH</span>
+                  </div>
+                  <div class="tl-signal">
+                    <span class="tl-sig tl-sig--on"></span><span class="tl-sig tl-sig--on"></span><span class="tl-sig tl-sig--on"></span><span class="tl-sig tl-sig--on"></span><span class="tl-sig tl-sig--on"></span><span class="tl-sig tl-sig--on"></span><span class="tl-sig tl-sig--on"></span><span class="tl-sig tl-sig--on"></span><span class="tl-sig tl-sig--on"></span><span class="tl-sig"></span><span class="tl-sig"></span><span class="tl-sig"></span><span class="tl-sig"></span><span class="tl-sig"></span>
+                  </div>
+                </div>
+                <div class="tl-foot-item">
+                  <div class="tl-foot-header">
+                    <span class="tl-foot-label">CHECKPOINT</span>
+                  </div>
+                  <div class="tl-checkpoint">3 / 7</div>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <!-- CARD 04 -->
+          <article class="tl-card" data-index="3" data-progress="60" data-status="STANDBY"
+            data-date="22 AUG 2026" data-time="17:00 – 20:00" data-sector="04 / 07" data-checkpoint="4 / 7">
+            <div class="tl-card__inner">
+              <div class="tl-card__header">
+                <div class="tl-card__level">
+                  <span class="tl-card__level-text">LEVEL <strong>04</strong></span>
+                  <span class="tl-card__sep">//</span>
+                  <span class="tl-card__file">FILE&nbsp;&nbsp;OP-004</span>
+                </div>
+                <div class="tl-card__status-badge">
+                  <span class="tl-status-dot"></span>
+                  <span class="tl-status-label">STANDBY</span>
+                </div>
+              </div>
+
+              <h2 class="tl-card__title">Mentor Session</h2>
+              <div class="tl-card__divider"></div>
+
+              <p class="tl-card__desc">
+                Seek guidance from the experts. Listen carefully — this intel will help you refine your ideas.
+              </p>
+
+              <div class="tl-card__meta">
+                <div class="tl-meta-item">
+                  <svg class="tl-meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+                  <div><div class="tl-meta-label">DATE</div><div class="tl-meta-value">22 AUG 2026</div></div>
+                </div>
+                <div class="tl-meta-item">
+                  <svg class="tl-meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+                  <div><div class="tl-meta-label">TIME</div><div class="tl-meta-value">17:00 – 20:00</div></div>
+                </div>
+                <div class="tl-meta-item">
+                  <svg class="tl-meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path d="M12 3v9l5 2"/></svg>
+                  <div><div class="tl-meta-label">SECTOR</div><div class="tl-meta-value">04 / 07</div></div>
+                </div>
+              </div>
+
+              <div class="tl-card__footer">
+                <div class="tl-foot-item">
+                  <div class="tl-foot-header">
+                    <span class="tl-foot-label">MISSION PROGRESS</span>
+                    <span class="tl-foot-val">60%</span>
+                  </div>
+                  <div class="tl-progress-track"><div class="tl-progress-bar" style="--prog: 60%"></div></div>
+                </div>
+                <div class="tl-foot-item">
+                  <div class="tl-foot-header">
+                    <span class="tl-foot-label">SIGNAL STRENGTH</span>
+                  </div>
+                  <div class="tl-signal">
+                    <span class="tl-sig tl-sig--on"></span><span class="tl-sig tl-sig--on"></span><span class="tl-sig tl-sig--on"></span><span class="tl-sig tl-sig--on"></span><span class="tl-sig tl-sig--on"></span><span class="tl-sig tl-sig--on"></span><span class="tl-sig tl-sig--on"></span><span class="tl-sig tl-sig--on"></span><span class="tl-sig tl-sig--on"></span><span class="tl-sig tl-sig--on"></span><span class="tl-sig"></span><span class="tl-sig"></span><span class="tl-sig"></span><span class="tl-sig"></span>
+                  </div>
+                </div>
+                <div class="tl-foot-item">
+                  <div class="tl-foot-header">
+                    <span class="tl-foot-label">CHECKPOINT</span>
+                  </div>
+                  <div class="tl-checkpoint">4 / 7</div>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <!-- CARD 05 -->
+          <article class="tl-card" data-index="4" data-progress="75" data-status="STANDBY"
+            data-date="22 AUG 2026" data-time="23:00" data-sector="05 / 07" data-checkpoint="5 / 7">
+            <div class="tl-card__inner">
+              <div class="tl-card__header">
+                <div class="tl-card__level">
+                  <span class="tl-card__level-text">LEVEL <strong>05</strong></span>
+                  <span class="tl-card__sep">//</span>
+                  <span class="tl-card__file">FILE&nbsp;&nbsp;OP-005</span>
+                </div>
+                <div class="tl-card__status-badge">
+                  <span class="tl-status-dot"></span>
+                  <span class="tl-status-label">STANDBY</span>
+                </div>
+              </div>
+
+              <h2 class="tl-card__title">Prototype I</h2>
+              <div class="tl-card__divider"></div>
+
+              <p class="tl-card__desc">
+                Showcase your first prototype. The journey from idea to reality begins here.
+              </p>
+
+              <div class="tl-card__meta">
+                <div class="tl-meta-item">
+                  <svg class="tl-meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+                  <div><div class="tl-meta-label">DATE</div><div class="tl-meta-value">22 AUG 2026</div></div>
+                </div>
+                <div class="tl-meta-item">
+                  <svg class="tl-meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+                  <div><div class="tl-meta-label">TIME</div><div class="tl-meta-value">23:00</div></div>
+                </div>
+                <div class="tl-meta-item">
+                  <svg class="tl-meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path d="M12 3v9l5 2"/></svg>
+                  <div><div class="tl-meta-label">SECTOR</div><div class="tl-meta-value">05 / 07</div></div>
+                </div>
+              </div>
+
+              <div class="tl-card__footer">
+                <div class="tl-foot-item">
+                  <div class="tl-foot-header">
+                    <span class="tl-foot-label">MISSION PROGRESS</span>
+                    <span class="tl-foot-val">75%</span>
+                  </div>
+                  <div class="tl-progress-track"><div class="tl-progress-bar" style="--prog: 75%"></div></div>
+                </div>
+                <div class="tl-foot-item">
+                  <div class="tl-foot-header">
+                    <span class="tl-foot-label">SIGNAL STRENGTH</span>
+                  </div>
+                  <div class="tl-signal">
+                    <span class="tl-sig tl-sig--on"></span><span class="tl-sig tl-sig--on"></span><span class="tl-sig tl-sig--on"></span><span class="tl-sig tl-sig--on"></span><span class="tl-sig tl-sig--on"></span><span class="tl-sig tl-sig--on"></span><span class="tl-sig tl-sig--on"></span><span class="tl-sig tl-sig--on"></span><span class="tl-sig tl-sig--on"></span><span class="tl-sig tl-sig--on"></span><span class="tl-sig tl-sig--on"></span><span class="tl-sig"></span><span class="tl-sig"></span><span class="tl-sig"></span>
+                  </div>
+                </div>
+                <div class="tl-foot-item">
+                  <div class="tl-foot-header">
+                    <span class="tl-foot-label">CHECKPOINT</span>
+                  </div>
+                  <div class="tl-checkpoint">5 / 7</div>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <!-- CARD 06 – TIME LEAP -->
+          <article class="tl-card" data-index="5" data-progress="88" data-status="CLASSIFIED"
+            data-date="23 AUG 2026" data-time="00:30 – 03:00" data-sector="06 / 07" data-checkpoint="6 / 7">
+            <div class="tl-card__inner">
+              <div class="tl-card__header">
+                <div class="tl-card__level">
+                  <span class="tl-card__level-text">LEVEL <strong>05A</strong></span>
+                  <span class="tl-card__sep">//</span>
+                  <span class="tl-card__file">FILE&nbsp;&nbsp;TIME-LEAP</span>
+                </div>
+                <div class="tl-card__status-badge tl-card__status-badge--classified">
+                  <span class="tl-status-dot tl-status-dot--red"></span>
+                  <span class="tl-status-label">CLASSIFIED</span>
+                </div>
+              </div>
+
+              <h2 class="tl-card__title">Time Leap</h2>
+              <div class="tl-card__divider"></div>
+
+              <p class="tl-card__desc">
+                Not every mission is announced. Stay sharp. Stay ready.
+              </p>
+
+              <div class="tl-card__meta">
+                <div class="tl-meta-item">
+                  <svg class="tl-meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+                  <div><div class="tl-meta-label">DATE</div><div class="tl-meta-value">23 AUG 2026</div></div>
+                </div>
+                <div class="tl-meta-item">
+                  <svg class="tl-meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+                  <div><div class="tl-meta-label">TIME</div><div class="tl-meta-value">00:30 – 03:00</div></div>
+                </div>
+                <div class="tl-meta-item">
+                  <svg class="tl-meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path d="M12 3v9l5 2"/></svg>
+                  <div><div class="tl-meta-label">SECTOR</div><div class="tl-meta-value">06 / 07</div></div>
+                </div>
+              </div>
+
+              <div class="tl-card__footer">
+                <div class="tl-foot-item">
+                  <div class="tl-foot-header">
+                    <span class="tl-foot-label">MISSION PROGRESS</span>
+                    <span class="tl-foot-val">88%</span>
+                  </div>
+                  <div class="tl-progress-track"><div class="tl-progress-bar" style="--prog: 88%"></div></div>
+                </div>
+                <div class="tl-foot-item">
+                  <div class="tl-foot-header">
+                    <span class="tl-foot-label">SIGNAL STRENGTH</span>
+                  </div>
+                  <div class="tl-signal">
+                    <span class="tl-sig tl-sig--on"></span><span class="tl-sig tl-sig--on"></span><span class="tl-sig tl-sig--on"></span><span class="tl-sig tl-sig--on"></span><span class="tl-sig tl-sig--on"></span><span class="tl-sig tl-sig--on"></span><span class="tl-sig tl-sig--on"></span><span class="tl-sig tl-sig--on"></span><span class="tl-sig tl-sig--on"></span><span class="tl-sig tl-sig--on"></span><span class="tl-sig tl-sig--on"></span><span class="tl-sig tl-sig--on"></span><span class="tl-sig"></span><span class="tl-sig"></span>
+                  </div>
+                </div>
+                <div class="tl-foot-item">
+                  <div class="tl-foot-header">
+                    <span class="tl-foot-label">CHECKPOINT</span>
+                  </div>
+                  <div class="tl-checkpoint">6 / 7</div>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <!-- CARD FINAL -->
+          <article class="tl-card" data-index="6" data-progress="100" data-status="STANDBY"
+            data-date="23 AUG 2026" data-time="11:30 – 15:00" data-sector="07 / 07" data-checkpoint="7 / 7">
+            <div class="tl-card__inner">
+              <div class="tl-card__header">
+                <div class="tl-card__level">
+                  <span class="tl-card__level-text">FINAL</span>
+                  <span class="tl-card__sep">//</span>
+                  <span class="tl-card__file">FILE&nbsp;&nbsp;SHOWDOWN</span>
+                </div>
+                <div class="tl-card__status-badge">
+                  <span class="tl-status-dot"></span>
+                  <span class="tl-status-label">STANDBY</span>
+                </div>
+              </div>
+
+              <h2 class="tl-card__title">Final Showdown</h2>
+              <div class="tl-card__divider"></div>
+
+              <p class="tl-card__desc">
+                One last stand. The final fortress awaits. Present your work to the judges and claim your place in history.
+              </p>
+
+              <div class="tl-card__meta">
+                <div class="tl-meta-item">
+                  <svg class="tl-meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+                  <div><div class="tl-meta-label">DATE</div><div class="tl-meta-value">23 AUG 2026</div></div>
+                </div>
+                <div class="tl-meta-item">
+                  <svg class="tl-meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+                  <div><div class="tl-meta-label">TIME</div><div class="tl-meta-value">11:30 – 15:00</div></div>
+                </div>
+                <div class="tl-meta-item">
+                  <svg class="tl-meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path d="M12 3v9l5 2"/></svg>
+                  <div><div class="tl-meta-label">SECTOR</div><div class="tl-meta-value">07 / 07</div></div>
+                </div>
+              </div>
+
+              <div class="tl-card__footer">
+                <div class="tl-foot-item">
+                  <div class="tl-foot-header">
+                    <span class="tl-foot-label">MISSION PROGRESS</span>
+                    <span class="tl-foot-val">100%</span>
+                  </div>
+                  <div class="tl-progress-track"><div class="tl-progress-bar" style="--prog: 100%"></div></div>
+                </div>
+                <div class="tl-foot-item">
+                  <div class="tl-foot-header">
+                    <span class="tl-foot-label">SIGNAL STRENGTH</span>
+                  </div>
+                  <div class="tl-signal">
+                    <span class="tl-sig tl-sig--on"></span><span class="tl-sig tl-sig--on"></span><span class="tl-sig tl-sig--on"></span><span class="tl-sig tl-sig--on"></span><span class="tl-sig tl-sig--on"></span><span class="tl-sig tl-sig--on"></span><span class="tl-sig tl-sig--on"></span><span class="tl-sig tl-sig--on"></span><span class="tl-sig tl-sig--on"></span><span class="tl-sig tl-sig--on"></span><span class="tl-sig tl-sig--on"></span><span class="tl-sig tl-sig--on"></span><span class="tl-sig tl-sig--on"></span><span class="tl-sig tl-sig--on"></span>
+                  </div>
+                </div>
+                <div class="tl-foot-item">
+                  <div class="tl-foot-header">
+                    <span class="tl-foot-label">CHECKPOINT</span>
+                  </div>
+                  <div class="tl-checkpoint">7 / 7</div>
+                </div>
+              </div>
+            </div>
+          </article>
+
+        </div><!-- /.tl-stage -->
+
+        <!-- Bottom HUD -->
+        <div class="tl-bottom-hud" aria-hidden="true">
+          <span class="tl-bottom-hud__text">// SCROLL TO ADVANCE</span>
+          <span class="tl-bottom-hud__counter" id="tl-counter">01 / 07</span>
         </div>
 
-        <!-- Slowly rotating cybernetic temporal clock watermark -->
-        <div class="hud-clock-container" aria-hidden="true">
-            <svg class="hud-clock-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="50" cy="50" r="46" fill="none" stroke="rgba(0, 212, 255, 0.14)" stroke-width="0.3"
-                    stroke-dasharray="1 3" />
-                <circle cx="50" cy="50" r="42" fill="none" stroke="rgba(196, 30, 58, 0.08)" stroke-width="0.2" />
-                <!-- Clock ticks -->
-                <g stroke="rgba(229, 226, 225, 0.12)" stroke-width="0.3">
-                    <line x1="50" y1="8" x2="50" y2="12" />
-                    <line x1="50" y1="88" x2="50" y2="92" />
-                    <line x1="8" y1="50" x2="12" y2="50" />
-                    <line x1="88" y1="50" x2="92" y2="50" />
-                </g>
-                <!-- Clock hands -->
-                <line x1="50" y1="50" x2="50" y2="24" stroke="rgba(0, 212, 255, 0.3)" stroke-width="0.4"
-                    stroke-linecap="round" class="hand-minute" />
-                <line x1="50" y1="50" x2="68" y2="50" stroke="rgba(196, 30, 58, 0.3)" stroke-width="0.5"
-                    stroke-linecap="round" class="hand-hour" />
-            </svg>
-        </div>
-
-        <!-- Floating Timeline Glass Fracture Shards -->
-        <div class="hud-shards-container" aria-hidden="true">
-            <div class="hud-shard shard-1"></div>
-            <div class="hud-shard shard-2"></div>
-            <div class="hud-shard shard-3"></div>
-        </div>
-
-        <!-- Pulsing background Toman Manji watermark behind header -->
-        <div class="hud-watermark-container" aria-hidden="true">
-            <img src="assets/images/manji-emblem.webp" alt="Watermark" class="hud-watermark-emblem" loading="lazy">
-        </div>
-
-        <!-- Distressed Center Title Overlay -->
-        <div class="hud-header-container">
-            <h2 class="hud-timeline-title"><span class="title-white">THE</span> <span
-                    class="title-crimson">TIMELINE</span></h2>
-            <p class="hud-timeline-sub">Navigate the battlefield – hover checkpoints to reveal your mission</p>
-        </div>
-
-        <!-- Top-Left Tokyo Revengers Logo & Vertical Margin Text -->
-        <div class="hud-overlay-tl" aria-hidden="true">
-            <div class="hud-tokyo-sub">REVENGERS HACK</div>
-        </div>
-
-
-
-        <!-- Bottom Center Gang Slogans -->
-        <div class="hud-overlay-bc" aria-hidden="true">
-            <div class="hud-slogan-en">THE ONLY ONE WHO CAN CHANGE THE FUTURE IS YOURSELF</div>
-        </div>
-
-        <!-- Time Leap Synchronization HUD (Neon cyan theme representing time travel portal) -->
-        <div class="hud-time-leap-panel" aria-hidden="true">
-            <div class="hud-tl-monitor-title">TIME LEAP SYNC</div>
-            <div class="hud-tl-date-wrapper">
-                <span class="hud-tl-date" style="letter-spacing: 6px; font-size: 1.5rem;">SURPRISE</span>
-            </div>
-        </div>
-
-        <!-- Bottom-Left SYSTEM STATUS with Laurel Leaves Manji Emblem -->
-        <div class="hud-status-panel hud-status-left" aria-hidden="true">
-            <div class="hud-status-content">
-                <div class="hud-status-title">SYSTEM STATUS</div>
-                <div class="hud-status-row"><span class="hud-status-lbl">CONNECTION:</span><span
-                        class="hud-status-val status-secure">SECURE</span></div>
-                <div class="hud-status-row"><span class="hud-status-lbl">NETWORK:</span><span
-                        class="hud-status-val">UNDERGROUND</span></div>
-                <div class="hud-status-row"><span class="hud-status-lbl">ENCRYPTION:</span><span
-                        class="hud-status-val text-blink">ACTIVE</span></div>
-            </div>
-            <div class="hud-emblem-container">
-                <img src="assets/images/manji-emblem.webp" class="hud-manji-emblem" alt="Toman Emblem" loading="lazy">
-            </div>
-        </div>
-
-        <!-- Bottom-Right MISSION PROTOCOL with Skull Octagon Emblem -->
-        <div class="hud-status-panel hud-status-right" aria-hidden="true">
-            <div class="hud-skull-container">
-                <div class="hud-octagon-border">
-                    <img src="assets/images/download__23_-removebg-preview.webp" alt="Skull" class="hud-skull" loading="lazy">
-                </div>
-            </div>
-            <div class="hud-protocol-content">
-                <div class="hud-protocol-title">MISSION PROTOCOL</div>
-                <div class="hud-protocol-row">STAY SHARP. STAY HIDDEN.</div>
-                <div class="hud-protocol-row">TRUST NO SYSTEM.</div>
-                <div class="hud-protocol-row text-red">CODE YOUR REVENGE.</div>
-            </div>
-        </div>
-
-        <div class="map-arena">
-
-            <!-- Advanced Tactical HUD Coordinate Crosshairs along the route -->
-            <div class="hud-crosshair c-hair-1" style="top: 63.5%; left: 19%;" aria-hidden="true">
-                <span class="hud-cross-symbol">+</span>
-                <span class="hud-cross-lbl">LOC_01A</span>
-            </div>
-            <div class="hud-crosshair c-hair-2" style="top: 40%; left: 28.5%;" aria-hidden="true">
-                <span class="hud-cross-symbol">+</span>
-                <span class="hud-cross-lbl">LOC_02B</span>
-            </div>
-            <div class="hud-crosshair c-hair-3" style="top: 39%; left: 43%;" aria-hidden="true">
-                <span class="hud-cross-symbol">+</span>
-                <span class="hud-cross-lbl">LOC_03C</span>
-            </div>
-            <div class="hud-crosshair c-hair-4" style="top: 41%; left: 62.5%;" aria-hidden="true">
-                <span class="hud-cross-symbol">+</span>
-                <span class="hud-cross-lbl">LOC_04D</span>
-            </div>
-            <div class="hud-crosshair c-hair-5" style="top: 46%; left: 79%;" aria-hidden="true">
-                <span class="hud-cross-symbol">+</span>
-                <span class="hud-cross-lbl">LOC_05E</span>
-            </div>
-
-            <!-- CHECKPOINT 1: Raven's Watch Tower — bottom-left junction -->
-            <div class="checkpoint" id="cp1" style="top: 75%; left: 12%;" data-index="1">
-                <div class="cp-marker">
-                    <span class="cp-num">1</span>
-                    <div class="cp-pulse"></div>
-                </div>
-                <div class="cp-popup cp-popup--right">
-                    <div class="cp-popup-inner">
-                        <div class="cp-popup-name">1. Registration and PPT Submission Deadline</div>
-                        <div class="cp-popup-activity">📅 20 Aug 2026</div>
-                        <p class="cp-popup-desc">The gates open. Submit your presentations and secure your spot before time runs out.</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- CHECKPOINT 2: Violet Village — middle-left highway -->
-            <div class="checkpoint" id="cp2" style="top: 52%; left: 26%;" data-index="2">
-                <div class="cp-marker">
-                    <span class="cp-num">2</span>
-                    <div class="cp-pulse"></div>
-                </div>
-                <div class="cp-popup cp-popup--right">
-                    <div class="cp-popup-inner">
-                        <div class="cp-popup-name">2. PPT Evaluation Results</div>
-                        <div class="cp-popup-activity">📅 22 Aug 2026 • 8 AM</div>
-                        <p class="cp-popup-desc">The evaluation is complete. Find out if your vision made the cut for the ultimate showdown.</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- CHECKPOINT 3: Crystal Data Core — glowing Tokyo Tower -->
-            <div class="checkpoint" id="cp3" style="top: 28%; left: 31%;" data-index="3">
-                <div class="cp-marker">
-                    <span class="cp-num">3</span>
-                    <div class="cp-pulse"></div>
-                </div>
-                <div class="cp-popup cp-popup--right">
-                    <div class="cp-popup-inner">
-                        <div class="cp-popup-name">3. Team Briefing</div>
-                        <div class="cp-popup-activity">📅 22 Aug 2026 • 9 AM - 12 PM</div>
-                        <p class="cp-popup-desc">Get briefed on the mission. Prepare your team for the challenges ahead.<br><br><span style="color: var(--strike-red); font-weight: bold;">[ Official start of hackathon ]</span></p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- CHECKPOINT 4: Mystic Ruin — center-right bridge -->
-            <div class="checkpoint" id="cp4" style="top: 50%; left: 55%;" data-index="4">
-                <div class="cp-marker">
-                    <span class="cp-num">4</span>
-                    <div class="cp-pulse"></div>
-                </div>
-                <div class="cp-popup cp-popup--bottom">
-                    <div class="cp-popup-inner">
-                        <div class="cp-popup-name">4. Mentor Session</div>
-                        <div class="cp-popup-activity">📅 22 Aug 2026 • 5 PM - 8 PM</div>
-                        <p class="cp-popup-desc">Seek guidance from the experts. Listen carefully &mdash; this intel will help you refine your ideas.</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- CHECKPOINT 5: Aether Research Campus — top-right skyline -->
-            <div class="checkpoint" id="cp5" style="top: 32%; left: 70%;" data-index="5">
-                <div class="cp-marker">
-                    <span class="cp-num">5</span>
-                    <div class="cp-pulse"></div>
-                </div>
-                <div class="cp-popup cp-popup--bottom">
-                    <div class="cp-popup-inner">
-                        <div class="cp-popup-name">5. Prototype I</div>
-                        <div class="cp-popup-activity">📅 22 Aug 2026 • 11 PM</div>
-                        <p class="cp-popup-desc">Showcase your first prototype. The journey from idea to reality begins here.</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- CHECKPOINT 5A: Surprise -->
-            <div class="checkpoint" id="cp5a" style="top: 60%; left: 70%;" data-index="5a">
-                <div class="cp-marker">
-                    <span class="cp-num">5A</span>
-                    <div class="cp-pulse"></div>
-                </div>
-                <div class="cp-popup cp-popup--bottom">
-                    <div class="cp-popup-inner">
-                        <div class="cp-popup-name">5A. TIME LEAP</div>
-                        <div class="cp-popup-activity">📅 23 Aug 2026 • 12:30 AM - 3:00 AM</div>
-                        <p class="cp-popup-desc">Not every mission is announced. Stay sharp. Stay ready.</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- CHECKPOINT 6: The Star Citadel — far-right river edge -->
-            <div class="checkpoint" id="cp6" style="top: 60%; left: 88%;" data-index="6">
-                <div class="cp-marker">
-                    <span class="cp-num">6</span>
-                    <div class="cp-pulse"></div>
-                </div>
-                <div class="cp-popup cp-popup--left">
-                    <div class="cp-popup-inner">
-                        <div class="cp-popup-name">6. Judging Round</div>
-                        <div class="cp-popup-activity">📅 23 Aug 2026 • 11:30 AM - 3:00 PM</div>
-                        <p class="cp-popup-desc">One last stand. The final fortress awaits. Present your work to the judges and claim your place in history.</p>
-                    </div>
-                </div>
-            </div>
-
-        </div><!-- /.map-arena -->
-
-        <!-- Connection lines SVG between checkpoints mapped as a high-tech dotted trace with advanced laser pulse -->
-        <svg class="map-connections" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-            <defs>
-                <filter id="glow-line">
-                    <feGaussianBlur stdDeviation="0.8" result="coloredBlur" />
-                    <feMerge>
-                        <feMergeNode in="coloredBlur" />
-                        <feMergeNode in="SourceGraphic" />
-                    </feMerge>
-                </filter>
-            </defs>
-            <!-- Curved dotted tactical laser trace connecting CP1(12,75) -> CP2(26,52) -> CP3(31,28) -> CP4(55,50) -> CP5(70,32) -> CP6(88,60) & CP5A(70,60) -> CP6(88,60) -->
-            <!-- Branch 1: CP1 -> CP5 -> CP6 -->
-            <path
-                d="M 12,75 C 18,65 22,58 26,52 C 30,46 28,34 31,28 C 34,22 48,58 55,50 C 62,42 66,36 70,32 C 74,28 82,50 88,60"
-                class="conn-line conn-line-base" filter="url(#glow-line)" />
-            <path
-                d="M 12,75 C 18,65 22,58 26,52 C 30,46 28,34 31,28 C 34,22 48,58 55,50 C 62,42 66,36 70,32 C 74,28 82,50 88,60"
-                class="conn-line conn-line-mid" />
-            <path
-                d="M 12,75 C 18,65 22,58 26,52 C 30,46 28,34 31,28 C 34,22 48,58 55,50 C 62,42 66,36 70,32 C 74,28 82,50 88,60"
-                class="conn-line conn-line-core" />
-            <path
-                d="M 12,75 C 18,65 22,58 26,52 C 30,46 28,34 31,28 C 34,22 48,58 55,50 C 62,42 66,36 70,32 C 74,28 82,50 88,60"
-                class="conn-line conn-line-pulse" />
-
-            <!-- Branch 2: CP1 -> CP5 -> CP5A -> CP6 -->
-            <path
-                d="M 12,75 C 18,65 22,58 26,52 C 30,46 28,34 31,28 C 34,22 48,58 55,50 C 62,42 66,36 70,32 C 70,48 64,60 70,60 C 76,60 82,60 88,60"
-                class="conn-line conn-line-base" filter="url(#glow-line)" />
-            <path
-                d="M 12,75 C 18,65 22,58 26,52 C 30,46 28,34 31,28 C 34,22 48,58 55,50 C 62,42 66,36 70,32 C 70,48 64,60 70,60 C 76,60 82,60 88,60"
-                class="conn-line conn-line-mid" />
-            <path
-                d="M 12,75 C 18,65 22,58 26,52 C 30,46 28,34 31,28 C 34,22 48,58 55,50 C 62,42 66,36 70,32 C 70,48 64,60 70,60 C 76,60 82,60 88,60"
-                class="conn-line conn-line-core" />
-            <path
-                d="M 12,75 C 18,65 22,58 26,52 C 30,46 28,34 31,28 C 34,22 48,58 55,50 C 62,42 66,36 70,32 C 70,48 64,60 70,60 C 76,60 82,60 88,60"
-                class="conn-line conn-line-pulse" />
-        </svg>
+      </div><!-- /.tl-sticky -->
     </section>
+
 
     <section class="treasury" id="treasury">
         <div class="container">
@@ -1412,6 +1632,7 @@
 
     <script type="module" src="js/firebase-join.js"></script>
     <script type="module" src="js/script.js"></script>
+    <script src="js/timeline.js"></script>
 
     <!-- Marquee controller — extracted to external module to comply with CSP -->
     <script type="module" src="js/marquee.js"></script>

@@ -1,0 +1,528 @@
+    <!-- ===== MAP TIMELINE SECTION ===== -->
+    <section id="schedule" class="relative" style="height: 800vh; background-color: #0a0a0a;" aria-label="Mission Timeline">
+      <div id="timeline-wrapper" class="sticky top-0 h-screen w-full overflow-hidden" style="font-family: var(--font-body);">
+        
+        <!-- Background grid + vignette -->
+        <div id="timeline-bg-grid" class="pointer-events-none absolute inset-0 opacity-[0.15]" style="background-image: linear-gradient(rgba(178,34,34,0.2) 1px, transparent 1px), linear-gradient(90deg, rgba(178,34,34,0.2) 1px, transparent 1px); background-size: 80px 80px; will-change: transform;"></div>
+        <div class="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,#080808_85%)]"></div>
+
+        <!-- Scanline -->
+        <div class="pointer-events-none absolute inset-x-0 top-0 h-px bg-[color:var(--strike-red)] opacity-60 shadow-[0_0_20px_var(--strike-red)]"></div>
+
+        <!-- Header bar -->
+        <div class="pointer-events-none absolute inset-x-0 top-0 z-40 flex items-center justify-between px-6 py-5 text-[10px] uppercase tracking-[0.3em] text-white/60 md:px-12" style="font-family: var(--font-mono);">
+          <div class="flex items-center gap-3">
+            <span class="h-2 w-2 rotate-45 bg-[color:var(--strike-red)] shadow-[0_0_10px_var(--strike-red)] animate-pulse"></span>
+            <span>SECURE CHANNEL // MISSION TIMELINE</span>
+          </div>
+          <div class="hidden md:block">
+            <span class="text-white/40">CLEARANCE</span> <span class="text-[color:var(--strike-red)]">LVL-9</span>
+          </div>
+        </div>
+
+        <!-- Left vertical progress rail -->
+        <div class="absolute left-6 top-0 z-30 flex h-full flex-col items-center pt-24 pb-16 md:left-12">
+          <div class="relative h-full w-px bg-white/10">
+            <div id="timeline-progress-line" class="absolute left-0 top-0 w-px bg-[color:var(--strike-red)] shadow-[0_0_12px_var(--strike-red)]" style="height: 0%; will-change: height;"></div>
+            
+            <div class="timeline-left-indicator absolute -left-[5px] flex items-center" style="top: 0%">
+                <div class="timeline-dot h-[11px] w-[11px] rotate-45 border transition-all duration-500 border-white/30 bg-[#0a0a0a]"></div>
+                <span class="timeline-code ml-3 text-[10px] uppercase tracking-[0.25em] transition-colors text-white/25" style="font-family: var(--font-mono);">OP-001</span>
+            </div>
+            <div class="timeline-left-indicator absolute -left-[5px] flex items-center" style="top: 16.66%">
+                <div class="timeline-dot h-[11px] w-[11px] rotate-45 border transition-all duration-500 border-white/30 bg-[#0a0a0a]"></div>
+                <span class="timeline-code ml-3 text-[10px] uppercase tracking-[0.25em] transition-colors text-white/25" style="font-family: var(--font-mono);">OP-002</span>
+            </div>
+            <div class="timeline-left-indicator absolute -left-[5px] flex items-center" style="top: 33.33%">
+                <div class="timeline-dot h-[11px] w-[11px] rotate-45 border transition-all duration-500 border-white/30 bg-[#0a0a0a]"></div>
+                <span class="timeline-code ml-3 text-[10px] uppercase tracking-[0.25em] transition-colors text-white/25" style="font-family: var(--font-mono);">OP-003</span>
+            </div>
+            <div class="timeline-left-indicator absolute -left-[5px] flex items-center" style="top: 50%">
+                <div class="timeline-dot h-[11px] w-[11px] rotate-45 border transition-all duration-500 border-white/30 bg-[#0a0a0a]"></div>
+                <span class="timeline-code ml-3 text-[10px] uppercase tracking-[0.25em] transition-colors text-white/25" style="font-family: var(--font-mono);">OP-004</span>
+            </div>
+            <div class="timeline-left-indicator absolute -left-[5px] flex items-center" style="top: 66.66%">
+                <div class="timeline-dot h-[11px] w-[11px] rotate-45 border transition-all duration-500 border-white/30 bg-[#0a0a0a]"></div>
+                <span class="timeline-code ml-3 text-[10px] uppercase tracking-[0.25em] transition-colors text-white/25" style="font-family: var(--font-mono);">OP-005</span>
+            </div>
+            <div class="timeline-left-indicator absolute -left-[5px] flex items-center" style="top: 83.33%">
+                <div class="timeline-dot h-[11px] w-[11px] rotate-45 border transition-all duration-500 border-white/30 bg-[#0a0a0a]"></div>
+                <span class="timeline-code ml-3 text-[10px] uppercase tracking-[0.25em] transition-colors text-white/25" style="font-family: var(--font-mono);">TIME-LEAP</span>
+            </div>
+            <div class="timeline-left-indicator absolute -left-[5px] flex items-center" style="top: 100%">
+                <div class="timeline-dot h-[11px] w-[11px] rotate-45 border transition-all duration-500 border-white/30 bg-[#0a0a0a]"></div>
+                <span class="timeline-code ml-3 text-[10px] uppercase tracking-[0.25em] transition-colors text-white/25" style="font-family: var(--font-mono);">SHOWDOWN</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right side HUD -->
+        <div class="pointer-events-none absolute right-6 top-1/2 z-30 hidden -translate-y-1/2 flex-col items-end gap-3 text-[10px] uppercase tracking-[0.3em] text-white/50 md:right-12 md:flex" style="font-family: var(--font-mono);">
+          <span id="timeline-right-sector">SECTOR 01 / 07</span>
+          <div class="h-40 w-px bg-white/10">
+            <div id="timeline-progress-line-right" class="w-px bg-[color:var(--strike-red)] shadow-[0_0_10px_var(--strike-red)]" style="height: 0%;"></div>
+          </div>
+          <span id="timeline-progress-percent" class="text-[color:var(--strike-red)] font-bold">0%</span>
+        </div>
+
+        <!-- Stacked stages -->
+        <div class="absolute inset-0">
+          <!-- STAGE 1 -->
+          <article class="timeline-stage absolute inset-0 flex items-center justify-center px-6 md:px-24" style="transform: translate3d(0, 100vh, 0) scale(0.95); opacity: 0; z-index: 10; will-change: transform, opacity;" aria-hidden="true" data-status="ACTIVE" data-progress="15">
+            <div class="relative mx-auto w-full max-w-6xl">
+              <!-- Corner brackets -->
+              <span class="absolute h-8 w-8 border-[color:var(--strike-red)] -left-2 -top-2 border-l-[3px] border-t-[3px]"></span>
+              <span class="absolute h-8 w-8 border-[color:var(--strike-red)] -right-2 -top-2 border-r-[3px] border-t-[3px]"></span>
+              <span class="absolute h-8 w-8 border-[color:var(--strike-red)] -bottom-2 -left-2 border-b-[3px] border-l-[3px]"></span>
+              <span class="absolute h-8 w-8 border-[color:var(--strike-red)] -bottom-2 -right-2 border-b-[3px] border-r-[3px]"></span>
+
+              <div class="relative border border-white/10 bg-[#0a0a0a] p-10 md:p-16">
+                
+                <div class="flex flex-wrap items-center justify-between gap-4 text-[11px] uppercase tracking-[0.35em] text-white/45" style="font-family: var(--font-mono);">
+                  <div class="flex items-center gap-3">
+                    <span class="text-[color:var(--strike-red)]">LEVEL 01</span>
+                    <span class="text-white/20">——</span>
+                    <span>FILE // OP-001</span>
+                  </div>
+                  <div class="status-badge flex items-center gap-2 border px-3 py-1.5 uppercase tracking-[0.3em]">
+                    <span class="status-badge-dot h-1.5 w-1.5 rotate-45"></span>
+                    <span class="status-badge-text">STANDBY</span>
+                  </div>
+                </div>
+
+                <div class="mt-8 text-[12px] uppercase tracking-[0.4em] text-white/60 flex items-center gap-2" style="font-family: var(--font-mono);">
+                  <span class="text-[color:var(--strike-red)]">►</span> 20 AUG 2026
+                </div>
+
+                <div class="mt-6">
+                  <h2 class="uppercase leading-[0.9] text-white m-0" style="font-family: var(--font-heading); font-size: clamp(3rem, 7vw, 6.5rem); letter-spacing: 2px; text-shadow: 0 0 20px rgba(255,255,255,0.1);">
+                    Registration & PPT Submission
+                  </h2>
+                </div>
+                
+                <p class="mt-10 max-w-2xl text-lg leading-relaxed text-white/60 md:text-xl">
+                  The gates open. Submit your presentations and secure your spot before time runs out.
+                </p>
+
+                <div class="mt-14 grid gap-10 border-t border-white/10 pt-8 md:grid-cols-3" style="font-family: var(--font-mono);">
+                  <div>
+                    <div class="flex items-baseline justify-between text-[10px] uppercase tracking-[0.3em] text-white/40">
+                      <span>Mission Progress</span><span class="text-white/80">15%</span>
+                    </div>
+                    <div class="mt-3 h-[3px] w-full bg-white/10">
+                      <div class="mission-progress-bar h-full bg-[color:var(--strike-red)] transition-[width] duration-700" style="width: 0%;"></div>
+                    </div>
+                  </div>
+                  <div>
+                    <div class="flex items-baseline justify-between text-[10px] uppercase tracking-[0.3em] text-white/40">
+                      <span>Signal</span><span class="text-white/80">Encrypted</span>
+                    </div>
+                    <div class="mt-3 flex gap-[3px]">
+                      <span class="h-3 w-[3px] bg-[color:var(--strike-red)]"></span><span class="h-3 w-[3px] bg-[color:var(--strike-red)]"></span><span class="h-3 w-[3px] bg-[color:var(--strike-red)]"></span><span class="h-3 w-[3px] bg-[color:var(--strike-red)]"></span><span class="h-3 w-[3px] bg-[color:var(--strike-red)]"></span><span class="h-3 w-[3px] bg-[color:var(--strike-red)]"></span><span class="h-3 w-[3px] bg-[color:var(--strike-red)]"></span><span class="h-3 w-[3px] bg-[color:var(--strike-red)]"></span><span class="h-3 w-[3px] bg-[color:var(--strike-red)]"></span><span class="h-3 w-[3px] bg-[color:var(--strike-red)]"></span><span class="h-3 w-[3px] bg-white/15"></span><span class="h-3 w-[3px] bg-white/15"></span><span class="h-3 w-[3px] bg-white/15"></span><span class="h-3 w-[3px] bg-white/15"></span>
+                    </div>
+                  </div>
+                  <div>
+                    <div class="flex items-baseline justify-between text-[10px] uppercase tracking-[0.3em] text-white/40">
+                      <span>Checkpoint</span><span class="text-white/80">1 / 7</span>
+                    </div>
+                    <div class="mt-3 flex gap-1.5">
+                      <span class="h-[3px] flex-1 bg-[color:var(--strike-red)]"></span><span class="h-[3px] flex-1 bg-white/10"></span><span class="h-[3px] flex-1 bg-white/10"></span><span class="h-[3px] flex-1 bg-white/10"></span><span class="h-[3px] flex-1 bg-white/10"></span><span class="h-[3px] flex-1 bg-white/10"></span><span class="h-[3px] flex-1 bg-white/10"></span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <!-- STAGE 2 -->
+          <article class="timeline-stage absolute inset-0 flex items-center justify-center px-6 md:px-24" style="transform: translate3d(0, 100vh, 0) scale(0.95); opacity: 0; z-index: 11; will-change: transform, opacity;" aria-hidden="true" data-status="ACTIVE" data-progress="30">
+            <div class="relative mx-auto w-full max-w-6xl">
+              <span class="absolute h-8 w-8 border-[color:var(--strike-red)] -left-2 -top-2 border-l-[3px] border-t-[3px]"></span>
+              <span class="absolute h-8 w-8 border-[color:var(--strike-red)] -right-2 -top-2 border-r-[3px] border-t-[3px]"></span>
+              <span class="absolute h-8 w-8 border-[color:var(--strike-red)] -bottom-2 -left-2 border-b-[3px] border-l-[3px]"></span>
+              <span class="absolute h-8 w-8 border-[color:var(--strike-red)] -bottom-2 -right-2 border-b-[3px] border-r-[3px]"></span>
+
+              <div class="relative border border-white/10 bg-[#0a0a0a] p-10 md:p-16">
+                <div class="flex flex-wrap items-center justify-between gap-4 text-[11px] uppercase tracking-[0.35em] text-white/45" style="font-family: var(--font-mono);">
+                  <div class="flex items-center gap-3">
+                    <span class="text-[color:var(--strike-red)]">LEVEL 02</span>
+                    <span class="text-white/20">——</span>
+                    <span>FILE // OP-002</span>
+                  </div>
+                  <div class="status-badge flex items-center gap-2 border px-3 py-1.5 uppercase tracking-[0.3em]">
+                    <span class="status-badge-dot h-1.5 w-1.5 rotate-45"></span>
+                    <span class="status-badge-text">STANDBY</span>
+                  </div>
+                </div>
+
+                <div class="mt-8 text-[12px] uppercase tracking-[0.4em] text-white/60 flex items-center gap-2" style="font-family: var(--font-mono);">
+                  <span class="text-[color:var(--strike-red)]">►</span> 22 AUG 2026 • 08:00
+                </div>
+
+                <div class="mt-6">
+                  <h2 class="uppercase leading-[0.9] text-white m-0" style="font-family: var(--font-heading); font-size: clamp(3rem, 7vw, 6.5rem); letter-spacing: 2px; text-shadow: 0 0 20px rgba(255,255,255,0.1);">
+                    PPT Evaluation Results
+                  </h2>
+                </div>
+                <p class="mt-10 max-w-2xl text-lg leading-relaxed text-white/60 md:text-xl">
+                  The evaluation is complete. Find out if your vision made the cut for the ultimate showdown.
+                </p>
+
+                <div class="mt-14 grid gap-10 border-t border-white/10 pt-8 md:grid-cols-3" style="font-family: var(--font-mono);">
+                  <div>
+                    <div class="flex items-baseline justify-between text-[10px] uppercase tracking-[0.3em] text-white/40">
+                      <span>Mission Progress</span><span class="text-white/80">30%</span>
+                    </div>
+                    <div class="mt-3 h-[3px] w-full bg-white/10">
+                      <div class="mission-progress-bar h-full bg-[color:var(--strike-red)] transition-[width] duration-700" style="width: 0%;"></div>
+                    </div>
+                  </div>
+                  <div>
+                    <div class="flex items-baseline justify-between text-[10px] uppercase tracking-[0.3em] text-white/40">
+                      <span>Signal</span><span class="text-white/80">Encrypted</span>
+                    </div>
+                    <div class="mt-3 flex gap-[3px]">
+                      <span class="h-3 w-[3px] bg-[color:var(--strike-red)]"></span><span class="h-3 w-[3px] bg-[color:var(--strike-red)]"></span><span class="h-3 w-[3px] bg-[color:var(--strike-red)]"></span><span class="h-3 w-[3px] bg-[color:var(--strike-red)]"></span><span class="h-3 w-[3px] bg-[color:var(--strike-red)]"></span><span class="h-3 w-[3px] bg-[color:var(--strike-red)]"></span><span class="h-3 w-[3px] bg-[color:var(--strike-red)]"></span><span class="h-3 w-[3px] bg-[color:var(--strike-red)]"></span><span class="h-3 w-[3px] bg-[color:var(--strike-red)]"></span><span class="h-3 w-[3px] bg-[color:var(--strike-red)]"></span><span class="h-3 w-[3px] bg-white/15"></span><span class="h-3 w-[3px] bg-white/15"></span><span class="h-3 w-[3px] bg-white/15"></span><span class="h-3 w-[3px] bg-white/15"></span>
+                    </div>
+                  </div>
+                  <div>
+                    <div class="flex items-baseline justify-between text-[10px] uppercase tracking-[0.3em] text-white/40">
+                      <span>Checkpoint</span><span class="text-white/80">2 / 7</span>
+                    </div>
+                    <div class="mt-3 flex gap-1.5">
+                      <span class="h-[3px] flex-1 bg-[color:var(--strike-red)]"></span><span class="h-[3px] flex-1 bg-[color:var(--strike-red)]"></span><span class="h-[3px] flex-1 bg-white/10"></span><span class="h-[3px] flex-1 bg-white/10"></span><span class="h-[3px] flex-1 bg-white/10"></span><span class="h-[3px] flex-1 bg-white/10"></span><span class="h-[3px] flex-1 bg-white/10"></span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <!-- STAGE 3 -->
+          <article class="timeline-stage absolute inset-0 flex items-center justify-center px-6 md:px-24" style="transform: translate3d(0, 100vh, 0) scale(0.95); opacity: 0; z-index: 12; will-change: transform, opacity;" aria-hidden="true" data-status="ACTIVE" data-progress="45">
+            <div class="relative mx-auto w-full max-w-6xl">
+              <span class="absolute h-8 w-8 border-[color:var(--strike-red)] -left-2 -top-2 border-l-[3px] border-t-[3px]"></span>
+              <span class="absolute h-8 w-8 border-[color:var(--strike-red)] -right-2 -top-2 border-r-[3px] border-t-[3px]"></span>
+              <span class="absolute h-8 w-8 border-[color:var(--strike-red)] -bottom-2 -left-2 border-b-[3px] border-l-[3px]"></span>
+              <span class="absolute h-8 w-8 border-[color:var(--strike-red)] -bottom-2 -right-2 border-b-[3px] border-r-[3px]"></span>
+
+              <div class="relative border border-white/10 bg-[#0a0a0a] p-10 md:p-16">
+                <div class="flex flex-wrap items-center justify-between gap-4 text-[11px] uppercase tracking-[0.35em] text-white/45" style="font-family: var(--font-mono);">
+                  <div class="flex items-center gap-3">
+                    <span class="text-[color:var(--strike-red)]">LEVEL 03</span>
+                    <span class="text-white/20">——</span>
+                    <span>FILE // OP-003</span>
+                  </div>
+                  <div class="status-badge flex items-center gap-2 border px-3 py-1.5 uppercase tracking-[0.3em]">
+                    <span class="status-badge-dot h-1.5 w-1.5 rotate-45"></span>
+                    <span class="status-badge-text">STANDBY</span>
+                  </div>
+                </div>
+
+                <div class="mt-8 text-[12px] uppercase tracking-[0.4em] text-white/60 flex items-center gap-2" style="font-family: var(--font-mono);">
+                  <span class="text-[color:var(--strike-red)]">►</span> 22 AUG 2026 • 09:00 — 12:00
+                </div>
+
+                <div class="mt-6">
+                  <h2 class="uppercase leading-[0.9] text-white m-0" style="font-family: var(--font-heading); font-size: clamp(3rem, 7vw, 6.5rem); letter-spacing: 2px; text-shadow: 0 0 20px rgba(255,255,255,0.1);">
+                    Team Briefing
+                  </h2>
+                </div>
+                <p class="mt-10 max-w-2xl text-lg leading-relaxed text-white/60 md:text-xl">
+                  Get briefed on the mission. Prepare your team for the challenges ahead. Official start of the hackathon.
+                </p>
+
+                <div class="mt-14 grid gap-10 border-t border-white/10 pt-8 md:grid-cols-3" style="font-family: var(--font-mono);">
+                  <div>
+                    <div class="flex items-baseline justify-between text-[10px] uppercase tracking-[0.3em] text-white/40">
+                      <span>Mission Progress</span><span class="text-white/80">45%</span>
+                    </div>
+                    <div class="mt-3 h-[3px] w-full bg-white/10">
+                      <div class="mission-progress-bar h-full bg-[color:var(--strike-red)] transition-[width] duration-700" style="width: 0%;"></div>
+                    </div>
+                  </div>
+                  <div>
+                    <div class="flex items-baseline justify-between text-[10px] uppercase tracking-[0.3em] text-white/40">
+                      <span>Signal</span><span class="text-white/80">Encrypted</span>
+                    </div>
+                    <div class="mt-3 flex gap-[3px]">
+                      <span class="h-3 w-[3px] bg-[color:var(--strike-red)]"></span><span class="h-3 w-[3px] bg-[color:var(--strike-red)]"></span><span class="h-3 w-[3px] bg-[color:var(--strike-red)]"></span><span class="h-3 w-[3px] bg-[color:var(--strike-red)]"></span><span class="h-3 w-[3px] bg-[color:var(--strike-red)]"></span><span class="h-3 w-[3px] bg-[color:var(--strike-red)]"></span><span class="h-3 w-[3px] bg-[color:var(--strike-red)]"></span><span class="h-3 w-[3px] bg-[color:var(--strike-red)]"></span><span class="h-3 w-[3px] bg-[color:var(--strike-red)]"></span><span class="h-3 w-[3px] bg-[color:var(--strike-red)]"></span><span class="h-3 w-[3px] bg-white/15"></span><span class="h-3 w-[3px] bg-white/15"></span><span class="h-3 w-[3px] bg-white/15"></span><span class="h-3 w-[3px] bg-white/15"></span>
+                    </div>
+                  </div>
+                  <div>
+                    <div class="flex items-baseline justify-between text-[10px] uppercase tracking-[0.3em] text-white/40">
+                      <span>Checkpoint</span><span class="text-white/80">3 / 7</span>
+                    </div>
+                    <div class="mt-3 flex gap-1.5">
+                      <span class="h-[3px] flex-1 bg-[color:var(--strike-red)]"></span><span class="h-[3px] flex-1 bg-[color:var(--strike-red)]"></span><span class="h-[3px] flex-1 bg-[color:var(--strike-red)]"></span><span class="h-[3px] flex-1 bg-white/10"></span><span class="h-[3px] flex-1 bg-white/10"></span><span class="h-[3px] flex-1 bg-white/10"></span><span class="h-[3px] flex-1 bg-white/10"></span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <!-- STAGE 4 -->
+          <article class="timeline-stage absolute inset-0 flex items-center justify-center px-6 md:px-24" style="transform: translate3d(0, 100vh, 0) scale(0.95); opacity: 0; z-index: 13; will-change: transform, opacity;" aria-hidden="true" data-status="ACTIVE" data-progress="60">
+            <div class="relative mx-auto w-full max-w-6xl">
+              <span class="absolute h-8 w-8 border-[color:var(--strike-red)] -left-2 -top-2 border-l-[3px] border-t-[3px]"></span>
+              <span class="absolute h-8 w-8 border-[color:var(--strike-red)] -right-2 -top-2 border-r-[3px] border-t-[3px]"></span>
+              <span class="absolute h-8 w-8 border-[color:var(--strike-red)] -bottom-2 -left-2 border-b-[3px] border-l-[3px]"></span>
+              <span class="absolute h-8 w-8 border-[color:var(--strike-red)] -bottom-2 -right-2 border-b-[3px] border-r-[3px]"></span>
+
+              <div class="relative border border-white/10 bg-[#0a0a0a] p-10 md:p-16">
+                <div class="flex flex-wrap items-center justify-between gap-4 text-[11px] uppercase tracking-[0.35em] text-white/45" style="font-family: var(--font-mono);">
+                  <div class="flex items-center gap-3">
+                    <span class="text-[color:var(--strike-red)]">LEVEL 04</span>
+                    <span class="text-white/20">——</span>
+                    <span>FILE // OP-004</span>
+                  </div>
+                  <div class="status-badge flex items-center gap-2 border px-3 py-1.5 uppercase tracking-[0.3em]">
+                    <span class="status-badge-dot h-1.5 w-1.5 rotate-45"></span>
+                    <span class="status-badge-text">STANDBY</span>
+                  </div>
+                </div>
+
+                <div class="mt-8 text-[12px] uppercase tracking-[0.4em] text-white/60 flex items-center gap-2" style="font-family: var(--font-mono);">
+                  <span class="text-[color:var(--strike-red)]">►</span> 22 AUG 2026 • 17:00 — 20:00
+                </div>
+
+                <div class="mt-6">
+                  <h2 class="uppercase leading-[0.9] text-white m-0" style="font-family: var(--font-heading); font-size: clamp(3rem, 7vw, 6.5rem); letter-spacing: 2px; text-shadow: 0 0 20px rgba(255,255,255,0.1);">
+                    Mentor Session
+                  </h2>
+                </div>
+                <p class="mt-10 max-w-2xl text-lg leading-relaxed text-white/60 md:text-xl">
+                  Seek guidance from the experts. Listen carefully — this intel will help you refine your ideas.
+                </p>
+
+                <div class="mt-14 grid gap-10 border-t border-white/10 pt-8 md:grid-cols-3" style="font-family: var(--font-mono);">
+                  <div>
+                    <div class="flex items-baseline justify-between text-[10px] uppercase tracking-[0.3em] text-white/40">
+                      <span>Mission Progress</span><span class="text-white/80">60%</span>
+                    </div>
+                    <div class="mt-3 h-[3px] w-full bg-white/10">
+                      <div class="mission-progress-bar h-full bg-[color:var(--strike-red)] transition-[width] duration-700" style="width: 0%;"></div>
+                    </div>
+                  </div>
+                  <div>
+                    <div class="flex items-baseline justify-between text-[10px] uppercase tracking-[0.3em] text-white/40">
+                      <span>Signal</span><span class="text-white/80">Encrypted</span>
+                    </div>
+                    <div class="mt-3 flex gap-[3px]">
+                      <span class="h-3 w-[3px] bg-[color:var(--strike-red)]"></span><span class="h-3 w-[3px] bg-[color:var(--strike-red)]"></span><span class="h-3 w-[3px] bg-[color:var(--strike-red)]"></span><span class="h-3 w-[3px] bg-[color:var(--strike-red)]"></span><span class="h-3 w-[3px] bg-[color:var(--strike-red)]"></span><span class="h-3 w-[3px] bg-[color:var(--strike-red)]"></span><span class="h-3 w-[3px] bg-[color:var(--strike-red)]"></span><span class="h-3 w-[3px] bg-[color:var(--strike-red)]"></span><span class="h-3 w-[3px] bg-[color:var(--strike-red)]"></span><span class="h-3 w-[3px] bg-[color:var(--strike-red)]"></span><span class="h-3 w-[3px] bg-white/15"></span><span class="h-3 w-[3px] bg-white/15"></span><span class="h-3 w-[3px] bg-white/15"></span><span class="h-3 w-[3px] bg-white/15"></span>
+                    </div>
+                  </div>
+                  <div>
+                    <div class="flex items-baseline justify-between text-[10px] uppercase tracking-[0.3em] text-white/40">
+                      <span>Checkpoint</span><span class="text-white/80">4 / 7</span>
+                    </div>
+                    <div class="mt-3 flex gap-1.5">
+                      <span class="h-[3px] flex-1 bg-[color:var(--strike-red)]"></span><span class="h-[3px] flex-1 bg-[color:var(--strike-red)]"></span><span class="h-[3px] flex-1 bg-[color:var(--strike-red)]"></span><span class="h-[3px] flex-1 bg-[color:var(--strike-red)]"></span><span class="h-[3px] flex-1 bg-white/10"></span><span class="h-[3px] flex-1 bg-white/10"></span><span class="h-[3px] flex-1 bg-white/10"></span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <!-- STAGE 5 -->
+          <article class="timeline-stage absolute inset-0 flex items-center justify-center px-6 md:px-24" style="transform: translate3d(0, 100vh, 0) scale(0.95); opacity: 0; z-index: 14; will-change: transform, opacity;" aria-hidden="true" data-status="ACTIVE" data-progress="75">
+            <div class="relative mx-auto w-full max-w-6xl">
+              <span class="absolute h-8 w-8 border-[color:var(--strike-red)] -left-2 -top-2 border-l-[3px] border-t-[3px]"></span>
+              <span class="absolute h-8 w-8 border-[color:var(--strike-red)] -right-2 -top-2 border-r-[3px] border-t-[3px]"></span>
+              <span class="absolute h-8 w-8 border-[color:var(--strike-red)] -bottom-2 -left-2 border-b-[3px] border-l-[3px]"></span>
+              <span class="absolute h-8 w-8 border-[color:var(--strike-red)] -bottom-2 -right-2 border-b-[3px] border-r-[3px]"></span>
+
+              <div class="relative border border-white/10 bg-[#0a0a0a] p-10 md:p-16">
+                <div class="flex flex-wrap items-center justify-between gap-4 text-[11px] uppercase tracking-[0.35em] text-white/45" style="font-family: var(--font-mono);">
+                  <div class="flex items-center gap-3">
+                    <span class="text-[color:var(--strike-red)]">LEVEL 05</span>
+                    <span class="text-white/20">——</span>
+                    <span>FILE // OP-005</span>
+                  </div>
+                  <div class="status-badge flex items-center gap-2 border px-3 py-1.5 uppercase tracking-[0.3em]">
+                    <span class="status-badge-dot h-1.5 w-1.5 rotate-45"></span>
+                    <span class="status-badge-text">STANDBY</span>
+                  </div>
+                </div>
+
+                <div class="mt-8 text-[12px] uppercase tracking-[0.4em] text-white/60 flex items-center gap-2" style="font-family: var(--font-mono);">
+                  <span class="text-[color:var(--strike-red)]">►</span> 22 AUG 2026 • 23:00
+                </div>
+
+                <div class="mt-6">
+                  <h2 class="uppercase leading-[0.9] text-white m-0" style="font-family: var(--font-heading); font-size: clamp(3rem, 7vw, 6.5rem); letter-spacing: 2px; text-shadow: 0 0 20px rgba(255,255,255,0.1);">
+                    Prototype I
+                  </h2>
+                </div>
+                <p class="mt-10 max-w-2xl text-lg leading-relaxed text-white/60 md:text-xl">
+                  Showcase your first prototype. The journey from idea to reality begins here.
+                </p>
+
+                <div class="mt-14 grid gap-10 border-t border-white/10 pt-8 md:grid-cols-3" style="font-family: var(--font-mono);">
+                  <div>
+                    <div class="flex items-baseline justify-between text-[10px] uppercase tracking-[0.3em] text-white/40">
+                      <span>Mission Progress</span><span class="text-white/80">75%</span>
+                    </div>
+                    <div class="mt-3 h-[3px] w-full bg-white/10">
+                      <div class="mission-progress-bar h-full bg-[color:var(--strike-red)] transition-[width] duration-700" style="width: 0%;"></div>
+                    </div>
+                  </div>
+                  <div>
+                    <div class="flex items-baseline justify-between text-[10px] uppercase tracking-[0.3em] text-white/40">
+                      <span>Signal</span><span class="text-white/80">Encrypted</span>
+                    </div>
+                    <div class="mt-3 flex gap-[3px]">
+                      <span class="h-3 w-[3px] bg-[color:var(--strike-red)]"></span><span class="h-3 w-[3px] bg-[color:var(--strike-red)]"></span><span class="h-3 w-[3px] bg-[color:var(--strike-red)]"></span><span class="h-3 w-[3px] bg-[color:var(--strike-red)]"></span><span class="h-3 w-[3px] bg-[color:var(--strike-red)]"></span><span class="h-3 w-[3px] bg-[color:var(--strike-red)]"></span><span class="h-3 w-[3px] bg-[color:var(--strike-red)]"></span><span class="h-3 w-[3px] bg-[color:var(--strike-red)]"></span><span class="h-3 w-[3px] bg-[color:var(--strike-red)]"></span><span class="h-3 w-[3px] bg-[color:var(--strike-red)]"></span><span class="h-3 w-[3px] bg-white/15"></span><span class="h-3 w-[3px] bg-white/15"></span><span class="h-3 w-[3px] bg-white/15"></span><span class="h-3 w-[3px] bg-white/15"></span>
+                    </div>
+                  </div>
+                  <div>
+                    <div class="flex items-baseline justify-between text-[10px] uppercase tracking-[0.3em] text-white/40">
+                      <span>Checkpoint</span><span class="text-white/80">5 / 7</span>
+                    </div>
+                    <div class="mt-3 flex gap-1.5">
+                      <span class="h-[3px] flex-1 bg-[color:var(--strike-red)]"></span><span class="h-[3px] flex-1 bg-[color:var(--strike-red)]"></span><span class="h-[3px] flex-1 bg-[color:var(--strike-red)]"></span><span class="h-[3px] flex-1 bg-[color:var(--strike-red)]"></span><span class="h-[3px] flex-1 bg-[color:var(--strike-red)]"></span><span class="h-[3px] flex-1 bg-white/10"></span><span class="h-[3px] flex-1 bg-white/10"></span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <!-- STAGE 6 -->
+          <article class="timeline-stage absolute inset-0 flex items-center justify-center px-6 md:px-24" style="transform: translate3d(0, 100vh, 0) scale(0.95); opacity: 0; z-index: 15; will-change: transform, opacity;" aria-hidden="true" data-status="CLASSIFIED" data-progress="88">
+            <div class="relative mx-auto w-full max-w-6xl">
+              <span class="absolute h-8 w-8 border-[color:var(--strike-red)] -left-2 -top-2 border-l-[3px] border-t-[3px]"></span>
+              <span class="absolute h-8 w-8 border-[color:var(--strike-red)] -right-2 -top-2 border-r-[3px] border-t-[3px]"></span>
+              <span class="absolute h-8 w-8 border-[color:var(--strike-red)] -bottom-2 -left-2 border-b-[3px] border-l-[3px]"></span>
+              <span class="absolute h-8 w-8 border-[color:var(--strike-red)] -bottom-2 -right-2 border-b-[3px] border-r-[3px]"></span>
+
+              <div class="relative border border-white/10 bg-[#0a0a0a] p-10 md:p-16">
+                <div class="flex flex-wrap items-center justify-between gap-4 text-[11px] uppercase tracking-[0.35em] text-white/45" style="font-family: var(--font-mono);">
+                  <div class="flex items-center gap-3">
+                    <span class="text-[color:var(--strike-red)]">LEVEL 05A</span>
+                    <span class="text-white/20">——</span>
+                    <span>FILE // TIME-LEAP</span>
+                  </div>
+                  <div class="status-badge flex items-center gap-2 border px-3 py-1.5 uppercase tracking-[0.3em]">
+                    <span class="status-badge-dot h-1.5 w-1.5 rotate-45"></span>
+                    <span class="status-badge-text">STANDBY</span>
+                  </div>
+                </div>
+
+                <div class="mt-8 text-[12px] uppercase tracking-[0.4em] text-white/60 flex items-center gap-2" style="font-family: var(--font-mono);">
+                  <span class="text-[color:var(--strike-red)]">►</span> 23 AUG 2026 • 00:30 — 03:00
+                </div>
+
+                <div class="mt-6">
+                  <h2 class="uppercase leading-[0.9] text-white m-0" style="font-family: var(--font-heading); font-size: clamp(3rem, 7vw, 6.5rem); letter-spacing: 2px; text-shadow: 0 0 20px rgba(255,255,255,0.1);">
+                    Time Leap
+                  </h2>
+                </div>
+                <p class="mt-10 max-w-2xl text-lg leading-relaxed text-white/60 md:text-xl">
+                  Not every mission is announced. Stay sharp. Stay ready.
+                </p>
+
+                <div class="mt-14 grid gap-10 border-t border-white/10 pt-8 md:grid-cols-3" style="font-family: var(--font-mono);">
+                  <div>
+                    <div class="flex items-baseline justify-between text-[10px] uppercase tracking-[0.3em] text-white/40">
+                      <span>Mission Progress</span><span class="text-white/80">88%</span>
+                    </div>
+                    <div class="mt-3 h-[3px] w-full bg-white/10">
+                      <div class="mission-progress-bar h-full bg-[color:var(--strike-red)] transition-[width] duration-700" style="width: 0%;"></div>
+                    </div>
+                  </div>
+                  <div>
+                    <div class="flex items-baseline justify-between text-[10px] uppercase tracking-[0.3em] text-white/40">
+                      <span>Signal</span><span class="text-white/80">Encrypted</span>
+                    </div>
+                    <div class="mt-3 flex gap-[3px]">
+                      <span class="h-3 w-[3px] bg-[color:var(--strike-red)]"></span><span class="h-3 w-[3px] bg-[color:var(--strike-red)]"></span><span class="h-3 w-[3px] bg-[color:var(--strike-red)]"></span><span class="h-3 w-[3px] bg-[color:var(--strike-red)]"></span><span class="h-3 w-[3px] bg-[color:var(--strike-red)]"></span><span class="h-3 w-[3px] bg-[color:var(--strike-red)]"></span><span class="h-3 w-[3px] bg-[color:var(--strike-red)]"></span><span class="h-3 w-[3px] bg-[color:var(--strike-red)]"></span><span class="h-3 w-[3px] bg-[color:var(--strike-red)]"></span><span class="h-3 w-[3px] bg-[color:var(--strike-red)]"></span><span class="h-3 w-[3px] bg-white/15"></span><span class="h-3 w-[3px] bg-white/15"></span><span class="h-3 w-[3px] bg-white/15"></span><span class="h-3 w-[3px] bg-white/15"></span>
+                    </div>
+                  </div>
+                  <div>
+                    <div class="flex items-baseline justify-between text-[10px] uppercase tracking-[0.3em] text-white/40">
+                      <span>Checkpoint</span><span class="text-white/80">6 / 7</span>
+                    </div>
+                    <div class="mt-3 flex gap-1.5">
+                      <span class="h-[3px] flex-1 bg-[color:var(--strike-red)]"></span><span class="h-[3px] flex-1 bg-[color:var(--strike-red)]"></span><span class="h-[3px] flex-1 bg-[color:var(--strike-red)]"></span><span class="h-[3px] flex-1 bg-[color:var(--strike-red)]"></span><span class="h-[3px] flex-1 bg-[color:var(--strike-red)]"></span><span class="h-[3px] flex-1 bg-[color:var(--strike-red)]"></span><span class="h-[3px] flex-1 bg-white/10"></span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <!-- STAGE 7 -->
+          <article class="timeline-stage absolute inset-0 flex items-center justify-center px-6 md:px-24" style="transform: translate3d(0, 100vh, 0) scale(0.95); opacity: 0; z-index: 16; will-change: transform, opacity;" aria-hidden="true" data-status="ACTIVE" data-progress="100">
+            <div class="relative mx-auto w-full max-w-6xl">
+              <span class="absolute h-8 w-8 border-[color:var(--strike-red)] -left-2 -top-2 border-l-[3px] border-t-[3px]"></span>
+              <span class="absolute h-8 w-8 border-[color:var(--strike-red)] -right-2 -top-2 border-r-[3px] border-t-[3px]"></span>
+              <span class="absolute h-8 w-8 border-[color:var(--strike-red)] -bottom-2 -left-2 border-b-[3px] border-l-[3px]"></span>
+              <span class="absolute h-8 w-8 border-[color:var(--strike-red)] -bottom-2 -right-2 border-b-[3px] border-r-[3px]"></span>
+
+              <div class="relative border border-white/10 bg-[#0a0a0a] p-10 md:p-16">
+                <div class="flex flex-wrap items-center justify-between gap-4 text-[11px] uppercase tracking-[0.35em] text-white/45" style="font-family: var(--font-mono);">
+                  <div class="flex items-center gap-3">
+                    <span class="text-[color:var(--strike-red)]">FINAL</span>
+                    <span class="text-white/20">——</span>
+                    <span>FILE // SHOWDOWN</span>
+                  </div>
+                  <div class="status-badge flex items-center gap-2 border px-3 py-1.5 uppercase tracking-[0.3em]">
+                    <span class="status-badge-dot h-1.5 w-1.5 rotate-45"></span>
+                    <span class="status-badge-text">STANDBY</span>
+                  </div>
+                </div>
+
+                <div class="mt-8 text-[12px] uppercase tracking-[0.4em] text-white/60 flex items-center gap-2" style="font-family: var(--font-mono);">
+                  <span class="text-[color:var(--strike-red)]">►</span> 23 AUG 2026 • 11:30 — 15:00
+                </div>
+
+                <div class="mt-6">
+                  <h2 class="uppercase leading-[0.9] text-white m-0" style="font-family: var(--font-heading); font-size: clamp(3rem, 7vw, 6.5rem); letter-spacing: 2px; text-shadow: 0 0 20px rgba(255,255,255,0.1);">
+                    Final Showdown
+                  </h2>
+                </div>
+                <p class="mt-10 max-w-2xl text-lg leading-relaxed text-white/60 md:text-xl">
+                  One last stand. The final fortress awaits. Present your work to the judges and claim your place in history.
+                </p>
+
+                <div class="mt-14 grid gap-10 border-t border-white/10 pt-8 md:grid-cols-3" style="font-family: var(--font-mono);">
+                  <div>
+                    <div class="flex items-baseline justify-between text-[10px] uppercase tracking-[0.3em] text-white/40">
+                      <span>Mission Progress</span><span class="text-white/80">100%</span>
+                    </div>
+                    <div class="mt-3 h-[3px] w-full bg-white/10">
+                      <div class="mission-progress-bar h-full bg-[color:var(--strike-red)] transition-[width] duration-700" style="width: 0%;"></div>
+                    </div>
+                  </div>
+                  <div>
+                    <div class="flex items-baseline justify-between text-[10px] uppercase tracking-[0.3em] text-white/40">
+                      <span>Signal</span><span class="text-white/80">Encrypted</span>
+                    </div>
+                    <div class="mt-3 flex gap-[3px]">
+                      <span class="h-3 w-[3px] bg-[color:var(--strike-red)]"></span><span class="h-3 w-[3px] bg-[color:var(--strike-red)]"></span><span class="h-3 w-[3px] bg-[color:var(--strike-red)]"></span><span class="h-3 w-[3px] bg-[color:var(--strike-red)]"></span><span class="h-3 w-[3px] bg-[color:var(--strike-red)]"></span><span class="h-3 w-[3px] bg-[color:var(--strike-red)]"></span><span class="h-3 w-[3px] bg-[color:var(--strike-red)]"></span><span class="h-3 w-[3px] bg-[color:var(--strike-red)]"></span><span class="h-3 w-[3px] bg-[color:var(--strike-red)]"></span><span class="h-3 w-[3px] bg-[color:var(--strike-red)]"></span><span class="h-3 w-[3px] bg-[color:var(--strike-red)]"></span><span class="h-3 w-[3px] bg-[color:var(--strike-red)]"></span><span class="h-3 w-[3px] bg-[color:var(--strike-red)]"></span><span class="h-3 w-[3px] bg-[color:var(--strike-red)]"></span>
+                    </div>
+                  </div>
+                  <div>
+                    <div class="flex items-baseline justify-between text-[10px] uppercase tracking-[0.3em] text-white/40">
+                      <span>Checkpoint</span><span class="text-white/80">7 / 7</span>
+                    </div>
+                    <div class="mt-3 flex gap-1.5">
+                      <span class="h-[3px] flex-1 bg-[color:var(--strike-red)]"></span><span class="h-[3px] flex-1 bg-[color:var(--strike-red)]"></span><span class="h-[3px] flex-1 bg-[color:var(--strike-red)]"></span><span class="h-[3px] flex-1 bg-[color:var(--strike-red)]"></span><span class="h-[3px] flex-1 bg-[color:var(--strike-red)]"></span><span class="h-[3px] flex-1 bg-[color:var(--strike-red)]"></span><span class="h-[3px] flex-1 bg-[color:var(--strike-red)]"></span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </article>
+        </div>
+
+        <!-- Bottom scan bar -->
+        <div class="pointer-events-none absolute inset-x-0 bottom-0 z-40 flex items-center justify-between px-6 py-5 text-[10px] uppercase tracking-[0.3em] text-white/40 md:px-12" style="font-family: var(--font-mono);">
+          <span>// SCROLL TO ADVANCE</span>
+          <span id="timeline-bottom-sector" class="text-[color:var(--strike-red)]">01/07</span>
+        </div>
+      </div>
+    </section>
