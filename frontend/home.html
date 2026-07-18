@@ -16,6 +16,8 @@
 </head>
 
 <body>
+    <!-- Particle network canvas — fixed, behind all post-hero content -->
+    <canvas id="rh-net-canvas" aria-hidden="true"></canvas>
     <!-- Preloader -->
     <section id="animationSection" style="position: fixed; top: 0; left: 0; width: 100%; height: 100vh; background-color: #150211; z-index: 99999; display: flex; justify-content: center; align-items: center;">
         <div id="loader-text" style="opacity: 0; font-family: 'Creepster', 'Anton', sans-serif; font-size: clamp(3rem, 7vw, 7rem); text-transform: uppercase; letter-spacing: 6px; clip-path: polygon(0 0, 100% 0, 100% 100%, 0% 100%); display: flex; gap: 20px;">
@@ -248,43 +250,43 @@
           <div class="tl-rail__line"></div>
 
           <!-- dot 01 -->
-          <div class="tl-dot" data-dot="0" style="--dot-pos: 0%">
+          <div class="tl-dot" data-dot="0" style="--dot-pos: 5%">
             <div class="tl-dot__ring"></div>
             <div class="tl-dot__fill"></div>
             <span class="tl-dot__label">01</span>
           </div>
           <!-- dot 02 -->
-          <div class="tl-dot" data-dot="1" style="--dot-pos: 16.67%">
+          <div class="tl-dot" data-dot="1" style="--dot-pos: 20%">
             <div class="tl-dot__ring"></div>
             <div class="tl-dot__fill"></div>
             <span class="tl-dot__label">02</span>
           </div>
           <!-- dot 03 -->
-          <div class="tl-dot" data-dot="2" style="--dot-pos: 33.33%">
+          <div class="tl-dot" data-dot="2" style="--dot-pos: 34.33%">
             <div class="tl-dot__ring"></div>
             <div class="tl-dot__fill"></div>
             <span class="tl-dot__label">03</span>
           </div>
           <!-- dot 04 -->
-          <div class="tl-dot" data-dot="3" style="--dot-pos: 50%">
+          <div class="tl-dot" data-dot="3" style="--dot-pos: 49%">
             <div class="tl-dot__ring"></div>
             <div class="tl-dot__fill"></div>
             <span class="tl-dot__label">04</span>
           </div>
           <!-- dot 05 -->
-          <div class="tl-dot" data-dot="4" style="--dot-pos: 66.67%">
+          <div class="tl-dot" data-dot="4" style="--dot-pos: 63.67%">
             <div class="tl-dot__ring"></div>
             <div class="tl-dot__fill"></div>
             <span class="tl-dot__label">05</span>
           </div>
           <!-- dot 06 -->
-          <div class="tl-dot" data-dot="5" style="--dot-pos: 83.33%">
+          <div class="tl-dot" data-dot="5" style="--dot-pos: 78.33%">
             <div class="tl-dot__ring"></div>
             <div class="tl-dot__fill"></div>
             <span class="tl-dot__label">06</span>
           </div>
           <!-- dot FINAL -->
-          <div class="tl-dot" data-dot="6" style="--dot-pos: 100%">
+          <div class="tl-dot" data-dot="6" style="--dot-pos: 93%">
             <div class="tl-dot__ring"></div>
             <div class="tl-dot__fill"></div>
             <span class="tl-dot__label">FINAL</span>
@@ -1633,6 +1635,8 @@
     <script type="module" src="js/firebase-join.js"></script>
     <script type="module" src="js/script.js"></script>
     <script src="js/timeline.js"></script>
+    <script src="js/page-indicator.js"></script>
+    <script src="js/network-bg.js"></script>
 
     <!-- Marquee controller — extracted to external module to comply with CSP -->
     <script type="module" src="js/marquee.js"></script>

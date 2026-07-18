@@ -6049,3 +6049,138 @@ footer a:hover {
     font-size: clamp(28px, 7vw, 38px);
   }
 }
+
+/* =====================================================
+   NETWORK CANVAS BACKGROUND
+   ===================================================== */
+
+#rh-net-canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 0;
+  display: block;
+}
+
+/* =====================================================
+   PAGE SECTION SCROLL INDICATOR
+   ===================================================== */
+
+#pg-indicator {
+  position: fixed;
+  right: clamp(16px, 2.5vw, 36px);
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 999;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  pointer-events: auto;
+}
+
+.pg-line {
+  position: absolute;
+  right: 5px;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgba(255, 255, 255, 0.12);
+  pointer-events: none;
+}
+
+.pg-dot-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 9px 0;
+  cursor: pointer;
+}
+
+.pg-dot {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255, 255, 255, 0.2);
+  background: transparent;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+}
+
+.pg-label {
+  font-family: var(--font-mono, monospace);
+  font-size: 8px;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.0);
+  white-space: nowrap;
+  transition: color 0.3s ease;
+  pointer-events: none;
+  user-select: none;
+}
+
+.pg-dot-wrap.is-past .pg-dot {
+  background: var(--strike-red, #b22222);
+  border-color: var(--strike-red, #b22222);
+}
+
+.pg-dot-wrap.is-active .pg-dot {
+  background: transparent;
+  border-color: var(--strike-red, #b22222);
+  box-shadow: 0 0 0 3px rgba(178, 34, 34, 0.18),
+              0 0 12px rgba(178, 34, 34, 0.5);
+}
+
+.pg-dot-wrap.is-active .pg-label {
+  color: var(--strike-red, #b22222);
+}
+
+.pg-dot-wrap:hover .pg-label {
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.pg-dot-wrap:hover .pg-dot {
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+@media (max-width: 480px) {
+  #pg-indicator { display: none; }
+}
+
+/* =====================================================
+   TIMELINE CARD — FULL WIDTH (rail → right edge)
+   ===================================================== */
+
+.tl-card {
+  padding: 0 clamp(16px, 2.5vw, 36px) 0 clamp(110px, 13vw, 160px) !important;
+  justify-content: flex-start !important;
+}
+
+.tl-card__inner {
+  max-width: 1100px !important;
+  width: 100% !important;
+}
+
+@media (max-width: 768px) {
+  .tl-card {
+    padding: 0 14px 0 clamp(70px, 12vw, 100px) !important;
+  }
+}
+
+/* Ensure all page content renders above the canvas z-index */
+header, section, footer, nav,
+#animationSection, .tl-sticky, .tl-rail,
+#pg-indicator {
+  position: relative;
+  z-index: 1;
+}
+
+#pg-indicator {
+  z-index: 999;
+}
