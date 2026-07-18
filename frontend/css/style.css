@@ -6051,21 +6051,6 @@ footer a:hover {
 }
 
 /* =====================================================
-   NETWORK CANVAS BACKGROUND
-   ===================================================== */
-
-#rh-net-canvas {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  pointer-events: none;
-  z-index: 0;
-  display: block;
-}
-
-/* =====================================================
    PAGE SECTION SCROLL INDICATOR
    ===================================================== */
 
@@ -6173,14 +6158,17 @@ footer a:hover {
   }
 }
 
-/* Ensure all page content renders above the canvas z-index */
-header, section, footer, nav,
-#animationSection, .tl-sticky, .tl-rail,
-#pg-indicator {
+/* Page-level stacking context — DO NOT include tl-rail or tl-sticky here */
+header, section, footer, nav {
   position: relative;
   z-index: 1;
 }
 
+#animationSection {
+  z-index: 99999 !important;
+}
+
 #pg-indicator {
-  z-index: 999;
+  position: fixed !important;
+  z-index: 999 !important;
 }
