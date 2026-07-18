@@ -3,18 +3,24 @@
 
 :root {
     /* Color Palette */
-    --void-black: #050505;
-    --charcoal: #1A1A1A;
-    --strike-red: #B22222;
-    --blood-burgundy: #4E0707;
-    --neon-magenta: #FF00FF;
-    --dark-purple: #301934;
-    --white: #E5E2E1;
-    --rust: #3D1A1A;
-    
-    /* Timeline Colors */
-    --crimson: #DC143C;
-    --terminal: #00D4FF;
+    --base: #08080A;
+    --secondary: #101014;
+    --card: #111114;
+    --border: rgba(255,255,255,.08);
+    --primary-red: #E11D48;
+    --secondary-red: #991B2B;
+    --glow: rgba(225,29,72,.12);
+    --text: #F5F5F5;
+    --secondary-text: #A8A8A8;
+
+    /* Legacy colors mapped to new ones to prevent breaking existing classes */
+    --void-black: var(--base);
+    --charcoal: var(--secondary);
+    --strike-red: var(--primary-red);
+    --blood-burgundy: var(--secondary-red);
+    --white: var(--text);
+    --crimson: var(--primary-red);
+    --terminal: var(--primary-red);
 
     /* Typography */
     --font-heading: 'Anton', sans-serif;
@@ -34,15 +40,11 @@
 }
 
 body {
-    background-color: var(--void-black);
-    color: #f2ede7;
+    background-color: var(--base);
+    color: var(--text);
     font-family: var(--font-body);
     line-height: 1.6;
     overflow-x: hidden;
-    background-image:
-        radial-gradient(circle at 20% 30%, rgba(75, 0, 130, 0.15) 0%, transparent 40%),
-        radial-gradient(circle at 80% 70%, rgba(255, 0, 255, 0.1) 0%, transparent 40%);
-    background-attachment: fixed;
 }
 
 html {
@@ -57,19 +59,7 @@ body::-webkit-scrollbar {
     display: none;
 }
 
-/* Background Texture */
-body::before {
-    content: "";
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: url('https://www.transparenttextures.com/patterns/dark-matter.png');
-    opacity: 0.15;
-    pointer-events: none;
-    z-index: 9999;
-}
+/* Background Texture Removed */
 
 h1,
 h2,
