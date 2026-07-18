@@ -6046,23 +6046,25 @@ footer a:hover {
 
 #pg-indicator {
   position: fixed;
-  right: clamp(16px, 2.5vw, 36px);
+  right: clamp(16px, 4vw, 40px);
   top: 50%;
   transform: translateY(-50%);
   z-index: 999;
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
+  align-items: center;
+  width: 30px;
   pointer-events: auto;
 }
 
 .pg-line {
   position: absolute;
-  right: 5px;
+  left: 50%;
+  transform: translateX(-50%);
   top: 0;
   bottom: 0;
   width: 1px;
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.15);
   pointer-events: none;
 }
 
@@ -6070,58 +6072,55 @@ footer a:hover {
   position: relative;
   display: flex;
   align-items: center;
-  justify-content: flex-end;
-  gap: 10px;
-  padding: 9px 0;
+  justify-content: center;
+  width: 100%;
+  height: 60px; /* Enlarged spacing */
   cursor: pointer;
 }
 
+/* Base dot on the line */
 .pg-dot {
-  width: 11px;
-  height: 11px;
+  width: 7px; /* Enlarged dot */
+  height: 7px;
   border-radius: 50%;
-  border: 1.5px solid rgba(255, 255, 255, 0.2);
-  background: transparent;
-  transition: border-color 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
-  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.3);
   position: relative;
-  z-index: 1;
+  transition: all 0.3s ease;
+  z-index: 2;
 }
 
-.pg-label {
-  font-family: var(--font-mono, monospace);
-  font-size: 8px;
-  letter-spacing: 0.25em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.0);
-  white-space: nowrap;
-  transition: color 0.3s ease;
-  pointer-events: none;
-  user-select: none;
-}
-
-.pg-dot-wrap.is-past .pg-dot {
-  background: var(--strike-red, #b22222);
-  border-color: var(--strike-red, #b22222);
-}
-
+/* Active dot on the line */
 .pg-dot-wrap.is-active .pg-dot {
-  background: transparent;
-  border-color: var(--strike-red, #b22222);
-  box-shadow: 0 0 0 3px rgba(178, 34, 34, 0.18),
-              0 0 12px rgba(178, 34, 34, 0.5);
+  background: var(--primary-red);
+  box-shadow: 0 0 10px rgba(225,29,72,.6);
+  transform: scale(1.3); /* Slightly emphasize active dot */
 }
 
+/* The Label (Pill-shaped, placed just left of the node) */
+.pg-label {
+  position: absolute;
+  top: 50%;
+  right: 25px; /* Placed to the left of the dot */
+  transform: translateY(-50%);
+  
+  font-family: var(--font-mono, monospace);
+  font-size: 11px; /* Slightly larger text */
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #F5F5F5;
+  background: var(--base);
+  border: 1px solid var(--primary-red);
+  border-radius: 20px;
+  padding: 5px 14px;
+  
+  opacity: 0;
+  transition: all 0.3s ease;
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 3;
+}
 .pg-dot-wrap.is-active .pg-label {
-  color: var(--strike-red, #b22222);
-}
-
-.pg-dot-wrap:hover .pg-label {
-  color: rgba(255, 255, 255, 0.55);
-}
-
-.pg-dot-wrap:hover .pg-dot {
-  border-color: rgba(255, 255, 255, 0.4);
+  opacity: 1;
 }
 
 @media (max-width: 480px) {
