@@ -917,7 +917,7 @@ section {
     justify-content: center;
     padding: 80px 20px;
     overflow: hidden;
-    background: var(--void-black);
+    background: transparent;
     border: none;
 }
 
@@ -1408,13 +1408,15 @@ footer .container {
     overflow: hidden;
 }
 
-.tracks-background {
+.tracks-background#rh-net-canvas {
     position: fixed;
     top: 0;
     left: 0;
-    width: 100%;
+    width: 100vw;
     height: 100vh;
-    z-index: -1;
+    z-index: 9999;
+    pointer-events: none;
+    opacity: 1 !important;
 }
 
 .tracks-background img {
@@ -6125,6 +6127,27 @@ footer a:hover {
 
 @media (max-width: 480px) {
   #pg-indicator { display: none; }
+}
+
+/* =====================================================
+   NETWORK CANVAS BACKGROUND
+   ===================================================== */
+#rh-net-canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+
+/* Sections that should be positioned on top of the network */
+#mission, #tracks, #schedule, #treasury, #sponsors, #about, #footer {
+  position: relative;
+  z-index: 1;
 }
 
 /* =====================================================

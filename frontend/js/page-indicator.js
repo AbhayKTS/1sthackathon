@@ -28,6 +28,7 @@
         <span class="pg-label">${s.label}</span>
       </div>`).join("")}
   `;
+  rail.style.transition = "opacity 0.3s ease";
   document.body.appendChild(rail);
 
   const dotWraps = Array.from(rail.querySelectorAll(".pg-dot-wrap"));
@@ -62,6 +63,36 @@
         wrap.classList.toggle("is-active", i === activeIdx);
         wrap.classList.toggle("is-past",   i < activeIdx);
       });
+    }
+
+    // Determine if indicator should be hidden (Header or Footer)
+    let hideIndicator = false;
+
+    // 1. Hide on Footer
+    const footer = document.querySelector('footer');
+    if (footer) {
+      const scrollBottom = window.scrollY + window.innerHeight;
+      if (scrollBottom > footer.offsetTop + window.innerHeight * 0.1) {
+        hideIndicator = true;
+      }
+    }
+
+    // 2. Hide on Hero section
+    const missionSection = document.getElementById('mission');
+    if (missionSection) {
+      // If we haven't scrolled down far enough to reach the mission section
+      if (window.scrollY < missionSection.offsetTop - window.innerHeight * 0.5) {
+        hideIndicator = true;
+      }
+    }
+
+    // Apply visibility
+    if (hideIndicator) {
+      rail.style.opacity = '0';
+      rail.style.pointerEvents = 'none';
+    } else {
+      rail.style.opacity = '1';
+      rail.style.pointerEvents = 'auto';
     }
   }
 

@@ -7,13 +7,16 @@
     <title>RevengersHack | Rewrite the Timeline Hackathon</title>
     <meta name="description"
         content="RevengersHack — A Tokyo Revengers inspired hackathon. Code the timeline, rewrite the past, protect the future. revengershack.com">
-    <link rel="stylesheet" href="css/style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Creepster&display=swap" as="style">
-    <link href="https://fonts.googleapis.com/css2?family=Creepster&display=swap" rel="stylesheet">
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@300;400;600&family=JetBrains+Mono:wght@400;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Creepster&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
     <link rel="icon" type="image/png" href="/assets/images/image.webp">
+</head>
 <body>
+    <!-- Particle network canvas — fixed, behind all post-hero content -->
+    <canvas id="rh-net-canvas" aria-hidden="true"></canvas>
     <!-- Preloader -->
     <section id="animationSection" style="position: fixed; top: 0; left: 0; width: 100%; height: 100vh; background-color: #150211; z-index: 99999; display: flex; justify-content: center; align-items: center;">
         <div id="loader-text" style="opacity: 0; font-family: 'Creepster', 'Anton', sans-serif; font-size: clamp(3rem, 7vw, 7rem); text-transform: uppercase; letter-spacing: 6px; clip-path: polygon(0 0, 100% 0, 100% 100%, 0% 100%); display: flex; gap: 20px;">
@@ -123,12 +126,6 @@
 
 
     <section class="mission" id="mission">
-        <div class="mission-video-bg">
-            <video muted loop playsinline data-autoplay-on-visible preload="none" poster="assets/images/mission-poster.webp">
-                <source src="assets/videos/tokyo_revengers_about_bg.mp4" type="video/mp4">
-            </video>
-            <div class="video-overlay"></div>
-        </div>
 
         <div class="mission-container">
             <div class="mission-content">
@@ -1632,6 +1629,7 @@
     <script type="module" src="js/script.js"></script>
     <script src="js/timeline.js"></script>
     <script src="js/page-indicator.js"></script>
+    <script src="js/network-bg.js"></script>
 
     <!-- Marquee controller — extracted to external module to comply with CSP -->
     <script type="module" src="js/marquee.js"></script>
