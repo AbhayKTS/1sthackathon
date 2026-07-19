@@ -203,6 +203,7 @@ document.addEventListener("DOMContentLoaded", () => {
         
         let force = 0;
         let connectAlpha = 0; // Opacity modifier for connections
+        let activeShape = 0;
 
         if (cycleProgress < 0.4) {
             // Form shape tightly
