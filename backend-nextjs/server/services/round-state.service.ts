@@ -186,6 +186,18 @@ export async function transitionRound(
     const fromStatus = current.status;
     fromStatusStr = fromStatus;
 
+    // Safety net: reject docs whose status predates or corrupts the state machine.
+    // Without this, ROUND_TRANSITIONS[fromStatus] returns undefined and crashes with
+    // a raw TypeError instead of a readable error.
+    const validStatuses = Object.keys(ROUND_TRANSITIONS);
+    if (!validStatuses.includes(fromStatus)) {
+      throw Errors.validation(
+        `Round "${roundId}" has an invalid/legacy status "${fromStatus}" ` +
+        `that predates the round state machine. ` +
+        `Run the migrate-round-status script to fix it before transitioning.`
+      );
+    }
+
     // Validate transition
     const allowedNext = ROUND_TRANSITIONS[fromStatus];
     if (!allowedNext.includes(toStatus)) {
