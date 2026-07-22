@@ -975,9 +975,10 @@ async function fetchAndRenderRounds() {
                     <input type="text" class="form-input linked-sheet-input" placeholder="e.g. 1BxiMVs0XRYFgCE..." value="${sanitizeHTML(r.googleSheetId || '')}">
                 </div>
 
-                <div style="display: flex; gap: 8px;">
-                    <button type="button" class="btn-outline btn-activate" style="flex: 1; border-color: var(--accent); color: var(--accent); font-size: 11px; padding: 6px 12px;" ${r.status === 'Active' ? 'disabled style="opacity: 0.5; cursor: not-allowed; border-color: var(--border); color: var(--muted-foreground);"' : ''}>Activate</button>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <button type="button" class="btn-outline btn-activate" style="flex: 1; border-color: var(--accent); color: var(--accent); font-size: 11px; padding: 6px 12px;" ${r.status === 'Active' ? 'disabled style="opacity: 0.5; cursor: not-allowed; border-color: var(--border); color: var(--muted-foreground);"' : ''}>${r.status === 'Locked' ? 'Activate (N/A)' : 'Activate'}</button>
                     <button type="button" class="btn-outline btn-deactivate" style="flex: 1; border-color: #ef4444; color: #ef4444; font-size: 11px; padding: 6px 12px;" ${r.status !== 'Active' ? 'disabled style="opacity: 0.5; cursor: not-allowed; border-color: var(--border); color: var(--muted-foreground);"' : ''}>Deactivate</button>
+                    ${r.status === 'Locked' && currentAdminRole === 'super_admin' ? `<button type="button" class="btn-outline btn-reopen" style="flex: 1; border-color: #f59e0b; color: #f59e0b; font-size: 11px; padding: 6px 12px;">Reopen</button>` : ''}
                     <button type="button" class="btn-primary btn-save" style="flex: 1; font-size: 11px; padding: 6px 12px;">Save</button>
                 </div>
             `;
@@ -985,6 +986,7 @@ async function fetchAndRenderRounds() {
             // Wire button events
             const actBtn = card.querySelector(".btn-activate");
             const deactBtn = card.querySelector(".btn-deactivate");
+            const reopenBtn = card.querySelector(".btn-reopen");
             const saveBtn = card.querySelector(".btn-save");
             const deadlineInput = card.querySelector(".deadline-picker");
             const googleSheetInput = card.querySelector(".linked-sheet-input");
@@ -1046,6 +1048,42 @@ async function fetchAndRenderRounds() {
                     deactBtn.textContent = "Deactivate";
                 }
             });
+
+            // Reopen button — only rendered for super_admin when round is Locked.
+            if (reopenBtn) {
+                reopenBtn.addEventListener("click", async () => {
+                    const reason = window.prompt(
+                        `⚠️ SUPER ADMIN OVERRIDE\n\nYou are about to reopen "${r.title}" from Locked → Active.\n\nThis will allow new submissions again. Please enter a reason for the record:`
+                    );
+                    if (reason === null) return; // user cancelled
+                    if (!reason.trim()) {
+                        showToast("Reopen cancelled — a reason is required.", "error");
+                        return;
+                    }
+                    reopenBtn.disabled = true;
+                    reopenBtn.textContent = "Reopening...";
+                    try {
+                        const response = await fetch(`${API_BASE}/admin/rounds/${r.id}/transition`, {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json",
+                                Authorization: `Bearer ${idToken}`
+                            },
+                            body: JSON.stringify({ to: "Active", reason: reason.trim() })
+                        });
+                        if (!response.ok) {
+                            const errData = await response.json().catch(() => ({}));
+                            throw new Error(errData.message || "Failed to reopen round.");
+                        }
+                        showToast(`Round ${r.title} reopened (Active). Reason logged.`);
+                        await fetchAndRenderRounds();
+                    } catch (err) {
+                        showToast(err.message, "error");
+                        reopenBtn.disabled = false;
+                        reopenBtn.textContent = "Reopen";
+                    }
+                });
+            }
 
             saveBtn.addEventListener("click", async () => {
                 const deadlineStr = deadlineInput.value;

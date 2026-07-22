@@ -181,12 +181,16 @@ export async function updateRound(adminUid: string, roundId: string, input: Upda
 /**
  * Transitions a round to a new status.
  * Validates allowed transitions using the state machine.
+ *
+ * Special case: Locked → Active is a super_admin-only manual reopen.
+ * The caller MUST be super_admin and SHOULD supply a reason string.
  */
 export async function transitionRound(
   adminUid: string,
   roundId: string,
   toStatus: RoundStatus,
   isSuperAdmin = false,
+  reason?: string,
 ): Promise<void> {
   const db = getAdminDb();
   const ref = db.collection('rounds').doc(roundId);
@@ -232,6 +236,23 @@ export async function transitionRound(
       throw Errors.forbidden('Only super_admin can complete an Evaluation round (this publishes scores).');
     }
 
+    // Locked → Active: manual reopen — strictly super_admin only.
+    // Normal admins cannot undo an auto-lock even if they wanted to;
+    // only super_admin can reopen when a genuine mistake occurred.
+    if (fromStatus === 'Locked' && toStatus === 'Active') {
+      if (!isSuperAdmin) {
+        throw Errors.forbidden(
+          'Only super_admin can reopen a Locked round (Locked → Active). ' +
+          'Normal admins cannot override the auto-lock.'
+        );
+      }
+      if (!reason || !reason.trim()) {
+        throw Errors.validation(
+          'A non-empty reason is required when reopening a Locked round.'
+        );
+      }
+    }
+
     transaction.update(ref, {
       status: toStatus,
       // Auto-set isVisible when publishing
@@ -250,6 +271,19 @@ export async function transitionRound(
     metadata: { from: fromStatusStr, to: toStatus },
     ip: null,
   });
+
+  // Write a separate, easily-filterable audit entry for manual reopens.
+  if (fromStatusStr === 'Locked' && toStatus === 'Active' && isSuperAdmin) {
+    await writeAuditLog({
+      action: 'round.manual_reopen',
+      actorUid: adminUid,
+      actorRole: 'super_admin',
+      targetId: roundId,
+      targetType: 'rounds',
+      metadata: { from: 'Locked', to: 'Active', reason: reason?.trim() ?? '' },
+      ip: null,
+    });
+  }
 }
 
 /**

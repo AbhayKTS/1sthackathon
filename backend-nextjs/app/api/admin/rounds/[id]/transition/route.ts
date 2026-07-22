@@ -38,7 +38,11 @@ export async function POST(request: NextRequest, { params }: Params): Promise<Ne
       throw Errors.validation(`Invalid target status. Must be one of: ${VALID_STATUSES.join(', ')}`);
     }
 
-    await transitionRound(token.uid, id, to, token.role === 'super_admin');
+    // 'reason' is only required for the Locked → Active manual reopen path.
+    // Ignored for all other transitions (service layer enforces when needed).
+    const reason = typeof body.reason === 'string' ? body.reason : undefined;
+
+    await transitionRound(token.uid, id, to, token.role === 'super_admin', reason);
 
     const response = apiSuccess({ transitioned: true, roundId: id, to });
     return applyCorsHeaders(response, origin);

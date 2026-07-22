@@ -65,7 +65,7 @@ let activeRoundId = null;
 // Firebase real-time listener unsubscribers to prevent memory leaks and duplicate queries
 let roundsUnsubscribers = [];
 const roundStates = {};
-let announcementsInterval = null;
+let announcementsUnsub = null;   // onSnapshot unsubscriber for announcements
 let leaderboardUnsubscriber = null;
 let leaderboardDocUnsub = null;
 let notificationsUnsubscriber = null;
@@ -75,9 +75,9 @@ let countdownInterval = null;
 function cleanupListeners() {
     roundsUnsubscribers.forEach(unsub => unsub());
     roundsUnsubscribers = [];
-    if (announcementsInterval) {
-        clearInterval(announcementsInterval);
-        announcementsInterval = null;
+    if (announcementsUnsub) {
+        announcementsUnsub();
+        announcementsUnsub = null;
     }
     if (leaderboardUnsubscriber) {
         leaderboardUnsubscriber();
@@ -298,6 +298,45 @@ function loadActiveRounds() {
     startSharedRoundsListener();
 }
 
+/**
+ * Dynamically updates the top marquee ticker from live round data.
+ * Pass the active roundData object, or null when no round is active.
+ * Content is doubled because the CSS animation scrolls two copies
+ * of the text to create a seamless infinite scroll effect.
+ */
+function updateMarqueeTicker(roundData) {
+    const track = document.querySelector(".ticker-track");
+    if (!track) return;
+
+    let alertText, callText;
+    if (roundData) {
+        const title = (roundData.title || "ROUND").toUpperCase();
+        let deadlineStr = "TBA";
+        if (roundData.submissionDeadline) {
+            try {
+                const d = roundData.submissionDeadline.toDate
+                    ? roundData.submissionDeadline.toDate()
+                    : new Date(roundData.submissionDeadline);
+                deadlineStr = d.toLocaleString("en-IN", {
+                    day: "2-digit", month: "short", year: "numeric",
+                    hour: "2-digit", minute: "2-digit", hour12: true
+                }).toUpperCase();
+            } catch (_) { /* leave as TBA */ }
+        }
+        alertText = `// ${title} SUBMISSIONS OPEN — DEADLINE: ${deadlineStr}`;
+        callText  = `[ SUBMIT OR PERISH ]`;
+    } else {
+        alertText = `// STANDBY — AWAITING NEXT ROUND`;
+        callText  = `[ STAY SHARP ]`;
+    }
+
+    // Build two copies so the scroll loop is seamless.
+    track.innerHTML = [0, 1].map(() => `
+        <span class="px-8 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">${alertText}</span>
+        <span class="px-8 font-mono text-[10px] uppercase tracking-[0.2em] text-primary">${callText}</span>
+    `).join('');
+}
+
 function renderActiveRound() {
     const activeEntry = Object.entries(roundStates).find(([, data]) => data && data.status === 'Active');
 
@@ -337,6 +376,9 @@ function renderActiveRound() {
         if (displayEl) displayEl.innerHTML = `<span style="font-size:1.5rem; color: var(--muted-foreground); letter-spacing: 0.2em;">AWAITING</span>`;
         const progressEl = document.getElementById("countdownProgress");
         if (progressEl) progressEl.style.width = "0%";
+
+        // Ticker: standby state
+        updateMarqueeTicker(null);
         return;
     }
 
@@ -350,42 +392,40 @@ function renderActiveRound() {
     if (activeRoundTitle) activeRoundTitle.textContent = roundData.title || "Active Round";
     if (activeRoundDesc) activeRoundDesc.textContent = roundData.description || "Submit your payload below.";
     
-    let topText = "AWAITING";
-    let bottomText = "NEXT ROUND";
-    
-    let t = (roundData.title || "").toLowerCase();
-    
-    // Dynamic Hero Header & Badges
-    if (t.includes("1") || t.includes("one")) {
-        if (heroImageBg) heroImageBg.src = new URL('../assets/images/round1img.png', import.meta.url).href;
-        if (heroRoundBadge) heroRoundBadge.textContent = `LIVE // ROUND 01`;
-        if (heroRoundDesc) heroRoundDesc.innerHTML = roundData.description || `This is your first move. Submit your required links to define your vision.`;
-        topText = "SHOW US"; bottomText = "WHAT YOU GOT";
-    } else if (t.includes("2") || t.includes("two")) {
-        if (heroImageBg) heroImageBg.src = new URL('../assets/images/row2-bg.jpg', import.meta.url).href;
-        if (heroRoundBadge) heroRoundBadge.textContent = `LIVE // ROUND 02`;
-        if (heroRoundDesc) heroRoundDesc.innerHTML = roundData.description || `The underground waits for no one. Lock in your code, defend your turf, and take the throne.`;
-        topText = "WE RIDE"; bottomText = "AT MIDNIGHT";
-    } else if (t.includes("3") || t.includes("three")) {
-        if (heroImageBg) heroImageBg.src = new URL('../assets/images/round3img.png', import.meta.url).href;
-        if (heroRoundBadge) heroRoundBadge.textContent = `LIVE // ROUND 03 - FINALE`;
-        if (heroRoundDesc) heroRoundDesc.innerHTML = roundData.description || `This is it. The final showdown.<br /><span class="text-primary">Only one will rise.</span>`;
-        topText = "SEEK THE"; bottomText = "WAY IN OR OUT";
-    } else {
-        if (heroRoundBadge) heroRoundBadge.textContent = `LIVE // ${roundData.title.toUpperCase()}`;
-        if (heroRoundDesc) heroRoundDesc.textContent = roundData.description || "Submit your payload below.";
-        topText = "MISSION"; bottomText = "ACTIVE";
-    }
+    // ── Hero header: fully data-driven, no title string-matching ─────────────
+    // Background image is keyed by roundId (purely decorative — fine to keep).
+    const roundImageMap = {
+        'round-1': '../assets/images/round1img.png',
+        'round-2': '../assets/images/row2-bg.jpg',
+        'round-3': '../assets/images/round3img.png',
+    };
+    const heroImg = roundImageMap[rid] || '../assets/images/round1img.png';
+    if (heroImageBg) heroImageBg.src = new URL(heroImg, import.meta.url).href;
 
-    // Dynamic What To Submit List from roundData.submissionTypes
+    // Badge and description come straight from roundData.
+    if (heroRoundBadge) heroRoundBadge.textContent = `LIVE // ${(roundData.title || rid).toUpperCase()}`;
+    if (heroRoundDesc) heroRoundDesc.textContent = roundData.description || "Submit your payload below.";
+
+    // Hero title copy — one static phrase per round slot, kept purely for atmosphere.
+    // If the round ID doesn't match a known slot, fall back to a generic message.
+    const heroCopy = {
+        'round-1': { top: 'SHOW US',  bottom: 'WHAT YOU GOT' },
+        'round-2': { top: 'WE RIDE',  bottom: 'AT MIDNIGHT' },
+        'round-3': { top: 'SEEK THE', bottom: 'WAY IN OR OUT' },
+    };
+    const copy = heroCopy[rid] || { top: 'MISSION', bottom: 'ACTIVE' };
+    if (heroRoundTitle) heroRoundTitle.innerHTML =
+        `${copy.top}<br /><span class="text-primary" style="animation: flicker 4s infinite">${copy.bottom}</span>`;
+
+    // ── What To Submit — driven by roundData.submissionTypes from Round Manager ─
     if (heroRequirementsTitle) heroRequirementsTitle.textContent = "WHAT TO SUBMIT";
     if (heroRequirementsList) {
         const typeLabels = {
-            PPT: { label: 'Presentation Deck (PPT)', icon: '<rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>' },
-            Github: { label: 'Source Code (GitHub)', icon: '<polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline>' },
-            Prototype: { label: 'Prototype Link', icon: '<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>' },
-            Demo: { label: 'Live Demo Link', icon: '<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line>' },
-            Custom: { label: 'Custom Submission Link', icon: '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/>' }
+            PPT:       { label: 'Presentation Deck (PPT)',    icon: '<rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>' },
+            Github:    { label: 'Source Code (GitHub)',       icon: '<polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline>' },
+            Prototype: { label: 'Prototype Link',             icon: '<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>' },
+            Demo:      { label: 'Live Demo Link',             icon: '<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line>' },
+            Custom:    { label: 'Custom Submission Link',     icon: '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/>' }
         };
 
         const currentTypes = Array.isArray(roundData.submissionTypes) && roundData.submissionTypes.length > 0
@@ -404,7 +444,8 @@ function renderActiveRound() {
         }).join('');
     }
 
-    if (heroRoundTitle) heroRoundTitle.innerHTML = `${topText}<br /><span class="text-primary" style="animation: flicker 4s infinite">${bottomText}</span>`;
+    // ── Marquee ticker: live round info ───────────────────────────────────────
+    updateMarqueeTicker(roundData);
     
     const githubInput = document.getElementById("githubLink");
     const demoInput = document.getElementById("demoLink");
@@ -517,8 +558,17 @@ function renderActiveRound() {
 function startSharedRoundsListener() {
     if (roundsUnsubscribers.length > 0) return;
 
+    // IMPORTANT: The where() filters here MUST mirror the Firestore security rule exactly
+    // (firestore.rules line 99-104). Without them, any Draft round (isVisible: false) in
+    // the same collection causes Firestore to reject the ENTIRE snapshot with permission-denied
+    // — not just that one document. This is the same fix applied to announcements previously.
     const roundsRef = collection(db, "rounds");
-    const unsub = onSnapshot(roundsRef, (snap) => {
+    const q = query(
+        roundsRef,
+        where("isVisible", "==", true),
+        where("status", "in", ["Published", "Active", "Locked", "Evaluation", "Completed"])
+    );
+    const unsub = onSnapshot(q, (snap) => {
         Object.keys(roundStates).forEach(k => delete roundStates[k]);
         
         snap.forEach(docSnap => {
@@ -678,14 +728,33 @@ async function fetchAnnouncements() {
     }
 }
 
+/**
+ * Switches announcements from 30-second polling back to a live Firestore
+ * onSnapshot listener. The where() filter MUST mirror firestore.rules exactly
+ * so any hidden announcement doesn't trigger a collection-wide permission-denied.
+ * Same fix pattern applied to rounds in startSharedRoundsListener().
+ */
 function listenToAnnouncements() {
-    if (announcementsInterval) {
-        clearInterval(announcementsInterval);
-        announcementsInterval = null;
+    // Tear down any existing listener before creating a new one.
+    if (announcementsUnsub) {
+        announcementsUnsub();
+        announcementsUnsub = null;
     }
 
-    fetchAnnouncements();
-    announcementsInterval = setInterval(fetchAnnouncements, 30000);
+    const annRef = collection(db, "announcements");
+    // where("isVisible", "==", true) mirrors the Firestore rule exactly — without
+    // it, a single doc where isVisible is missing/false poisons the whole snapshot.
+    const q = query(annRef, where("isVisible", "==", true), orderBy("timestamp", "desc"), limit(20));
+
+    announcementsUnsub = onSnapshot(q, () => {
+        // Re-use the existing fetch logic which already builds the feed correctly.
+        // onSnapshot fires immediately on attach, so no separate initial call needed.
+        fetchAnnouncements();
+    }, (error) => {
+        console.error("Announcements listener error:", error);
+        const announcementsStatus = document.getElementById("announcementsStatusMessage");
+        if (announcementsStatus) announcementsStatus.textContent = "Announcements unavailable.";
+    });
 }
 
 function updateUnreadBadge(count) {

@@ -174,7 +174,10 @@ export const ROUND_TRANSITIONS: Record<RoundStatus, RoundStatus[]> = {
   Draft:      ['Published'],
   Published:  ['Draft', 'Active'],
   Active:     ['Locked'],
-  Locked:     ['Evaluation'],
+  // 'Active' here is the super_admin-only manual reopen path.
+  // Normal admins are blocked at the service layer (transitionRound guards
+  // Locked → Active with a strict isSuperAdmin check).
+  Locked:     ['Evaluation', 'Active'],
   Evaluation: ['Completed'],
   Completed:  ['Archived'],
   Archived:   [],
@@ -444,6 +447,7 @@ export type AuditAction =
   | 'round.created'
   | 'round.updated'
   | 'round.transition'             // replaces 'round.activated' — stores from/to status
+  | 'round.manual_reopen'          // super_admin-only: Locked → Active override with reason
   | 'round.session_assigned'       // was misused as 'round.activated'
   // Submissions
   | 'submission.submitted'
