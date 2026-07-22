@@ -29,6 +29,7 @@ export interface CreateRoundInput {
   description: string;
   type: RoundType;
   submissionType: SubmissionType;
+  submissionTypes?: SubmissionType[];  // optional at creation; defaults to [submissionType]
 }
 
 export interface UpdateRoundInput {
@@ -41,6 +42,7 @@ export interface UpdateRoundInput {
   canvaViewerLink?: string | null;
   type?: RoundType;
   submissionType?: SubmissionType;
+  submissionTypes?: SubmissionType[];  // ordered; index 0 = required, 1+ = optional
   allowedTeams?: 'all' | string[];
   startsAt?: string | null;
   endsAt?: string | null;
@@ -85,6 +87,7 @@ export async function createRound(adminUid: string, input: CreateRoundInput): Pr
     type: input.type,
     status: 'Draft' as RoundStatus,
     submissionType: input.submissionType,
+    submissionTypes: input.submissionTypes ?? [input.submissionType],
     allowedTeams: 'all',
     startsAt: null,
     endsAt: null,
@@ -141,7 +144,19 @@ export async function updateRound(adminUid: string, roundId: string, input: Upda
   if (input.driveLink !== undefined) update.driveLink = input.driveLink;
   if (input.canvaViewerLink !== undefined) update.canvaViewerLink = input.canvaViewerLink;
   if (input.type !== undefined) update.type = input.type;
-  if (input.submissionType !== undefined) update.submissionType = input.submissionType;
+
+  // Keep submissionType (singular) and submissionTypes (array) in sync.
+  // - If only submissionTypes is sent, derive submissionType from index 0.
+  // - If only submissionType is sent, set submissionTypes to a single-item array.
+  // - If both are sent, submissionTypes wins (and submissionType = submissionTypes[0]).
+  if (input.submissionTypes !== undefined && input.submissionTypes.length > 0) {
+    update.submissionTypes = input.submissionTypes;
+    update.submissionType  = input.submissionTypes[0];  // primary for compat
+  } else if (input.submissionType !== undefined) {
+    update.submissionType  = input.submissionType;
+    update.submissionTypes = [input.submissionType];
+  }
+
   if (input.allowedTeams !== undefined) update.allowedTeams = input.allowedTeams;
   if ('startsAt' in input) update.startsAt = parseDate(input.startsAt);
   if ('endsAt' in input) update.endsAt = parseDate(input.endsAt);

@@ -427,64 +427,65 @@ function renderActiveRound() {
     if (adminAssignedMsg) { adminAssignedMsg.classList.add("hidden"); }
     if (submitMissionBtn) { submitMissionBtn.innerHTML = `Submit Build <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-3.5 w-3.5"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>`; }
 
-    const submissionType = roundData.submissionType || 'Github'; // default to Github if undefined
+    const submissionTypes = Array.isArray(roundData.submissionTypes) && roundData.submissionTypes.length > 0
+        ? roundData.submissionTypes
+        : [roundData.submissionType || 'Github'];
 
-    if (submissionType === 'PPT') {
-        if (pptInput) {
-            pptInput.classList.remove("hidden");
-            pptInput.required = true;
-        }
-        if (submitMissionBtn) {
-            submitMissionBtn.innerHTML = `Submit Deck <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-3.5 w-3.5"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>`;
-        }
-    } else if (submissionType === 'Prototype') {
-        if (prototypeInput) {
-            prototypeInput.classList.remove("hidden");
-            prototypeInput.required = true;
-        }
-        if (noPrototypeLabel) {
-            noPrototypeLabel.classList.remove("hidden");
-            if (hasNoPrototypeCheckbox) {
-                hasNoPrototypeCheckbox.onchange = (e) => {
-                    if (prototypeInput) {
-                        prototypeInput.required = !e.target.checked;
-                        if (e.target.checked) prototypeInput.value = "";
-                        prototypeInput.disabled = e.target.checked;
-                    }
-                };
-            }
-        }
-        if (submitMissionBtn) {
-            submitMissionBtn.innerHTML = `Submit Prototype <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-3.5 w-3.5"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>`;
-        }
-    } else if (submissionType === 'Demo') {
-        if (demoInput) {
-            demoInput.classList.remove("hidden");
-            demoInput.required = true;
-            demoInput.placeholder = "LIVE DEMO URL";
-        }
-    } else if (submissionType === 'Custom') {
-        if (customInput) {
-            customInput.classList.remove("hidden");
-            customInput.required = true;
-        }
-    } else if (submissionType === 'None') {
-        if (submissionForm) {
-            submissionForm.style.display = "none";
-        }
-        if (adminAssignedMsg) {
-            adminAssignedMsg.classList.remove("hidden");
-        }
+    if (submissionTypes.includes('None')) {
+        if (submissionForm) submissionForm.style.display = "none";
+        if (adminAssignedMsg) adminAssignedMsg.classList.remove("hidden");
     } else {
-        // Github or general
-        if (githubInput) {
-            githubInput.classList.remove("hidden");
-            githubInput.required = true;
-            githubInput.placeholder = "GITHUB REPO URL";
-        }
-        if (demoInput) {
-            demoInput.classList.remove("hidden");
-            demoInput.placeholder = "LIVE DEMO URL (OPTIONAL)";
+        submissionTypes.forEach((type, idx) => {
+            const isPrimary = idx === 0;
+            const optSuffix = isPrimary ? "" : " (OPTIONAL)";
+
+            if (type === 'PPT') {
+                if (pptInput) {
+                    pptInput.classList.remove("hidden");
+                    pptInput.required = isPrimary;
+                    pptInput.placeholder = `PRESENTATION DECK (PPT/PDF URL)${optSuffix}`;
+                }
+            } else if (type === 'Github') {
+                if (githubInput) {
+                    githubInput.classList.remove("hidden");
+                    githubInput.required = isPrimary;
+                    githubInput.placeholder = `GITHUB REPO URL${optSuffix}`;
+                }
+            } else if (type === 'Prototype') {
+                if (prototypeInput) {
+                    prototypeInput.classList.remove("hidden");
+                    prototypeInput.required = isPrimary;
+                    prototypeInput.placeholder = `PROTOTYPE URL (E.G. FIGMA, CODEPEN)${optSuffix}`;
+                }
+                if (noPrototypeLabel && isPrimary) {
+                    noPrototypeLabel.classList.remove("hidden");
+                    if (hasNoPrototypeCheckbox) {
+                        hasNoPrototypeCheckbox.onchange = (e) => {
+                            if (prototypeInput) {
+                                prototypeInput.required = !e.target.checked && isPrimary;
+                                if (e.target.checked) prototypeInput.value = "";
+                                prototypeInput.disabled = e.target.checked;
+                            }
+                        };
+                    }
+                }
+            } else if (type === 'Demo') {
+                if (demoInput) {
+                    demoInput.classList.remove("hidden");
+                    demoInput.required = isPrimary;
+                    demoInput.placeholder = `LIVE DEMO URL${optSuffix}`;
+                }
+            } else if (type === 'Custom') {
+                if (customInput) {
+                    customInput.classList.remove("hidden");
+                    customInput.required = isPrimary;
+                    customInput.placeholder = `SUBMISSION URL${optSuffix}`;
+                }
+            }
+        });
+
+        if (submitMissionBtn) {
+            submitMissionBtn.innerHTML = `Submit Build <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-3.5 w-3.5"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>`;
         }
     }
     
@@ -840,6 +841,10 @@ if (submissionForm) {
     
     const githubLink = document.getElementById("githubLink")?.value || "";
     const demoLink = document.getElementById("demoLink")?.value || "";
+    const pptLink = document.getElementById("pptLink")?.value || "";
+    const prototypeLink = document.getElementById("prototypeLink")?.value || "";
+    const customLink = document.getElementById("customLink")?.value || "";
+    const hasNoPrototype = document.getElementById("hasNoPrototype")?.checked || false;
     
     try {
         const idToken = await auth.currentUser.getIdToken(true);
@@ -848,7 +853,11 @@ if (submissionForm) {
             teamId: currentTeamId,
             roundId: activeRoundId,
             githubLink,
-            demoLink
+            demoLink,
+            pptLink,
+            prototypeLink,
+            customLink,
+            hasNoPrototype
         };
 
         const response = await fetch(`${API_BASE}/submission/submit`, {

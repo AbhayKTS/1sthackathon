@@ -952,16 +952,23 @@ async function fetchAndRenderRounds() {
                 </div>
                 
                 <div class="form-group" style="margin-bottom: 12px;">
-                    <label class="form-label" style="font-size: 10px;">SUBMISSION TYPE</label>
-                    <select class="form-input submission-type-select">
-                        <option value="PPT" ${r.submissionType === 'PPT' ? 'selected' : ''}>PPT</option>
-                        <option value="Github" ${r.submissionType === 'Github' ? 'selected' : ''}>Github</option>
-                        <option value="Prototype" ${r.submissionType === 'Prototype' ? 'selected' : ''}>Prototype</option>
-                        <option value="Demo" ${r.submissionType === 'Demo' ? 'selected' : ''}>Demo</option>
-                        <option value="Custom" ${r.submissionType === 'Custom' ? 'selected' : ''}>Custom</option>
-                        <option value="None" ${r.submissionType === 'None' ? 'selected' : ''}>None</option>
-                    </select>
+                    <label class="form-label" style="font-size: 10px;">SUBMISSION TYPES <span style="color: var(--muted-foreground); font-weight: 400;">(first checked = required, rest = optional)</span></label>
+                    <div class="submission-types-group" style="display: flex; flex-direction: column; gap: 6px; margin-top: 4px;">
+                        ${['PPT','Github','Prototype','Demo','Custom'].map(type => {
+                            const types = Array.isArray(r.submissionTypes) ? r.submissionTypes : (r.submissionType ? [r.submissionType] : []);
+                            const idx = types.indexOf(type);
+                            const isChecked = idx !== -1;
+                            const label = { PPT: 'PPT / Slides', Github: 'GitHub Repo', Prototype: 'Prototype Link', Demo: 'Live Demo', Custom: 'Custom Link' }[type];
+                            return `<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-family:monospace;font-size:11px;color:var(--foreground);">
+                                <input type="checkbox" class="submission-type-checkbox" data-type="${type}" ${isChecked ? 'checked' : ''} style="accent-color:var(--primary);width:14px;height:14px;">
+                                <span>${label}</span>
+                                ${isChecked && idx === 0 ? '<span style="font-size:9px;color:var(--primary);letter-spacing:.1em;">REQUIRED</span>' : ''}
+                                ${isChecked && idx > 0 ? '<span style="font-size:9px;color:var(--muted-foreground);letter-spacing:.1em;">OPTIONAL</span>' : ''}
+                            </label>`;
+                        }).join('')}
+                    </div>
                 </div>
+
 
                 <div class="form-group" style="margin-bottom: 16px;">
                     <label class="form-label" style="font-size: 10px;">LINKED GOOGLE SHEET ID (Optional)</label>
@@ -980,7 +987,6 @@ async function fetchAndRenderRounds() {
             const deactBtn = card.querySelector(".btn-deactivate");
             const saveBtn = card.querySelector(".btn-save");
             const deadlineInput = card.querySelector(".deadline-picker");
-            const submissionTypeSelect = card.querySelector(".submission-type-select");
             const googleSheetInput = card.querySelector(".linked-sheet-input");
 
             actBtn.addEventListener("click", async () => {
@@ -1043,9 +1049,17 @@ async function fetchAndRenderRounds() {
 
             saveBtn.addEventListener("click", async () => {
                 const deadlineStr = deadlineInput.value;
-                const submissionType = submissionTypeSelect.value;
                 const googleSheetId = googleSheetInput.value;
 
+                // Collect checked submission types in DOM order
+                const checkedBoxes = [...card.querySelectorAll(".submission-type-checkbox:checked")];
+                const submissionTypes = checkedBoxes.map(cb => cb.dataset.type);
+                const submissionType = submissionTypes[0] || null;
+
+                if (!submissionTypes.length) {
+                    showToast("Please select at least one submission type.", "error");
+                    return;
+                }
                 if (!deadlineStr) {
                     showToast("Please select a valid deadline date and time.", "error");
                     return;
@@ -1064,7 +1078,8 @@ async function fetchAndRenderRounds() {
                         body: JSON.stringify({
                             roundId: r.id,
                             submissionDeadline: timeDate.toISOString(),
-                            submissionType,
+                            submissionTypes,   // ordered array — backend derives submissionType from [0]
+                            submissionType,    // keep for compat with older backend versions
                             googleSheetId
                         })
                     });

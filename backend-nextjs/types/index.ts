@@ -191,7 +191,8 @@ export interface RoundDoc {
   canvaViewerLink: string | null;
   type: RoundType;
   status: RoundStatus;
-  submissionType: SubmissionType;
+  submissionType: SubmissionType;         // primary type — always submissionTypes[0]
+  submissionTypes?: SubmissionType[];     // ordered list: index 0 = required, 1+ = optional
   allowedTeams: 'all' | string[];
   startsAt: Timestamp | null;
   endsAt: Timestamp | null;
@@ -228,6 +229,7 @@ export interface SubmissionDoc {
   submittedBy: string;
   roundType: RoundType;
   submissionType: SubmissionType;
+  submissionTypes?: SubmissionType[];  // ordered list used at submission time
   // Content fields (populated based on submissionType)
   pptLink: string | null;
   prototypeLink: string | null;

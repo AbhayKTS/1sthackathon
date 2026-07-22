@@ -119,8 +119,12 @@ export async function submitPayload(userUid: string, input: SubmitPayloadInput):
     throw Errors.forbidden('Your team is not eligible for this round.');
   }
 
-  // 5. Branch by submissionType and build submission document
-  const submissionType = (roundData['submissionType'] ?? 'Github') as SubmissionType;
+  // 5. Resolve ordered submission types from round data
+  // submissionTypes is the new multi-type array; submissionType is the legacy primary.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const rawTypes = roundData['submissionTypes'] as SubmissionType[] | undefined;
+  const primaryType = (rawTypes?.[0] ?? roundData['submissionType'] ?? 'Github') as SubmissionType;
+  const allTypes: SubmissionType[] = rawTypes ?? [primaryType];
   const teamName: string = teamData['teamName'] ?? '';
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -128,8 +132,9 @@ export async function submitPayload(userUid: string, input: SubmitPayloadInput):
     teamId: input.teamId,
     roundId: input.roundId,
     submittedBy: userUid,
-    submissionType,
-    roundType: roundData['type'] ?? 'general',  // legacy compat
+    submissionType: primaryType,           // primary, for compat
+    submissionTypes: allTypes,             // full ordered list
+    roundType: roundData['type'] ?? 'general',
     status: 'Submitted',
     submittedAt: FieldValue.serverTimestamp(),
     lockedAt: null,
@@ -143,24 +148,25 @@ export async function submitPayload(userUid: string, input: SubmitPayloadInput):
 
   let sheetSyncData: Record<string, string | number> | null = null;
   const sheetId = roundData['googleSheetId'] ?? null;
-
   const submittedAtIso = new Date().toISOString();
 
-  switch (submissionType) {
+  // Shared base for sheet row — all submitted links will be appended below
+  const sheetBase: Record<string, string | number> = {
+    teamId: input.teamId,
+    roundId: input.roundId,
+    submittedAt: submittedAtIso,
+  };
+
+  // ── Primary type validation (required) ───────────────────────────────────
+  switch (primaryType) {
     case 'PPT': {
       if (!input.pptLink?.trim()) {
         throw Errors.validation('A PPT link (Canva / Google Slides) is required for this round.');
       }
       submissionDoc.pptLink = input.pptLink.trim();
-      sheetSyncData = {
-        teamId: input.teamId,
-        roundId: input.roundId,
-        submittedAt: submittedAtIso,
-        pptLink: input.pptLink.trim(),
-      };
+      sheetBase['pptLink'] = input.pptLink.trim();
       break;
     }
-
     case 'Prototype': {
       if (!input.hasNoPrototype && !input.prototypeLink?.trim()) {
         throw Errors.validation(
@@ -169,63 +175,78 @@ export async function submitPayload(userUid: string, input: SubmitPayloadInput):
       }
       submissionDoc.prototypeLink = input.prototypeLink?.trim() ?? null;
       submissionDoc.hasNoPrototype = !!input.hasNoPrototype;
-      sheetSyncData = {
-        teamId: input.teamId,
-        roundId: input.roundId,
-        submittedAt: submittedAtIso,
-        prototypeLink: input.prototypeLink?.trim() ?? '(no prototype)',
-      };
+      sheetBase['prototypeLink'] = input.prototypeLink?.trim() ?? '(no prototype)';
       break;
     }
-
     case 'Demo': {
       if (!input.demoLink?.trim()) {
         throw Errors.validation('A Demo link is required for this round.');
       }
       submissionDoc.demoLink = input.demoLink.trim();
-      sheetSyncData = {
-        teamId: input.teamId,
-        roundId: input.roundId,
-        submittedAt: submittedAtIso,
-        demoLink: input.demoLink.trim(),
-      };
+      sheetBase['demoLink'] = input.demoLink.trim();
       break;
     }
-
     case 'Custom': {
       submissionDoc.customLink = input.customLink?.trim() ?? null;
-      sheetSyncData = {
-        teamId: input.teamId,
-        roundId: input.roundId,
-        submittedAt: submittedAtIso,
-        customLink: input.customLink?.trim() ?? '',
-      };
+      sheetBase['customLink'] = input.customLink?.trim() ?? '';
       break;
     }
-
     case 'None': {
       throw Errors.validation(
         'Teams do not submit links for this round. Your session will be assigned by the admin.'
       );
     }
-
     case 'Github':
     default: {
       if (!input.githubLink?.trim()) {
-        throw Errors.validation('A GitHub link is required for this round.');
+        throw Errors.validation('A GitHub repository link is required for this round.');
       }
       submissionDoc.githubLink = input.githubLink.trim();
-      submissionDoc.demoLink = input.demoLink?.trim() ?? null;
-      sheetSyncData = {
-        teamId: input.teamId,
-        roundId: input.roundId,
-        submittedAt: submittedAtIso,
-        githubLink: input.githubLink.trim(),
-        demoLink: input.demoLink?.trim() ?? '',
-      };
+      sheetBase['githubLink'] = input.githubLink.trim();
       break;
     }
   }
+
+  // ── Secondary types (optional — accept if provided) ────────────────────────
+  for (const secondaryType of allTypes.slice(1)) {
+    switch (secondaryType) {
+      case 'PPT':
+        if (input.pptLink?.trim()) {
+          submissionDoc.pptLink = input.pptLink.trim();
+          sheetBase['pptLink'] = input.pptLink.trim();
+        }
+        break;
+      case 'Github':
+        if (input.githubLink?.trim()) {
+          submissionDoc.githubLink = input.githubLink.trim();
+          sheetBase['githubLink'] = input.githubLink.trim();
+        }
+        break;
+      case 'Prototype':
+        if (input.prototypeLink?.trim()) {
+          submissionDoc.prototypeLink = input.prototypeLink.trim();
+          sheetBase['prototypeLink'] = input.prototypeLink.trim();
+        } else if (input.hasNoPrototype) {
+          submissionDoc.hasNoPrototype = true;
+          sheetBase['prototypeLink'] = '(no prototype)';
+        }
+        break;
+      case 'Demo':
+        if (input.demoLink?.trim()) {
+          submissionDoc.demoLink = input.demoLink.trim();
+          sheetBase['demoLink'] = input.demoLink.trim();
+        }
+        break;
+      case 'Custom':
+        if (input.customLink?.trim()) {
+          submissionDoc.customLink = input.customLink.trim();
+          sheetBase['customLink'] = input.customLink.trim();
+        }
+        break;
+    }
+  }
+
+  sheetSyncData = sheetBase;
 
   // 6. Upsert submission doc (composite ID = idempotent re-submit)
   await submissionRef.set(submissionDoc, { merge: true });
@@ -234,8 +255,8 @@ export async function submitPayload(userUid: string, input: SubmitPayloadInput):
   if (sheetSyncData) {
     const effectiveSheetId =
       sheetId ||
-      (submissionType === 'PPT' ? env.GOOGLE_SHEET_PPT_ID : null) ||
-      (submissionType === 'Prototype' ? env.GOOGLE_SHEET_PROTO_ID : null) ||
+      (primaryType === 'PPT' ? env.GOOGLE_SHEET_PPT_ID : null) ||
+      (primaryType === 'Prototype' ? env.GOOGLE_SHEET_PROTO_ID : null) ||
       null;
 
     if (effectiveSheetId) {
@@ -265,7 +286,8 @@ export async function submitPayload(userUid: string, input: SubmitPayloadInput):
     metadata: {
       teamId: input.teamId,
       roundId: input.roundId,
-      submissionType,
+      submissionType: primaryType,
+      submissionTypes: allTypes,
       ...(isUpdate && {
         oldFields: {
           pptLink: oldValues?.pptLink || null,
