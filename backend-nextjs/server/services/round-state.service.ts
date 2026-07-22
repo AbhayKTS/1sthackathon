@@ -50,6 +50,8 @@ export interface UpdateRoundInput {
   timerDuration?: number | null;
   googleSheetId?: string | null;
   isVisible?: boolean;
+  isTimeLeapRound?: boolean;
+  timeLeapLink?: string | null;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
