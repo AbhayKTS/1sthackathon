@@ -137,6 +137,9 @@ onAuthStateChanged(auth, async (user) => {
         currentUserRole = userData.role;
 
         if (currentUserRole === "participant_leader") {
+            // Confirmed: correct role. Reveal the form and dismiss the loading state.
+            document.getElementById("authLoadingPlaceholder").classList.add("hidden");
+            document.getElementById("onboardingContent").classList.remove("hidden");
             // Setup Leader onboarding flow
             setupLeaderUI(user, userData);
         } else if (currentUserRole === "participant_member") {

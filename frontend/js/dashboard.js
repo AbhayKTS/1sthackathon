@@ -580,11 +580,15 @@ function startCountdown(targetTime) {
 async function fetchAnnouncements() {
     try {
         const annRef = collection(db, "announcements");
-        const q = query(annRef, orderBy("timestamp", "desc"), limit(20));
+        // where("isVisible", "==", true) must mirror the Firestore security rule exactly.
+        // Without it, any doc in the collection that has isVisible missing/false causes
+        // the ENTIRE query to throw permission-denied — not just that one doc.
+        const q = query(annRef, where("isVisible", "==", true), orderBy("timestamp", "desc"), limit(20));
         const snapshot = await getDocs(q);
-        
-        // filter out soft-deleted announcements
-        const visibleDocs = snapshot.docs.filter(docSnap => docSnap.data().isVisible !== false);
+
+        // All returned docs already satisfy isVisible === true (enforced by the query
+        // and mirrored by the Firestore rule), so no client-side filtering is needed.
+        const visibleDocs = snapshot.docs;
 
         if (visibleDocs.length === 0) {
             announcementsFeed.innerHTML = `<p style="color: rgba(255,255,255,0.5); font-size: 0.9rem; padding: 20px; text-align: center;">No new communications.</p>`;

@@ -987,7 +987,20 @@ async function fetchAndRenderRounds() {
                 actBtn.disabled = true;
                 actBtn.textContent = "Activating...";
                 try {
-                    const response = await fetch(`${API_BASE}/admin/rounds/${r.id}/transition`, {
+                    // If the round is still in Draft, it must pass through Published first.
+                    if (r.status === "Draft") {
+                        const publishRes = await fetch(`${API_BASE}/admin/rounds/${r.id}/transition`, {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json",
+                                Authorization: `Bearer ${idToken}`
+                            },
+                            body: JSON.stringify({ to: "Published" })
+                        });
+                        if (!publishRes.ok) throw new Error("Failed to publish round before activating.");
+                    }
+                    // Now transition to Active (works from either Published or already-Published).
+                    const activeRes = await fetch(`${API_BASE}/admin/rounds/${r.id}/transition`, {
                         method: "POST",
                         headers: {
                             "Content-Type": "application/json",
@@ -995,12 +1008,11 @@ async function fetchAndRenderRounds() {
                         },
                         body: JSON.stringify({ to: "Active" })
                     });
-                    if (!response.ok) throw new Error("Failed to activate round.");
+                    if (!activeRes.ok) throw new Error("Failed to activate round.");
                     showToast(`Round ${r.title} activated successfully!`);
                     await fetchAndRenderRounds();
                 } catch (err) {
                     showToast(err.message, "error");
-                } finally {
                     actBtn.disabled = false;
                     actBtn.textContent = "Activate";
                 }
@@ -2396,7 +2408,7 @@ async function initSessionsTab() {
             if (roundsRes.ok) {
                 const roundsResult = await roundsRes.json();
                 const allRounds = roundsResult.data?.rounds || [];
-                allRounds.filter(r => r.status === 'Active' || r.status === 'draft' || r.status === 'Published').forEach(r => {
+                allRounds.filter(r => r.status === 'Active' || r.status === 'Draft' || r.status === 'Published').forEach(r => {
                     const opt = document.createElement("option");
                     opt.value = r.id;
                     opt.textContent = r.title || r.id;
@@ -2563,6 +2575,7 @@ async function refreshSessionsData() {
                 id: t.id,
                 teamName: t.teamName,
                 trackId: t.trackId || 'None',
+                problemStatement: t.problemStatement || 'Not specified',
                 leaderName: t.leaderName,
                 rank: lbMap[t.id]?.rank || 999,
                 assignmentStatus
@@ -2573,7 +2586,7 @@ async function refreshSessionsData() {
     } catch (e) {
         console.error("Error refreshing sessions data", e);
         const tbody = document.getElementById("sessionsTbody");
-        if (tbody) tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color: var(--blood);">Error loading data</td></tr>`;
+        if (tbody) tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color: var(--blood);">Error loading data</td></tr>`;
     }
 }
 
@@ -2603,7 +2616,7 @@ function renderSessionsTable() {
 
     tbody.innerHTML = "";
     if (filtered.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 20px;">No teams found</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding: 20px;">No teams found</td></tr>`;
         return;
     }
 
@@ -2618,6 +2631,9 @@ function renderSessionsTable() {
             </td>
             <td><strong>${sanitizeHTML(t.teamName)}</strong></td>
             <td><span class="status-badge status-draft">${sanitizeHTML(t.trackId)}</span></td>
+            <td style="max-width: 260px;">
+                <span style="font-size: 10px; font-family: var(--font-mono); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;" title="${sanitizeHTML(t.problemStatement)}">${sanitizeHTML(t.problemStatement)}</span>
+            </td>
             <td>${sanitizeHTML(t.leaderName)}</td>
             <td>${t.rank === 999 ? '-' : t.rank}</td>
             <td><span style="font-size: 10px; font-family: var(--font-mono);">${sanitizeHTML(t.assignmentStatus)}</span></td>

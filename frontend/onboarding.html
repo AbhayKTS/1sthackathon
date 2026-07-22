@@ -82,7 +82,23 @@
         <div class="absolute -bottom-40 -right-40 h-[600px] w-[600px] rounded-full bg-blood/15 blur-3xl"></div>
     </div>
 
-    <main class="w-full max-w-3xl bg-card border border-border p-8 relative overflow-hidden">
+    <!-- Auth-check loading state — shown by default, hidden once JS confirms the role -->
+    <div id="authLoadingPlaceholder" class="text-center space-y-4 py-16">
+        <div style="
+            display: inline-block;
+            width: 40px; height: 40px;
+            border: 3px solid rgba(229,9,20,0.25);
+            border-top-color: #e50914;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        "></div>
+        <p class="font-mono text-sm text-muted-foreground" style="font-family: 'JetBrains Mono', monospace; letter-spacing: 0.1em;">
+            VERIFYING YOUR SESSION...
+        </p>
+        <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
+    </div>
+
+    <main id="onboardingContent" class="hidden w-full max-w-3xl bg-card border border-border p-8 relative overflow-hidden">
         <div class="absolute inset-0 scanlines opacity-20 pointer-events-none"></div>
         
         <!-- Onboarding Success Screen Container -->
