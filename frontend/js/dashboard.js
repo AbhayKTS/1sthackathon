@@ -355,52 +355,53 @@ function renderActiveRound() {
     
     let t = (roundData.title || "").toLowerCase();
     
+    // Dynamic Hero Header & Badges
     if (t.includes("1") || t.includes("one")) {
         if (heroImageBg) heroImageBg.src = new URL('../assets/images/round1img.png', import.meta.url).href;
         if (heroRoundBadge) heroRoundBadge.textContent = `LIVE // ROUND 01`;
-        if (heroRoundDesc) {
-            heroRoundDesc.innerHTML = `This is your first move.<br />Submit your problem statements and<br />presentation decks that define your vision,<br />your approach, and your edge.`;
-        }
-        if (heroRequirementsTitle) heroRequirementsTitle.textContent = "WHAT TO SUBMIT";
-        if (heroRequirementsList) {
-            heroRequirementsList.innerHTML = `
-                <span class="inline-flex items-center gap-2 rounded-sm border border-border bg-surface-2/70 px-3 py-1.5">
-                  <span class="text-accent"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-3.5 w-3.5"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg></span>
-                  <span class="font-mono text-[11px] uppercase tracking-[0.16em] text-foreground">Problem Statement</span>
-                </span>
-                <span class="inline-flex items-center gap-2 rounded-sm border border-border bg-surface-2/70 px-3 py-1.5">
-                  <span class="text-accent"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-3.5 w-3.5"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></span>
-                  <span class="font-mono text-[11px] uppercase tracking-[0.16em] text-foreground">Presentation Deck (PPT)</span>
-                </span>
-            `;
-        }
+        if (heroRoundDesc) heroRoundDesc.innerHTML = roundData.description || `This is your first move. Submit your required links to define your vision.`;
         topText = "SHOW US"; bottomText = "WHAT YOU GOT";
     } else if (t.includes("2") || t.includes("two")) {
         if (heroImageBg) heroImageBg.src = new URL('../assets/images/row2-bg.jpg', import.meta.url).href;
         if (heroRoundBadge) heroRoundBadge.textContent = `LIVE // ROUND 02`;
-        if (heroRoundDesc) heroRoundDesc.innerHTML = `The underground waits for no one. Lock in your code, defend your turf, and take the throne.`;
-        if (heroRequirementsTitle) heroRequirementsTitle.textContent = "WHAT TO SUBMIT";
-        if (heroRequirementsList) {
-            heroRequirementsList.innerHTML = `
-                <span class="inline-flex items-center gap-2 rounded-sm border border-border bg-surface-2/70 px-3 py-1.5">
-                  <span class="text-accent"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-3.5 w-3.5"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg></span>
-                  <span class="font-mono text-[11px] uppercase tracking-[0.16em] text-foreground">Source Code (GitHub)</span>
-                </span>
-                <span class="inline-flex items-center gap-2 rounded-sm border border-border bg-surface-2/70 px-3 py-1.5">
-                  <span class="text-accent"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-3.5 w-3.5"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></span>
-                  <span class="font-mono text-[11px] uppercase tracking-[0.16em] text-foreground">Live Demo Link</span>
-                </span>
-            `;
-        }
+        if (heroRoundDesc) heroRoundDesc.innerHTML = roundData.description || `The underground waits for no one. Lock in your code, defend your turf, and take the throne.`;
         topText = "WE RIDE"; bottomText = "AT MIDNIGHT";
     } else if (t.includes("3") || t.includes("three")) {
         if (heroImageBg) heroImageBg.src = new URL('../assets/images/round3img.png', import.meta.url).href;
         if (heroRoundBadge) heroRoundBadge.textContent = `LIVE // ROUND 03 - FINALE`;
-        if (heroRoundDesc) {
-            heroRoundDesc.innerHTML = `This is it. The final showdown.<br />Every idea. Every line of code. Every late night.<br />Now it decides.<br /><br /><span class="text-primary">Only one will rise.</span><br /><span class="text-primary">Only one will win.</span>`;
-        }
-        if (heroRequirementsTitle) heroRequirementsTitle.textContent = "WHAT DECIDES THE WINNER?";
+        if (heroRoundDesc) heroRoundDesc.innerHTML = roundData.description || `This is it. The final showdown.<br /><span class="text-primary">Only one will rise.</span>`;
         topText = "SEEK THE"; bottomText = "WAY IN OR OUT";
+    } else {
+        if (heroRoundBadge) heroRoundBadge.textContent = `LIVE // ${roundData.title.toUpperCase()}`;
+        if (heroRoundDesc) heroRoundDesc.textContent = roundData.description || "Submit your payload below.";
+        topText = "MISSION"; bottomText = "ACTIVE";
+    }
+
+    // Dynamic What To Submit List from roundData.submissionTypes
+    if (heroRequirementsTitle) heroRequirementsTitle.textContent = "WHAT TO SUBMIT";
+    if (heroRequirementsList) {
+        const typeLabels = {
+            PPT: { label: 'Presentation Deck (PPT)', icon: '<rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>' },
+            Github: { label: 'Source Code (GitHub)', icon: '<polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline>' },
+            Prototype: { label: 'Prototype Link', icon: '<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>' },
+            Demo: { label: 'Live Demo Link', icon: '<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line>' },
+            Custom: { label: 'Custom Submission Link', icon: '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/>' }
+        };
+
+        const currentTypes = Array.isArray(roundData.submissionTypes) && roundData.submissionTypes.length > 0
+            ? roundData.submissionTypes
+            : [roundData.submissionType || 'Github'];
+
+        heroRequirementsList.innerHTML = currentTypes.map((type, idx) => {
+            const config = typeLabels[type] || { label: type, icon: '<path d="M12 2v20M2 12h20"/>' };
+            const isReq = idx === 0;
+            return `
+                <span class="inline-flex items-center gap-2 rounded-sm border border-border bg-surface-2/70 px-3 py-1.5">
+                  <span class="text-accent"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-3.5 w-3.5">${config.icon}</svg></span>
+                  <span class="font-mono text-[11px] uppercase tracking-[0.16em] text-foreground">${config.label}${isReq ? '' : ' (OPTIONAL)'}</span>
+                </span>
+            `;
+        }).join('');
     }
 
     if (heroRoundTitle) heroRoundTitle.innerHTML = `${topText}<br /><span class="text-primary" style="animation: flicker 4s infinite">${bottomText}</span>`;
