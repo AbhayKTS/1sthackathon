@@ -164,6 +164,8 @@ export async function updateRound(adminUid: string, roundId: string, input: Upda
   if ('timerDuration' in input) update.timerDuration = input.timerDuration ?? null;
   if ('googleSheetId' in input) update.googleSheetId = input.googleSheetId ?? null;
   if (input.isVisible !== undefined) update.isVisible = input.isVisible;
+  if (input.isTimeLeapRound !== undefined) update.isTimeLeapRound = input.isTimeLeapRound;
+  if ('timeLeapLink' in input) update.timeLeapLink = input.timeLeapLink ?? null;
 
   await ref.update(update);
 
@@ -251,6 +253,21 @@ export async function transitionRound(
           'A non-empty reason is required when reopening a Locked round.'
         );
       }
+    }
+
+    if (toStatus === 'Active') {
+      // Auto-lock any other currently Active rounds
+      const activeQuery = db.collection('rounds').where('status', '==', 'Active');
+      const activeDocs = await transaction.get(activeQuery);
+      activeDocs.forEach((doc) => {
+        if (doc.id !== roundId) {
+          transaction.update(doc.ref, {
+            status: 'Locked',
+            updatedAt: FieldValue.serverTimestamp(),
+            updatedBy: adminUid,
+          });
+        }
+      });
     }
 
     transaction.update(ref, {

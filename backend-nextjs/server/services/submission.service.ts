@@ -64,7 +64,7 @@ export async function submitPayload(userUid: string, input: SubmitPayloadInput):
 
   const teamData = teamSnap.data()!;
 
-  if (teamData['status'] !== 'Verified') {
+  if (teamData['status'] !== 'Verified' && teamData['status'] !== 'Approved') {
     throw Errors.validation(
       `Your team is currently '${teamData['status']}' and cannot submit. Complete registration first.`
     );

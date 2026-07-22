@@ -975,6 +975,15 @@ async function fetchAndRenderRounds() {
                     <input type="text" class="form-input linked-sheet-input" placeholder="e.g. 1BxiMVs0XRYFgCE..." value="${sanitizeHTML(r.googleSheetId || '')}">
                 </div>
 
+                <div class="form-group" style="margin-bottom: 16px;">
+                    <label class="form-label" style="font-size: 10px;">TIME LEAP ROUND (Restricts visibility to qualified teams)</label>
+                    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-family:monospace;font-size:11px;color:var(--foreground);">
+                        <input type="checkbox" class="time-leap-checkbox" ${r.isTimeLeapRound ? 'checked' : ''} style="accent-color:var(--primary);width:14px;height:14px;">
+                        <span>Enable Time Leap Quiz</span>
+                    </label>
+                    <input type="text" class="form-input time-leap-link-input" placeholder="Quiz/External Link (e.g. Google Form)..." value="${sanitizeHTML(r.timeLeapLink || '')}" style="margin-top: 8px; ${r.isTimeLeapRound ? '' : 'display: none;'}">
+                </div>
+
                 <div style="display: flex; gap: 8px; flex-wrap: wrap;">
                     <button type="button" class="btn-outline btn-activate" style="flex: 1; border-color: var(--accent); color: var(--accent); font-size: 11px; padding: 6px 12px;" ${r.status === 'Active' ? 'disabled style="opacity: 0.5; cursor: not-allowed; border-color: var(--border); color: var(--muted-foreground);"' : ''}>${r.status === 'Locked' ? 'Activate (N/A)' : 'Activate'}</button>
                     <button type="button" class="btn-outline btn-deactivate" style="flex: 1; border-color: #ef4444; color: #ef4444; font-size: 11px; padding: 6px 12px;" ${r.status !== 'Active' ? 'disabled style="opacity: 0.5; cursor: not-allowed; border-color: var(--border); color: var(--muted-foreground);"' : ''}>Deactivate</button>
@@ -990,6 +999,14 @@ async function fetchAndRenderRounds() {
             const saveBtn = card.querySelector(".btn-save");
             const deadlineInput = card.querySelector(".deadline-picker");
             const googleSheetInput = card.querySelector(".linked-sheet-input");
+            const timeLeapCheckbox = card.querySelector(".time-leap-checkbox");
+            const timeLeapLinkInput = card.querySelector(".time-leap-link-input");
+
+            if (timeLeapCheckbox && timeLeapLinkInput) {
+                timeLeapCheckbox.addEventListener("change", (e) => {
+                    timeLeapLinkInput.style.display = e.target.checked ? 'block' : 'none';
+                });
+            }
 
             actBtn.addEventListener("click", async () => {
                 actBtn.disabled = true;
@@ -1088,6 +1105,8 @@ async function fetchAndRenderRounds() {
             saveBtn.addEventListener("click", async () => {
                 const deadlineStr = deadlineInput.value;
                 const googleSheetId = googleSheetInput.value;
+                const isTimeLeapRound = timeLeapCheckbox ? timeLeapCheckbox.checked : false;
+                const timeLeapLink = timeLeapLinkInput ? timeLeapLinkInput.value : '';
 
                 // Collect checked submission types in DOM order
                 const checkedBoxes = [...card.querySelectorAll(".submission-type-checkbox:checked")];
@@ -1118,7 +1137,9 @@ async function fetchAndRenderRounds() {
                             submissionDeadline: timeDate.toISOString(),
                             submissionTypes,   // ordered array — backend derives submissionType from [0]
                             submissionType,    // keep for compat with older backend versions
-                            googleSheetId
+                            googleSheetId,
+                            isTimeLeapRound,
+                            timeLeapLink
                         })
                     });
                     if (!response.ok) throw new Error("Failed to save round settings.");

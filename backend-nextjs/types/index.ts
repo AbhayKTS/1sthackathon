@@ -203,6 +203,8 @@ export interface RoundDoc {
   timerDuration: number | null;
   googleSheetId: string | null;
   isVisible: boolean;
+  isTimeLeapRound?: boolean;
+  timeLeapLink?: string | null;
   updatedAt: Timestamp;
   updatedBy: string;
 }

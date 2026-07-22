@@ -473,7 +473,17 @@ function renderActiveRound() {
         ? roundData.submissionTypes
         : [roundData.submissionType || 'Github'];
 
-    if (submissionTypes.includes('None')) {
+    if (roundData.isTimeLeapRound) {
+        if (submissionForm) submissionForm.style.display = "none";
+        if (adminAssignedMsg) {
+            adminAssignedMsg.classList.remove("hidden");
+            if (currentTeamDoc && currentTeamDoc.isTimeLeapQualified) {
+                adminAssignedMsg.innerHTML = `<span class="text-[color:var(--color-success)]">TIME LEAP SELECTED.</span><br/>Access your restricted mission link:<br/><br/><a href="${sanitizeHTML(roundData.timeLeapLink || '#')}" target="_blank" class="inline-block rounded bg-primary px-4 py-2 text-primary-foreground text-xs uppercase tracking-widest font-bold">START TIME LEAP</a>`;
+            } else {
+                adminAssignedMsg.innerHTML = `<span class="text-[color:var(--strike-red)]">ACCESS DENIED.</span><br/>Your team has not been selected for the Time Leap.`;
+            }
+        }
+    } else if (submissionTypes.includes('None')) {
         if (submissionForm) submissionForm.style.display = "none";
         if (adminAssignedMsg) adminAssignedMsg.classList.remove("hidden");
     } else {
