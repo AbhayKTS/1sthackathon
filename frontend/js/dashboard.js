@@ -919,25 +919,27 @@ if (submissionForm) {
     if (submitMissionBtn) { submitMissionBtn.disabled = true; submitMissionBtn.textContent = "TRANSMITTING..."; }
     if (submissionStatus) submissionStatus.textContent = "";
     
-    const githubLink = document.getElementById("githubLink")?.value || "";
-    const demoLink = document.getElementById("demoLink")?.value || "";
-    const pptLink = document.getElementById("pptLink")?.value || "";
-    const prototypeLink = document.getElementById("prototypeLink")?.value || "";
-    const customLink = document.getElementById("customLink")?.value || "";
+    const githubLink = document.getElementById("githubLink")?.value?.trim() || "";
+    const demoLink = document.getElementById("demoLink")?.value?.trim() || "";
+    const pptLink = document.getElementById("pptLink")?.value?.trim() || "";
+    const prototypeLink = document.getElementById("prototypeLink")?.value?.trim() || "";
+    const customLink = document.getElementById("customLink")?.value?.trim() || "";
     const hasNoPrototype = document.getElementById("hasNoPrototype")?.checked || false;
     
     try {
         const idToken = await auth.currentUser.getIdToken(true);
 
+        // Only include link fields when they actually have a value.
+        // Sending empty strings triggers the backend's .trim().min(1) guard.
         const payload = {
             teamId: currentTeamId,
             roundId: activeRoundId,
-            githubLink,
-            demoLink,
-            pptLink,
-            prototypeLink,
-            customLink,
-            hasNoPrototype
+            hasNoPrototype,
+            ...(githubLink && { githubLink }),
+            ...(demoLink && { demoLink }),
+            ...(pptLink && { pptLink }),
+            ...(prototypeLink && { prototypeLink }),
+            ...(customLink && { customLink }),
         };
 
         const response = await fetch(`${API_BASE}/submission/submit`, {

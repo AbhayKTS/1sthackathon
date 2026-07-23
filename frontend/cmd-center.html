@@ -579,6 +579,14 @@
           >
             Admin Accounts
           </button>
+          <button
+            type="button"
+            class="nav-item superadmin-only"
+            data-tab="time-leap"
+            style="color: var(--accent); border-color: transparent;"
+          >
+            ⚡ Time Leap
+          </button>
           <button type="button" class="nav-item" data-tab="logs">
             Activity Logs
           </button>
@@ -2217,8 +2225,96 @@
             </div>
           </div>
         </div>
+
+        <!-- TAB: Time Leap (super_admin only) -->
+        <div id="panel-time-leap" class="tab-panel superadmin-only" style="display:none;">
+          <!-- Master control bar -->
+          <div class="glass-card" style="margin-bottom:20px; padding:16px 24px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
+              <div>
+                <div style="font-family:var(--font-display); font-size:14px; font-weight:700; color:#fff; letter-spacing:.05em;">TIME LEAP CONTROL CENTER</div>
+                <div style="font-family:var(--font-mono); font-size:9px; color:var(--muted-foreground); text-transform:uppercase; letter-spacing:.1em; margin-top:2px;">Manage qualifying teams & scores • Super Admin only</div>
+              </div>
+              <div style="display:flex; align-items:center; gap:20px;">
+                <!-- Leaderboard Active toggle -->
+                <label style="display:flex; align-items:center; gap:10px; cursor:pointer; user-select:none;">
+                  <div style="position:relative; width:44px; height:24px;" id="tlToggleWrapper">
+                    <input type="checkbox" id="tlLeaderboardActive" style="opacity:0; width:0; height:0; position:absolute;" />
+                    <span id="tlToggleTrack" style="position:absolute; inset:0; border-radius:12px; background:rgba(255,255,255,.1); border:1px solid var(--border); transition:.25s; cursor:pointer;"></span>
+                    <span id="tlToggleThumb" style="position:absolute; top:3px; left:3px; width:18px; height:18px; border-radius:50%; background:var(--muted-foreground); transition:.25s; cursor:pointer;"></span>
+                  </div>
+                  <span style="font-family:var(--font-mono); font-size:10px; color:var(--muted-foreground); text-transform:uppercase; letter-spacing:.08em;">
+                    <span id="tlActiveLabel">Leaderboard LOCKED</span>
+                  </span>
+                </label>
+                <button id="tlRefreshBtn" class="btn-outline" style="padding:6px 14px; font-size:10px;">↻ Refresh</button>
+              </div>
+            </div>
+            <!-- Locked overlay hint -->
+            <div id="tlLockedHint" style="margin-top:12px; padding:8px 12px; background:rgba(229,9,20,.06); border:1px solid rgba(229,9,20,.2); border-radius:4px; font-family:var(--font-mono); font-size:10px; color:rgba(229,9,20,.8); display:block;">
+              🔒 Leaderboard is LOCKED. Toggle the switch above to enable score editing.
+            </div>
+          </div>
+
+          <!-- Stats row -->
+          <div class="metrics-grid" style="margin-bottom:20px; grid-template-columns:repeat(4,1fr);">
+            <div class="metric-box">
+              <div class="metric-title">Total Teams</div>
+              <div class="metric-value" id="tlStatTotal">—</div>
+            </div>
+            <div class="metric-box">
+              <div class="metric-title" style="color:var(--accent);">Time Leap Eligible</div>
+              <div class="metric-value" id="tlStatEligible">—</div>
+            </div>
+            <div class="metric-box">
+              <div class="metric-title" style="color:var(--success);">Scores Entered</div>
+              <div class="metric-value" id="tlStatScored">—</div>
+            </div>
+            <div class="metric-box">
+              <div class="metric-title" style="color:var(--warning);">Pending Scores</div>
+              <div class="metric-value" id="tlStatPending">—</div>
+            </div>
+          </div>
+
+          <!-- Main table -->
+          <div class="glass-card">
+            <div class="card-title-section">
+              <span class="card-title" style="color:var(--accent);">Teams & Leaderboard Scores</span>
+              <div style="display:flex; gap:8px; align-items:center;">
+                <input id="tlSearchInput" type="text" class="form-input" placeholder="Search team..." style="width:180px; padding:5px 10px; font-size:11px;" />
+              </div>
+            </div>
+            <div class="data-table-wrapper" style="overflow-x:auto;">
+              <table class="data-table" id="tlTable">
+                <thead>
+                  <tr>
+                    <th>Team</th>
+                    <th>College</th>
+                    <th style="color:var(--muted-foreground);">R1 Score</th>
+                    <th style="color:var(--muted-foreground);">R2 Score</th>
+                    <th style="color:var(--accent);">TL Score</th>
+                    <th style="color:var(--warning);">Final</th>
+                    <th>Rank</th>
+                    <th>Top10</th>
+                    <th>Top15</th>
+                    <th style="color:var(--accent);">TL Eligible</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="tlTableBody">
+                  <tr><td colspan="11" style="text-align:center; color:var(--muted-foreground); padding:24px;">Loading...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
       </main>
     </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         TIME LEAP PANEL — super_admin only, injected outside main grid
+         ═══════════════════════════════════════════════════════════════ -->
 
     <!-- Edit Team Modal (Hidden by default) -->
     <div
@@ -2390,6 +2486,96 @@
               style="flex: 1"
             >
               SAVE
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Score Edit Modal (Time Leap — super_admin only) -->
+    <div
+      id="tlScoreModal"
+      style="
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.88);
+        z-index: 1100;
+        align-items: center;
+        justify-content: center;
+        backdrop-filter: blur(5px);
+      "
+    >
+      <div class="glass-card" style="width: 500px; max-width: 96%; margin: 0; border-color: rgba(0,180,216,.25); box-shadow: 0 0 40px rgba(0,180,216,.08);">
+        <h3
+          style="
+            color: var(--accent);
+            margin-top: 0;
+            font-family: var(--font-display);
+            letter-spacing: 2px;
+            font-size: 13px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 12px;
+            margin-bottom: 20px;
+          "
+        >
+          ⚡ EDIT SCORES — <span id="tlScoreModalTeamName" style="color:#fff;"></span>
+        </h3>
+        <form id="tlScoreForm" class="dash-form">
+          <input type="hidden" id="tlScoreTeamId" />
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Round 1 Score</label>
+              <input type="number" id="tls_r1" class="form-input" placeholder="e.g. 85" step="0.1" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Round 2 Score</label>
+              <input type="number" id="tls_r2" class="form-input" placeholder="e.g. 90" step="0.1" />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" style="color:var(--accent);">Time Leap Score</label>
+              <input type="number" id="tls_tl" class="form-input" placeholder="e.g. 78" step="0.1" style="border-color:rgba(0,180,216,.3);" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" style="color:var(--warning);">Final Score</label>
+              <input type="number" id="tls_final" class="form-input" placeholder="e.g. 253" step="0.1" />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Rank</label>
+              <input type="number" id="tls_rank" class="form-input" placeholder="e.g. 3" min="1" step="1" />
+            </div>
+            <div class="form-group" style="justify-content:flex-end; padding-bottom:4px;">
+              <label class="form-label" style="margin-bottom:8px;">Flags</label>
+              <div style="display:flex; flex-direction:column; gap:8px;">
+                <label style="display:flex; align-items:center; gap:8px; font-size:11px; cursor:pointer;">
+                  <input type="checkbox" id="tls_top10" style="accent-color:var(--success);" /> Top 10
+                </label>
+                <label style="display:flex; align-items:center; gap:8px; font-size:11px; cursor:pointer;">
+                  <input type="checkbox" id="tls_top15" style="accent-color:var(--warning);" /> Top 15
+                </label>
+              </div>
+            </div>
+          </div>
+          <div style="display: flex; gap: 10px; margin-top: 14px;">
+            <button
+              type="button"
+              id="closeTlScoreModalBtn"
+              class="btn-outline"
+              style="flex: 1; border-color: var(--border); color: #fff;"
+            >
+              CANCEL
+            </button>
+            <button
+              type="submit"
+              id="saveTlScoreBtn"
+              class="btn-primary"
+              style="flex: 1; background: var(--accent); border:none;"
+            >
+              SAVE SCORES
             </button>
           </div>
         </form>

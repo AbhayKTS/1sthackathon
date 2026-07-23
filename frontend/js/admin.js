@@ -138,12 +138,13 @@ const tabTitles = {
     logs: ["ACTIVITY AUDIT LOGS", "Internal System Log Feeds & Events"],
     settings: ["SYSTEM SETTINGS", "Global Platform Property Configurations"],
     "admin-accounts": ["ADMIN & STAFF ACCOUNTS", "Manage Administrators Permissions"],
+    "time-leap": ["⚡ TIME LEAP CONTROL", "Qualifying Teams • Score Management • Leaderboard"],
 };
 
 let tabControlsWired = false;
 
 function switchTab(tabId, sourceElement) {
-    if (tabId === "admin-accounts" && currentAdminRole !== "super_admin") {
+    if ((tabId === "admin-accounts" || tabId === "time-leap") && currentAdminRole !== "super_admin") {
         return;
     }
 
@@ -245,6 +246,7 @@ onAuthStateChanged(auth, async (user) => {
         if (currentAdminRole === "super_admin") {
             document.body.classList.add("is-superadmin");
             startStartupTask("admin accounts tab", initAdminAccounts);
+            startStartupTask("time leap tab", initTimeLeap);
         }
 
         wireTabControls();
@@ -2757,3 +2759,339 @@ function updateBulkAssignPanel() {
     }
 }
 
+// ─── TAB: TIME LEAP ───────────────────────────────────────────────────────────
+
+let tlAllRows = [];  // merged team+score data for search filtering
+
+function tlIsLeaderboardActive() {
+    return localStorage.getItem("tl_leaderboard_active") === "true";
+}
+
+function tlUpdateToggleUI(active) {
+    const track = document.getElementById("tlToggleTrack");
+    const thumb = document.getElementById("tlToggleThumb");
+    const label = document.getElementById("tlActiveLabel");
+    const hint  = document.getElementById("tlLockedHint");
+    if (!track) return;
+
+    if (active) {
+        track.style.background = "rgba(0,180,216,.35)";
+        track.style.borderColor = "rgba(0,180,216,.6)";
+        thumb.style.left = "23px";
+        thumb.style.background = "var(--accent)";
+        label.textContent = "Leaderboard ACTIVE";
+        label.style.color = "var(--accent)";
+        if (hint) hint.style.display = "none";
+    } else {
+        track.style.background = "rgba(255,255,255,.1)";
+        track.style.borderColor = "var(--border)";
+        thumb.style.left = "3px";
+        thumb.style.background = "var(--muted-foreground)";
+        label.textContent = "Leaderboard LOCKED";
+        label.style.color = "var(--muted-foreground)";
+        if (hint) hint.style.display = "block";
+    }
+
+    // Grey-out all edit score buttons based on active state
+    document.querySelectorAll(".tl-edit-score-btn").forEach(btn => {
+        btn.disabled = !active;
+        btn.style.opacity = active ? "1" : "0.35";
+        btn.style.cursor = active ? "pointer" : "not-allowed";
+    });
+}
+
+function tlRenderTable(rows) {
+    const tbody = document.getElementById("tlTableBody");
+    if (!tbody) return;
+
+    if (!rows || rows.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="11" style="text-align:center; color:var(--muted-foreground); padding:24px;">No teams found.</td></tr>`;
+        return;
+    }
+
+    const active = tlIsLeaderboardActive();
+
+    tbody.innerHTML = "";
+    rows.forEach(t => {
+        const lb = t._lb || {};
+        const r1    = lb.round1Score    != null ? lb.round1Score    : "—";
+        const r2    = lb.round2Score    != null ? lb.round2Score    : "—";
+        const tl    = lb.timeLeapScore  != null ? lb.timeLeapScore  : "—";
+        const fin   = lb.finalScore     != null ? lb.finalScore     : "—";
+        const rank  = lb.rank           != null ? lb.rank           : "—";
+        const top10 = lb.isTop10 ? `<span style="color:var(--success); font-size:13px;">✓</span>` : `<span style="color:var(--border);">—</span>`;
+        const top15 = lb.isTop15 ? `<span style="color:var(--warning); font-size:13px;">✓</span>` : `<span style="color:var(--border);">—</span>`;
+        const hasScore = lb.round1Score != null || lb.round2Score != null || lb.timeLeapScore != null || lb.finalScore != null;
+
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+            <td>
+                <div style="font-weight:600; font-size:12px;">${sanitizeHTML(t.teamName)}</div>
+                <div style="font-family:var(--font-mono); font-size:9px; color:var(--muted-foreground); margin-top:2px;">${sanitizeHTML(t.id)}</div>
+            </td>
+            <td style="font-size:11px;">${sanitizeHTML(t.college || t.leaderCollege || "—")}</td>
+            <td style="font-family:var(--font-mono); font-size:12px; color:var(--muted-foreground);">${r1}</td>
+            <td style="font-family:var(--font-mono); font-size:12px; color:var(--muted-foreground);">${r2}</td>
+            <td style="font-family:var(--font-mono); font-size:12px; color:var(--accent); font-weight:600;">${tl}</td>
+            <td style="font-family:var(--font-mono); font-size:12px; color:var(--warning);">${fin}</td>
+            <td style="font-family:var(--font-mono); font-size:12px;">${rank}</td>
+            <td style="text-align:center;">${top10}</td>
+            <td style="text-align:center;">${top15}</td>
+            <td style="text-align:center;">
+                <label style="cursor:pointer; display:inline-flex; align-items:center; gap:5px; font-size:10px; font-family:var(--font-mono);">
+                    <input type="checkbox"
+                        class="tl-qualified-cb"
+                        data-team-id="${sanitizeHTML(t.id)}"
+                        ${t.isTimeLeapQualified ? "checked" : ""}
+                        style="accent-color:var(--accent); width:14px; height:14px;" />
+                    <span style="color:${t.isTimeLeapQualified ? 'var(--accent)' : 'var(--muted-foreground)'};">${t.isTimeLeapQualified ? "YES" : "NO"}</span>
+                </label>
+            </td>
+            <td>
+                <button
+                    class="btn-outline tl-edit-score-btn"
+                    data-team-id="${sanitizeHTML(t.id)}"
+                    data-team-name="${sanitizeHTML(t.teamName)}"
+                    style="padding:4px 10px; font-size:9px; border-color:var(--accent); color:var(--accent);
+                           opacity:${active ? '1' : '0.35'}; cursor:${active ? 'pointer' : 'not-allowed'};"
+                    ${active ? '' : 'disabled'}
+                >
+                    EDIT SCORES
+                </button>
+            </td>
+        `;
+
+        // Wire isTimeLeapQualified checkbox
+        const cb = tr.querySelector(".tl-qualified-cb");
+        cb.addEventListener("change", async (e) => {
+            const teamId = e.target.dataset.teamId;
+            const checked = e.target.checked;
+            const spanEl = e.target.nextElementSibling;
+            e.target.disabled = true;
+            try {
+                const freshToken = await auth.currentUser.getIdToken();
+                const res = await fetch(`${API_BASE}/admin/edit-team`, {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json", Authorization: `Bearer ${freshToken}` },
+                    body: JSON.stringify({ teamId, isTimeLeapQualified: checked })
+                });
+                const d = await safeJson(res, "TL Eligible");
+                if (d.success) {
+                    if (spanEl) {
+                        spanEl.textContent = checked ? "YES" : "NO";
+                        spanEl.style.color = checked ? "var(--accent)" : "var(--muted-foreground)";
+                    }
+                    // Update local cache
+                    const row = tlAllRows.find(r => r.id === teamId);
+                    if (row) row.isTimeLeapQualified = checked;
+                    tlUpdateStats();
+                    showToast(`Time Leap eligibility ${checked ? "granted" : "revoked"}.`);
+                } else {
+                    e.target.checked = !checked; // revert
+                    showToast(d.error?.message || "Update failed.", "error");
+                }
+            } catch (err) {
+                e.target.checked = !checked;
+                showToast(err.message, "error");
+            } finally {
+                e.target.disabled = false;
+            }
+        });
+
+        // Wire Edit Scores button
+        const editBtn = tr.querySelector(".tl-edit-score-btn");
+        editBtn.addEventListener("click", () => {
+            if (!tlIsLeaderboardActive()) return;
+            openTlScoreModal(t);
+        });
+
+        tbody.appendChild(tr);
+    });
+}
+
+function tlUpdateStats() {
+    const total    = tlAllRows.length;
+    const eligible = tlAllRows.filter(r => r.isTimeLeapQualified).length;
+    const scored   = tlAllRows.filter(r => r._lb && (r._lb.round1Score != null || r._lb.round2Score != null)).length;
+    const pending  = total - scored;
+
+    const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+    set("tlStatTotal",   total);
+    set("tlStatEligible", eligible);
+    set("tlStatScored",  scored);
+    set("tlStatPending", pending);
+}
+
+function openTlScoreModal(team) {
+    const lb = team._lb || {};
+    document.getElementById("tlScoreTeamId").value       = team.id;
+    document.getElementById("tlScoreModalTeamName").textContent = team.teamName;
+    document.getElementById("tls_r1").value    = lb.round1Score    != null ? lb.round1Score    : "";
+    document.getElementById("tls_r2").value    = lb.round2Score    != null ? lb.round2Score    : "";
+    document.getElementById("tls_tl").value    = lb.timeLeapScore  != null ? lb.timeLeapScore  : "";
+    document.getElementById("tls_final").value = lb.finalScore     != null ? lb.finalScore     : "";
+    document.getElementById("tls_rank").value  = lb.rank           != null ? lb.rank           : "";
+    document.getElementById("tls_top10").checked = !!lb.isTop10;
+    document.getElementById("tls_top15").checked = !!lb.isTop15;
+    const modal = document.getElementById("tlScoreModal");
+    if (modal) modal.style.display = "flex";
+}
+
+function closeTlScoreModal() {
+    const modal = document.getElementById("tlScoreModal");
+    if (modal) modal.style.display = "none";
+}
+
+async function initTimeLeap() {
+    if (currentAdminRole !== "super_admin") return;
+
+    // ── Leaderboard Active toggle ──────────────────────────────
+    const toggleCb = document.getElementById("tlLeaderboardActive");
+    const track    = document.getElementById("tlToggleTrack");
+    const thumb    = document.getElementById("tlToggleThumb");
+
+    if (toggleCb) {
+        // Restore persisted state
+        const active = tlIsLeaderboardActive();
+        toggleCb.checked = active;
+        tlUpdateToggleUI(active);
+
+        // Click on the visual track/thumb — mirrors checkbox
+        [track, thumb].forEach(el => {
+            el?.addEventListener("click", () => {
+                toggleCb.checked = !toggleCb.checked;
+                toggleCb.dispatchEvent(new Event("change"));
+            });
+        });
+
+        toggleCb.addEventListener("change", () => {
+            const now = toggleCb.checked;
+            localStorage.setItem("tl_leaderboard_active", now ? "true" : "false");
+            tlUpdateToggleUI(now);
+            showToast(now ? "Leaderboard ACTIVATED — scores can now be edited." : "Leaderboard LOCKED.", now ? "success" : "error");
+        });
+    }
+
+    // ── Close modal ────────────────────────────────────────────
+    document.getElementById("closeTlScoreModalBtn")?.addEventListener("click", closeTlScoreModal);
+    document.getElementById("tlScoreModal")?.addEventListener("click", (e) => {
+        if (e.target === document.getElementById("tlScoreModal")) closeTlScoreModal();
+    });
+
+    // ── Score Edit form submit ─────────────────────────────────
+    document.getElementById("tlScoreForm")?.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        if (!tlIsLeaderboardActive()) { showToast("Leaderboard is locked.", "error"); return; }
+
+        const teamId = document.getElementById("tlScoreTeamId").value;
+        const btn    = document.getElementById("saveTlScoreBtn");
+        btn.disabled = true;
+        btn.textContent = "SAVING...";
+
+        const parseNum = (id) => {
+            const v = document.getElementById(id).value;
+            return v === "" ? null : parseFloat(v);
+        };
+        const parseInt = (id) => {
+            const v = document.getElementById(id).value;
+            return v === "" ? null : parseInt(v, 10);
+        };
+
+        const payload = {
+            teamId,
+            round1Score:   parseNum("tls_r1"),
+            round2Score:   parseNum("tls_r2"),
+            timeLeapScore: parseNum("tls_tl"),
+            finalScore:    parseNum("tls_final"),
+            rank:          parseInt("tls_rank"),
+            isTop10:       document.getElementById("tls_top10").checked,
+            isTop15:       document.getElementById("tls_top15").checked,
+        };
+
+        try {
+            const freshToken = await auth.currentUser.getIdToken();
+            const res = await fetch(`${API_BASE}/admin/leaderboard`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json", Authorization: `Bearer ${freshToken}` },
+                body: JSON.stringify(payload)
+            });
+            const d = await safeJson(res, "Save Scores");
+            if (d.success) {
+                // Update local cache
+                const row = tlAllRows.find(r => r.id === teamId);
+                if (row) {
+                    row._lb = { ...(row._lb || {}), ...payload };
+                }
+                closeTlScoreModal();
+                tlRenderTable(tlGetFiltered());
+                tlUpdateStats();
+                showToast("Scores saved successfully.");
+            } else {
+                showToast(d.error?.message || "Save failed.", "error");
+            }
+        } catch (err) {
+            showToast(err.message, "error");
+        } finally {
+            btn.disabled = false;
+            btn.textContent = "SAVE SCORES";
+        }
+    });
+
+    // ── Search filter ──────────────────────────────────────────
+    document.getElementById("tlSearchInput")?.addEventListener("input", () => {
+        tlRenderTable(tlGetFiltered());
+    });
+
+    // ── Refresh button ─────────────────────────────────────────
+    document.getElementById("tlRefreshBtn")?.addEventListener("click", () => loadTlData());
+
+    // ── Initial data load ──────────────────────────────────────
+    await loadTlData();
+}
+
+function tlGetFiltered() {
+    const q = (document.getElementById("tlSearchInput")?.value || "").toLowerCase().trim();
+    if (!q) return tlAllRows;
+    return tlAllRows.filter(r =>
+        (r.teamName || "").toLowerCase().includes(q) ||
+        (r.college || r.leaderCollege || "").toLowerCase().includes(q) ||
+        r.id.toLowerCase().includes(q)
+    );
+}
+
+async function loadTlData() {
+    const tbody = document.getElementById("tlTableBody");
+    if (tbody) tbody.innerHTML = `<tr><td colspan="11" style="text-align:center; color:var(--muted-foreground); padding:24px;">Loading...</td></tr>`;
+
+    try {
+        const freshToken = await auth.currentUser.getIdToken();
+
+        // Fetch teams and leaderboard in parallel
+        const [teamsRes, lbRes] = await Promise.all([
+            fetch(`${API_BASE}/admin/teams`, { headers: { Authorization: `Bearer ${freshToken}` } }),
+            fetch(`${API_BASE}/admin/leaderboard`, { headers: { Authorization: `Bearer ${freshToken}` } }),
+        ]);
+
+        const teamsData = await safeJson(teamsRes, "Teams");
+        const lbData    = await safeJson(lbRes, "Leaderboard");
+
+        const teams     = teamsData.data?.teams ?? [];
+        const lbEntries = lbData.data?.leaderboard ?? [];
+
+        // Build a map: teamId → leaderboard entry
+        const lbMap = {};
+        lbEntries.forEach(e => { lbMap[e.id || e.teamId] = e; });
+
+        // Merge
+        tlAllRows = teams.map(t => ({ ...t, _lb: lbMap[t.id] || null }));
+
+        tlRenderTable(tlGetFiltered());
+        tlUpdateStats();
+        tlUpdateToggleUI(tlIsLeaderboardActive()); // re-apply button disabled state after re-render
+
+    } catch (err) {
+        console.error("Time Leap load error:", err);
+        if (tbody) tbody.innerHTML = `<tr><td colspan="11" style="text-align:center; color:var(--primary); padding:24px;">Failed to load: ${sanitizeHTML(err.message)}</td></tr>`;
+        showToast("Failed to load Time Leap data.", "error");
+    }
+}
