@@ -28,6 +28,7 @@ const schema = z.object({
   college: z.string().optional(),
   status: z.enum(['Draft', 'Verified', 'Submitted', 'Approved', 'Rejected', 'Incomplete', 'NeedChanges']).optional(),
   notes: z.string().optional(),
+  isTimeLeapQualified: z.boolean().optional(),
 });
 
 export async function PATCH(request: NextRequest): Promise<NextResponse> {
@@ -58,9 +59,9 @@ export async function PATCH(request: NextRequest): Promise<NextResponse> {
       throw Errors.validation(parsed.error.issues[0]?.message || 'Validation failed');
     }
 
-    const { teamId, teamName, college, status, notes } = parsed.data;
+    const { teamId, teamName, college, status, notes, isTimeLeapQualified } = parsed.data;
 
-    if (!teamName && !college && !status) {
+    if (!teamName && !college && !status && isTimeLeapQualified === undefined) {
       throw Errors.validation('No fields provided to update');
     }
 
@@ -82,6 +83,7 @@ export async function PATCH(request: NextRequest): Promise<NextResponse> {
     if (teamName !== undefined) updateData.teamName = teamName;
     if (college !== undefined) updateData.college = college;
     if (status !== undefined) updateData.status = status;
+    if (isTimeLeapQualified !== undefined) updateData.isTimeLeapQualified = isTimeLeapQualified;
 
     if (status === 'NeedChanges' || status === 'Incomplete' || status === 'Rejected') {
        if (notes) {

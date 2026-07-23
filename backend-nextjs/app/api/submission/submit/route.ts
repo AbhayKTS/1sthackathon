@@ -32,19 +32,25 @@ export function OPTIONS(request: NextRequest): NextResponse {
 
 // Accept all possible fields — the service layer validates which are required
 // based on the round type fetched from Firestore. This keeps the route thin.
+// NOTE: We intentionally use .trim().min(1) instead of .url() here because
+// Zod's url() validator is overly strict and rejects perfectly valid Google
+// Drive / Docs / Slides links that participants commonly paste (e.g. those
+// with trailing whitespace or without an explicit https:// scheme). The
+// service layer is responsible for enforcing which fields are required per
+// round type; the route only needs to confirm the string is non-empty.
 const submissionSchema = z.object({
   teamId: z.string().min(1, 'Team ID is required'),
   roundId: z.string().min(1, 'Round ID is required'),
   // General / legacy
-  githubLink: z.string().url().optional(),
-  demoLink: z.string().url().optional().or(z.literal('')),
+  githubLink: z.string().trim().min(1).optional(),
+  demoLink: z.string().trim().optional().or(z.literal('')),
   // PPT round
-  pptLink: z.string().url().optional(),
+  pptLink: z.string().trim().min(1).optional(),
   // Mentoring/prototype round
-  prototypeLink: z.string().url().optional(),
+  prototypeLink: z.string().trim().min(1).optional(),
   hasNoPrototype: z.boolean().optional().default(false),
   // Custom round
-  customLink: z.string().url().optional(),
+  customLink: z.string().trim().min(1).optional(),
 });
 
 export async function POST(request: NextRequest): Promise<NextResponse> {

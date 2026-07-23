@@ -784,6 +784,7 @@ async function openEditModal(teamId) {
             document.getElementById("edit_team_name").value = data.teamName;
             document.getElementById("edit_team_college").value = data.college;
             document.getElementById("edit_team_status").value = data.status;
+            document.getElementById("edit_team_time_leap_qualified").checked = !!data.isTimeLeapQualified;
             editTeamModal.style.display = "flex";
         }
     } catch (err) {
@@ -801,6 +802,11 @@ editTeamForm.addEventListener("submit", async (e) => {
     const name = document.getElementById("edit_team_name").value;
     const college = document.getElementById("edit_team_college").value;
     const status = document.getElementById("edit_team_status").value;
+    const isTimeLeapQualified = document.getElementById("edit_team_time_leap_qualified").checked;
+
+    const btn = document.getElementById("saveEditModalBtn");
+    btn.disabled = true;
+    btn.textContent = "SAVING...";
 
     try {
         const response = await fetch(`${API_BASE}/admin/edit-team`, {
@@ -809,14 +815,21 @@ editTeamForm.addEventListener("submit", async (e) => {
                 "Content-Type": "application/json",
                 Authorization: `Bearer ${idToken}`
             },
-            body: JSON.stringify({ teamId: id, teamName: name, college, status })
+            body: JSON.stringify({ teamId: id, teamName: name, college, status, isTimeLeapQualified })
         });
         
-        if (!response.ok) throw new Error("Update failed.");
-        showToast("Team updated successfully!");
-        editTeamModal.style.display = "none";
+        const data = await safeJson(response, 'Edit Team');
+        if (data.success) {
+            showToast("Team updated successfully!");
+            editTeamModal.style.display = "none";
+        } else {
+            showToast(data.error?.message || "Update failed.", "error");
+        }
     } catch (err) {
         showToast(err.message, "error");
+    } finally {
+        btn.disabled = false;
+        btn.textContent = "SAVE CHANGES";
     }
 });
 
