@@ -1000,8 +1000,24 @@ async function fetchAndRenderRounds() {
                 </div>
 
                 <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                    <button type="button" class="btn-outline btn-activate" style="flex: 1; border-color: var(--accent); color: var(--accent); font-size: 11px; padding: 6px 12px;" ${r.status === 'Active' ? 'disabled style="opacity: 0.5; cursor: not-allowed; border-color: var(--border); color: var(--muted-foreground);"' : ''}>${r.status === 'Locked' ? 'Activate (N/A)' : 'Activate'}</button>
-                    <button type="button" class="btn-outline btn-deactivate" style="flex: 1; border-color: #ef4444; color: #ef4444; font-size: 11px; padding: 6px 12px;" ${r.status !== 'Active' ? 'disabled style="opacity: 0.5; cursor: not-allowed; border-color: var(--border); color: var(--muted-foreground);"' : ''}>Deactivate</button>
+                    <button type="button" class="btn-outline btn-activate"
+                        style="flex: 1; font-size: 11px; padding: 6px 12px;
+                               ${r.status === 'Active'
+                                   ? 'border-color: var(--success); color: var(--success); cursor: default; font-weight:700;'
+                                   : r.status === 'Locked'
+                                       ? 'opacity:0.45; border-color:var(--border); color:var(--muted-foreground); cursor:not-allowed;'
+                                       : 'border-color: var(--accent); color: var(--accent);'
+                               }"
+                        ${r.status === 'Active' || r.status === 'Locked' ? 'disabled' : ''}>
+                        ${r.status === 'Active' ? '✓ ACTIVE' : r.status === 'Locked' ? 'Activate (N/A)' : 'Activate'}
+                    </button>
+                    ${currentAdminRole === 'super_admin' ? `
+                    <button type="button" class="btn-outline btn-deactivate"
+                        style="flex: 1; font-size: 11px; padding: 6px 12px;
+                               ${r.status !== 'Active' ? 'opacity:0.45; border-color:var(--border); color:var(--muted-foreground); cursor:not-allowed;' : 'border-color:#ef4444; color:#ef4444;'}"
+                        ${r.status !== 'Active' ? 'disabled' : ''}>
+                        Deactivate
+                    </button>` : ''}
                     ${r.status === 'Locked' && currentAdminRole === 'super_admin' ? `<button type="button" class="btn-outline btn-reopen" style="flex: 1; border-color: #f59e0b; color: #f59e0b; font-size: 11px; padding: 6px 12px;">Reopen</button>` : ''}
                     <button type="button" class="btn-primary btn-save" style="flex: 1; font-size: 11px; padding: 6px 12px;">Save</button>
                 </div>
@@ -1058,7 +1074,11 @@ async function fetchAndRenderRounds() {
                 }
             });
 
-            deactBtn.addEventListener("click", async () => {
+            deactBtn?.addEventListener("click", async () => {
+                if (currentAdminRole !== 'super_admin') {
+                    showToast("Only super_admin can deactivate rounds.", "error");
+                    return;
+                }
                 deactBtn.disabled = true;
                 deactBtn.textContent = "Deactivating...";
                 try {

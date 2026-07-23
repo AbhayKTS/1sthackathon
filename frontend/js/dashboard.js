@@ -344,19 +344,9 @@ function renderActiveRound() {
     const closedMissionsContainer = document.getElementById("closedMissionsContainer");
     const closedMissionsList = document.getElementById("closedMissionsList");
 
-    if (closedMissionsContainer && closedMissionsList) {
-        if (closedRounds.length > 0) {
-            closedMissionsContainer.style.display = "block";
-            closedMissionsList.innerHTML = closedRounds.map(([id, data]) => `
-                <div class="rounded bg-surface-2 p-3 border border-border">
-                    <div class="font-mono text-[11px] font-bold text-muted-foreground uppercase tracking-wider">${data.title || id}</div>
-                    <div class="font-sans text-[11px] text-muted-foreground mt-1">${data.description || 'Closed round'}</div>
-                </div>
-            `).join('');
-        } else {
-            closedMissionsContainer.style.display = "none";
-        }
-    }
+    // Closed missions: hidden — participants only need the active round.
+    if (closedMissionsContainer) closedMissionsContainer.style.display = "none";
+
 
     if (!activeEntry) {
         // No active round — show waiting state
