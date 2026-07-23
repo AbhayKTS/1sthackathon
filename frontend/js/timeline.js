@@ -26,41 +26,60 @@ document.addEventListener("DOMContentLoaded", () => {
     const p = total > 0 ? scrolled / total : 0;  // 0 → 1
 
     // Which card is "current" — evenly split
-    const slice  = 1 / TOTAL;
+    // We need (TOTAL - 1) transitions to bring up all cards after the first one
+    const transitions = Math.max(1, TOTAL - 1);
+    const slice  = 1 / transitions;
     // Use floor with a tiny bias so card 0 shows at p=0
-    const activeIndex = Math.min(TOTAL - 1, Math.floor(p * TOTAL + 0.0001));
+    const activeIndex = Math.min(TOTAL - 1, Math.floor(p * transitions + 0.0001));
 
-    // ---- Update cards ----
-    cards.forEach((card, i) => {
-      // local progress within this card's slot (-1 → 0 → 1)
+    // ---- Update cards (backward loop for correct stack pushing) ----
+    const H = window.innerHeight;
+    const positions = new Array(TOTAL);
+    let prevTy = Infinity;
+    let prevHeight = 0;
+
+    for (let i = TOTAL - 1; i >= 0; i--) {
+      const card = cards[i];
+      const inner = card.querySelector('.tl-card__inner');
+      const cardHeight = inner ? inner.offsetHeight : H;
+      
       const local = (p - i * slice) / slice;
+      const incomingTy = Math.max(0, -local * H); // 0 if active/past, >0 if incoming
+      
+      let ty = incomingTy;
+      if (i < TOTAL - 1) {
+        // Calculate dynamic gap based on actual content heights
+        const gap = (cardHeight + prevHeight) / 2 + 30; // 30px visual margin
+        ty = Math.min(incomingTy, prevTy - gap);
+      }
+      
+      positions[i] = { ty, local, card, i };
+      prevTy = ty;
+      prevHeight = cardHeight;
+    }
 
-      let ty = 0;
+    // Now apply the transforms
+    positions.forEach(({ ty, local, card, i }) => {
       let opacity = 1;
       let scale = 1;
 
-      if (local < 0) {
-        // Card is below viewport — slide in from below
-        const t = Math.min(1, -local);
-        ty      = t * 100;           // 100vh below
-        opacity = Math.max(0, 1 - t * 1.5);
-        scale   = 0.97 + (1 - t) * 0.03;
-      } else if (local <= 1) {
-        // Card is active viewport
-        ty      = 0;
-        opacity = 1;
-        scale   = 1;
-      } else {
-        // Card is above viewport — exit upward fast
-        const t = Math.min(1, local - 1);
-        ty      = -t * 18;           // subtle upward nudge, then fade
-        opacity = Math.max(0, 1 - t * 5);
-        scale   = 1 - t * 0.02;
+      if (ty < 0) {
+        // Pushed up above center -> fade out and fly over
+        opacity = Math.max(0, 1 - Math.abs(ty) / 400);
+        scale = 1 + Math.abs(ty) / 1000;
+      } else if (ty > 0) {
+        // Incoming from below
+        const t = Math.min(1, Math.abs(ty) / H); // 1 when at bottom, 0 when at center
+        scale = 1 - t * 0.05; 
+        opacity = Math.max(0, 1 - t * 1.5); 
       }
 
-      card.style.transform = `translate3d(0, ${ty}vh, 0) scale(${scale})`;
-      card.style.opacity   = opacity;
-      card.style.zIndex    = 10 + i;
+      const inner = card.querySelector(".tl-card__inner");
+      if (inner) {
+        inner.style.transform = `translate3d(0, ${ty}px, 0) scale(${scale})`;
+        inner.style.opacity   = opacity;
+      }
+      card.style.zIndex    = 100 - i; // Reversed z-index so top cards fly over bottom ones
 
       // Animate progress bar when card is active
       const bar = card.querySelector(".tl-progress-bar");

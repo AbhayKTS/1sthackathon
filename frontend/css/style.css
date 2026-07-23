@@ -5664,25 +5664,26 @@ footer a:hover {
   align-items: center;
   justify-content: center;
   padding: 0 clamp(80px, 10vw, 160px);
-  will-change: transform, opacity;
-  transform: translate3d(0, 100vh, 0) scale(0.97);
-  opacity: 0;
 }
 
-/* Card inner box — fixed width + height, no resizing */
+/* Card inner box — fluid height based on content */
 .tl-card__inner {
   width: 100%;
-  max-width: 820px;
-  height: 520px;
+  max-width: 1400px;
   min-height: 520px;
-  max-height: 520px;
+  height: auto;
   border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(5, 5, 5, 0.6);
+  background: rgba(5, 5, 5, 0.15);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   padding: 40px 48px 36px;
   display: flex;
   flex-direction: column;
   position: relative;
   overflow: hidden;
+  will-change: transform, opacity;
+  transform: translate3d(0, 100vh, 0) scale(0.97);
+  opacity: 0;
 }
 
 /* Corner brackets */
@@ -5801,7 +5802,7 @@ footer a:hover {
 /* ---- Card Title ---- */
 .tl-card__title {
   font-family: var(--font-heading);
-  font-size: clamp(32px, 4.5vw, 52px);
+  font-size: clamp(48px, 6vw, 72px);
   line-height: 0.95;
   letter-spacing: 2px;
   text-transform: uppercase;
@@ -5823,10 +5824,11 @@ footer a:hover {
 /* ---- Description ---- */
 .tl-card__desc {
   font-family: var(--font-body);
-  font-size: 14px;
+  font-size: 16px;
   line-height: 1.7;
-  color: rgba(255, 255, 255, 0.5);
-  max-width: 480px;
+  color: rgba(255, 255, 255, 0.78);
+  font-weight: 400;
+  max-width: 720px;
   margin: 0 0 auto;
 }
 
@@ -5870,7 +5872,8 @@ footer a:hover {
   font-size: 8px;
   letter-spacing: 0.3em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.3);
+  color: rgba(255, 255, 255, 0.78);
+  font-weight: 500;
   margin-bottom: 3px;
 }
 
@@ -5885,7 +5888,7 @@ footer a:hover {
 /* ---- Footer stats row ---- */
 .tl-card__footer {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 0;
   padding-top: 18px;
   flex-shrink: 0;
@@ -5894,6 +5897,10 @@ footer a:hover {
 .tl-foot-item {
   padding: 0 12px;
   border-right: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.tl-foot-item:nth-child(3) {
+  display: none;
 }
 
 .tl-foot-item:first-child {
@@ -5916,7 +5923,8 @@ footer a:hover {
   font-size: 8px;
   letter-spacing: 0.3em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.3);
+  color: rgba(255, 255, 255, 0.78);
+  font-weight: 500;
 }
 
 .tl-foot-val {
@@ -5987,7 +5995,8 @@ footer a:hover {
   font-size: 9px;
   letter-spacing: 0.35em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.3);
+  color: rgba(255, 255, 255, 0.78);
+  font-weight: 500;
 }
 
 .tl-bottom-hud__counter {
@@ -6038,7 +6047,7 @@ footer a:hover {
   }
 
   .tl-card__title {
-    font-size: clamp(28px, 7vw, 38px);
+    font-size: clamp(36px, 8vw, 48px);
   }
 }
 
