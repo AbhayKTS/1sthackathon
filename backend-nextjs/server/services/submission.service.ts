@@ -130,6 +130,7 @@ export async function submitPayload(userUid: string, input: SubmitPayloadInput):
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const submissionDoc: any = {
     teamId: input.teamId,
+    teamName: teamName,
     roundId: input.roundId,
     submittedBy: userUid,
     submissionType: primaryType,           // primary, for compat
@@ -153,6 +154,7 @@ export async function submitPayload(userUid: string, input: SubmitPayloadInput):
   // Shared base for sheet row — all submitted links will be appended below
   const sheetBase: Record<string, string | number> = {
     teamId: input.teamId,
+    teamName: teamName,
     roundId: input.roundId,
     submittedAt: submittedAtIso,
   };

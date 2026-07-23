@@ -1253,8 +1253,9 @@ function initSubmissionsRealtime() {
             const data = d.data();
             const tr = document.createElement("tr");
             const time = fmtDate(data.submittedAt, "");
+            const teamDisplayName = data.teamName || (data.teamId.slice(0, 10) + "...");
             tr.innerHTML = `
-                <td><strong>${sanitizeHTML(data.teamId.slice(0, 10))}...</strong></td>
+                <td><strong>${sanitizeHTML(teamDisplayName)}</strong></td>
                 <td>${sanitizeHTML(data.roundId)}</td>
                 <td><a href="${sanitizeHTML(data.githubLink || "#")}" target="_blank" style="color: var(--primary);">${data.githubLink ? "Repo ↗" : "None"}</a></td>
                 <td><a href="${sanitizeHTML(data.demoLink || "#")}" target="_blank" style="color: var(--accent);">${data.demoLink ? "Demo ↗" : "None"}</a></td>

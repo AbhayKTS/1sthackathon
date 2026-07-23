@@ -161,6 +161,10 @@ service cloud.firestore {
       allow read: if isAuth() && resource.data.keys().hasAny(['isVisible']) && resource.data.isVisible == true;
       allow read: if isAdmin(); // Admins see all including hidden
       allow write: if false; // Admin SDK only
+
+      match /ReadState/{userId} {
+        allow read, write: if isOwnUser(userId);
+      }
     }
 
     // ─── Mail Queue ───────────────────────────────────────────────────────────

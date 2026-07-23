@@ -90,6 +90,7 @@ export async function PATCH(request: NextRequest): Promise<NextResponse> {
       canvaViewerLink: fields.canvaViewerLink,
       type: fields.type as RoundType,
       submissionType: fields.submissionType as SubmissionType,
+      submissionTypes: fields.submissionTypes as SubmissionType[],
       allowedTeams: fields.allowedTeams,
       startsAt: fields.startsAt,
       endsAt: fields.endsAt,
